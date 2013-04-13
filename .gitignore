@@ -1,0 +1,46 @@
+glut-3.7.6-bin/*
+glut-3.7.6-bin/
+Debug/*
+glm/*
+glm/
+oldfiles/*
+Makefile
+AS3
+as3
+.DS_Store
+glut32.dll
+
+# Compiled Object files
+*.o
+
+# Compiled Static libraries
+*.a
+
+# log files
+*.txt
+
+# XCode Files
+*.1
+
+#documents
+*.pdf
+
+#VS files
+*.sdf
+*.opensdf
+*.sln
+*.suo
+*.vcxproj
+*.filters
+*.user
+
+#glut
+glut.def
+
+
+
+
+
+
+
+
