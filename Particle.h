@@ -7,6 +7,7 @@ public:
 	float density, number_density, temperature, mass, pressure;
 
 	Particle(void);
+	Particle(float,float,float);//temporary
 	~Particle(void);
 };
 
