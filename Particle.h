@@ -3,12 +3,8 @@
 #pragma once
 class Particle{
 public:
-	Vec3 position;
-	Vec3 velocity;
-	float density;
-	float temperature;
-
-	float dot(Vec3){};
+	Vec3 position, velocity, pressure_gradient;
+	float density, number_density, temperature, mass, pressure;
 
 	Particle(void);
 	~Particle(void);
