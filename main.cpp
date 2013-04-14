@@ -19,12 +19,13 @@ using namespace std;
 *******************/
 
 Container CONTAINER(Vec3(1,1,1),Vec3(-1,-1,-1));
-const float TIMESTEP = .01;
+const float TIMESTEP = .05;
 vector<Particle*> PARTICLES;
-const int NUM_PARTICLES = 100;
+const int NUM_PARTICLES = 300;
 const Vec3 GRAVITY(0,-9.8f,0);
 const float IDEAL_DENSITY = 1.0; //for water
 const float STIFFNESS = 1.0f; //no idea what it should be set to.
+const float VISCOSITY = 1.0f;
 const Container CONTAINTER(Vec3(-1,-1,-1),Vec3(1,1,1));
 
 /************
@@ -162,10 +163,10 @@ void initScene(){
 	float x,y,z;
 	for (int i = 0; i<NUM_PARTICLES; i++){
 		x = float(rand())/(float(RAND_MAX));
-		y = float(rand())/(float(RAND_MAX));
+		y = float(rand())/(float(RAND_MAX))/3.0f;
 		z = 0;//float(rand())/(float(RAND_MAX));
 		Vec3 pos(x,y,z);
-		Vec3 vel(0,0,0);
+		Vec3 vel(rand()%3,rand()%3,0);
 		float mass = 1.0f;
 		PARTICLES.push_back(new Particle(pos,vel,mass));
 	}
@@ -208,8 +209,6 @@ void myDisplay(){
 
 	update_particles();
 	
-	/*glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();*/
 	Particle *temp_particle;
 	glPointSize(4.0f);
 	for (int i = 0; i<NUM_PARTICLES; i++){
