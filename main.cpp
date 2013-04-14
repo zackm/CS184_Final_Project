@@ -8,8 +8,9 @@
 #include <stdlib.h>
 #include <iostream>
 
-#pragma once
 #include "Vec3.h"
+
+#include "Container.h"
 
 using namespace std;
 
@@ -22,12 +23,12 @@ vector<Particle*> PARTICLES;
 const int NUM_PARTICLES = 100;
 const Vec3 GRAVITY(0,-9.8f,0);
 const float IDEAL_DENSITY = 1.0; //for water
-const float STIFFNESS = 100.0f; //no idea what it should be set to.
+const float STIFFNESS = 1.0f; //no idea what it should be set to.
+const Container CONTAINTER(Vec3(-1,-1,-1),Vec3(1,1,1));
 
 /************
 * Overloads *
 ************/
-//might need to overload division as well.
 Vec3 operator * (float t, const Vec3& arg_vec){
 	Vec3 new_vec;
 	new_vec.x = arg_vec.x*t;
@@ -131,7 +132,7 @@ void update_particles(){
 			temp_particle = PARTICLES[j];
 
 			Vec3 weight = gaussian_grad(base_particle->position,temp_particle->position);
-			pressure_gradient += temp_particle->mass * (pressure_list[j]/density_list[j])*weight; 
+			pressure_gradient += temp_particle->mass * ((pressure_list[i]+pressure_list[j])/(2.0f*density_list[j]))*weight; 
 								 
 		}
 		pressure_grad_list.push_back(pressure_gradient);
@@ -179,7 +180,7 @@ void initScene(){
 		y = float(rand())/(float(RAND_MAX));
 		z = 0.0f; //rand() % 400;
 		Vec3 pos(x,y,z);
-		Vec3 vel(.1,0,0);
+		Vec3 vel(0,1,0);
 		float mass = 1.0f;
 		PARTICLES.push_back(new Particle(pos,vel,mass));
 	}
