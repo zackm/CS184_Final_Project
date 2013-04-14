@@ -8,31 +8,89 @@
 #include <stdlib.h>
 #include <iostream>
 
+#pragma once
+#include "Vec3.h"
+
 using namespace std;
 
 /*******************
 * GLOBAL VARIABLES *
 *******************/
 
-const float TIMESTEP = .1;
+const float TIMESTEP = .01;
 vector<Particle*> PARTICLES;
-const int NUM_PARTICLES = 10;
-const float IDEAL_DENSITY = 1.0f; //for water
+const int NUM_PARTICLES = 100;
+const Vec3 GRAVITY(0,-9.8f,0);
+const float IDEAL_DENSITY = 1.0; //for water
 const float STIFFNESS = 100.0f; //no idea what it should be set to.
+
+/************
+* Overloads *
+************/
+//might need to overload division as well.
+Vec3 operator * (float t, const Vec3& arg_vec){
+	Vec3 new_vec;
+	new_vec.x = arg_vec.x*t;
+	new_vec.y = arg_vec.y*t;
+	new_vec.z = arg_vec.z*t;
+	return new_vec;
+}
+
+Vec3 operator * (const Vec3& arg_vec,float t){
+	Vec3 new_vec;
+	new_vec.x = arg_vec.x*t;
+	new_vec.y = arg_vec.y*t;
+	new_vec.z = arg_vec.z*t;
+	return new_vec;
+}
+
+Vec3 operator / (float t, const Vec3& arg_vec){
+	Vec3 new_vec;
+	new_vec.x = arg_vec.x/t;
+	new_vec.y = arg_vec.y/t;
+	new_vec.z = arg_vec.z/t;
+	return new_vec;
+}
+
+Vec3 operator / (const Vec3& arg_vec,float t){
+	Vec3 new_vec;
+	new_vec.x = arg_vec.x/t;
+	new_vec.y = arg_vec.y/t;
+	new_vec.z = arg_vec.z/t;
+	return new_vec;
+}
+
+float dot(Vec3 v1, Vec3 v2){
+	return v1.x*v2.x+v1.y*v2.y+v1.z+v2.z;
+}
 
 /******************
 * Kernel Function *
 ******************/
 float gaussian(Vec3 r_i, Vec3 r_j){
-	float distance = r_i.dot(r_j);
+	//should add another parameter (max distance value)
+	Vec3 diff_vec = r_i-r_j;
+	float mag = dot(diff_vec,diff_vec);
 
-	return exp(-4.0f*distance);
+	return exp(-4.0f*mag);
 }
 
-float gaussian_deriv(Vec3 r_i, Vec3 r_j){
-	float distance = r_i.dot(r_j);
+Vec3 gaussian_grad(Vec3 r_i, Vec3 r_j){
+	Vec3 diff_vec = r_i-r_j;
+	float mag = dot(diff_vec,diff_vec);
 
-	return -8.0f*distance*exp(-4.0f*distance);
+	float coeff = -8.0f*sqrt(mag)*exp(-4.0f*mag);
+
+	Vec3 grad(diff_vec.x/sqrt(mag),diff_vec.y/sqrt(mag),diff_vec.z/sqrt(mag));
+
+	return coeff*grad;
+}
+
+/********************
+* Physics Functions *
+********************/
+Vec3 kinematic_polynomial(Vec3 acc, Vec3 vel, Vec3 pos,float t){
+	return .5f*acc*t*t+vel*t+pos;
 }
 
 /*
@@ -42,39 +100,56 @@ update particle location from old location and velocity.
 */
 void update_particles(){
 	vector<Particle*> new_particles;
+	vector<float> density_list;
+	vector<float> pressure_list;
+	vector<Vec3> pressure_grad_list;
 
 	//update using slow algorithm for now
 	Particle* base_particle, *temp_particle, *new_particle;
-	Vec3 pressure_gradient;
-	float number_density, density, pressure, weight;
+	float number_density = 0, density = 0, pressure = 0;
 
-	//for (int i = 0; i<NUM_PARTICLES; i++){
-	//	density = 0;
-	//	base_particle = PARTICLES[i];
-
-	//	//for now compute just the term for dv/dt in terms of pressure gradient, ignore the rest.
-	//	for (int j = 0; j<NUM_PARTICLES; j++){
-	//		//update density
-	//		temp_particle = PARTICLES[j];
-	//		number_density += gaussian(base_particle->position,temp_particle->position);
-	//	}
-	//	new_particle->pressure = STIFFNESS*(number_density-IDEAL_DENSITY);
-	//	new_particle->number_density = number_density;
-
-
-	//	//for (int j = 0; j<NUM_PARTICLES; j++){
-
-	//	//	pressure_gradient += density*()*gaussian_derive(
-	//	//}
-	//	//pressure_gradient 
-	//}
-	Vec3 v(.0001,0,0);
+	//Sets density at each point
 	for (int i = 0; i<NUM_PARTICLES; i++){
-		temp_particle = PARTICLES[i];
-		temp_particle->position += v;
+		density = 0;
+		base_particle = PARTICLES[i];
+
+		for (int j = 0; j<NUM_PARTICLES; j++){
+			//update density
+			temp_particle = PARTICLES[j];
+			density += temp_particle->mass*gaussian(base_particle->position,temp_particle->position);
+		}
+		density_list.push_back(density);
+		pressure_list.push_back(STIFFNESS*(density-IDEAL_DENSITY));
 	}
 
-	//PARTICLES = new_particles;
+	//Sets pressure gradient at each point using densities from last loop
+	for (int i = 0; i<NUM_PARTICLES; i++){
+		base_particle = PARTICLES[i];
+
+		Vec3 pressure_gradient(0,0,0);
+		for (int j = 0; j<NUM_PARTICLES && j!=i; j++){
+			temp_particle = PARTICLES[j];
+
+			Vec3 weight = gaussian_grad(base_particle->position,temp_particle->position);
+			pressure_gradient += temp_particle->mass * (pressure_list[j]/density_list[j])*weight; 
+								 
+		}
+		pressure_grad_list.push_back(pressure_gradient);
+	}
+
+	//Create new particles from old particles and from pressure gradient.
+	for (int i = 0; i<NUM_PARTICLES; i++){
+		temp_particle = PARTICLES[i];
+		Vec3 acceleration = -1.0f*pressure_grad_list[i]/density_list[i] + GRAVITY;
+		Vec3 velocity = temp_particle->velocity;
+		Vec3 position = temp_particle->position;
+		Vec3 new_position = kinematic_polynomial(acceleration,velocity,position,TIMESTEP);
+		Vec3 new_velocity = temp_particle->velocity + acceleration*TIMESTEP;
+		float mass = temp_particle->mass;
+		temp_particle = new Particle(new_position,new_velocity,mass);
+		new_particles.push_back(temp_particle);
+	}
+	PARTICLES = new_particles;
 }
 
 void initScene(){
@@ -103,7 +178,10 @@ void initScene(){
 		x = float(rand())/(float(RAND_MAX));
 		y = float(rand())/(float(RAND_MAX));
 		z = 0.0f; //rand() % 400;
-		PARTICLES.push_back(new Particle(x,y,z));
+		Vec3 pos(x,y,z);
+		Vec3 vel(.1,0,0);
+		float mass = 1.0f;
+		PARTICLES.push_back(new Particle(pos,vel,mass));
 	}
 }
 

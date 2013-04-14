@@ -14,6 +14,14 @@ Vec3 Vec3::operator + (Vec3 arg_vec){
 	return new_vec;
 }
 
+Vec3 Vec3::operator - (Vec3 arg_vec){
+	Vec3 new_vec;
+	new_vec.x = x-arg_vec.x;
+	new_vec.y = y-arg_vec.y;
+	new_vec.z = z-arg_vec.z;
+	return new_vec;
+}
+
 void Vec3::operator += (Vec3 arg_vec){
 	x += arg_vec.x;
 	y += arg_vec.y;
