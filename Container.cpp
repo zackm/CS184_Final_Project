@@ -13,3 +13,49 @@ Container::Container(void)
 Container::~Container(void)
 {
 }
+
+bool Container::in_container(Particle *part){
+	bool in_cont = true;
+
+	Vec3 pos = part->position;
+	Vec3 vel = part->velocity;
+	float mass = part->mass;
+
+	//reflect x direction
+	if (pos.x>max.x){
+		pos.x = max.x-(pos.x-max.x);
+		vel.x = -vel.x;
+		in_cont = false;
+	}else if(pos.x<min.x){
+		pos.x = min.x+(min.x-pos.x);
+		vel.x = -vel.x;
+		in_cont = false;
+	}
+
+	//reflect y direction
+	if (pos.y>max.y){
+		pos.y = max.y-(pos.y-max.y);
+		vel.y = -vel.y;
+		in_cont = false;
+	}else if(pos.y<min.y){
+		pos.y = min.y+(min.y-pos.y);
+		vel.y = -vel.y;
+		in_cont = false;
+	}
+
+	//reflect z direction
+	if (pos.z>max.z){
+		pos.z = max.z-(pos.z-max.z);
+		vel.z = -vel.z;
+		in_cont = false;
+	}else if(pos.z<min.z){
+		pos.z = min.z+(min.z-pos.z);
+		vel.z = -vel.z;
+		in_cont = false;
+	}
+
+	Particle reflected_part(pos,vel,mass);
+
+	(*part) = reflected_part;
+	return in_cont;
+}

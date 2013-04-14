@@ -18,6 +18,7 @@ using namespace std;
 * GLOBAL VARIABLES *
 *******************/
 
+Container CONTAINER(Vec3(1,1,1),Vec3(-1,-1,-1));
 const float TIMESTEP = .01;
 vector<Particle*> PARTICLES;
 const int NUM_PARTICLES = 100;
@@ -106,7 +107,7 @@ void update_particles(){
 	vector<Vec3> pressure_grad_list;
 
 	//update using slow algorithm for now
-	Particle* base_particle, *temp_particle, *new_particle;
+	Particle *base_particle, *temp_particle, *new_particle;
 	float number_density = 0, density = 0, pressure = 0;
 
 	//Sets density at each point
@@ -148,12 +149,28 @@ void update_particles(){
 		Vec3 new_velocity = temp_particle->velocity + acceleration*TIMESTEP;
 		float mass = temp_particle->mass;
 		temp_particle = new Particle(new_position,new_velocity,mass);
+
+		CONTAINER.in_container(temp_particle);
+
 		new_particles.push_back(temp_particle);
 	}
 	PARTICLES = new_particles;
 }
 
 void initScene(){
+	//create a list of random particles
+	float x,y,z;
+	for (int i = 0; i<NUM_PARTICLES; i++){
+		x = float(rand())/(float(RAND_MAX));
+		y = float(rand())/(float(RAND_MAX));
+		z = 0;//float(rand())/(float(RAND_MAX));
+		Vec3 pos(x,y,z);
+		Vec3 vel(0,0,0);
+		float mass = 1.0f;
+		PARTICLES.push_back(new Particle(pos,vel,mass));
+	}
+
+
 	//GLfloat light_position[] = { -1.0, -1.0, -1.0, 0.0 };
 	//GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
 	//GLfloat mat_diffuse[] = { 0.5, 0.0, 0.7, 1.0 };
@@ -170,20 +187,9 @@ void initScene(){
 	//glEnable(GL_LIGHTING);
 	//glEnable(GL_LIGHT0);
 	glEnable(GL_DEPTH_TEST);
+
+
 	//set window and camera
-
-
-	//create a list of random particles
-	float x,y,z;
-	for (int i = 0; i<NUM_PARTICLES; i++){
-		x = float(rand())/(float(RAND_MAX));
-		y = float(rand())/(float(RAND_MAX));
-		z = 0.0f; //rand() % 400;
-		Vec3 pos(x,y,z);
-		Vec3 vel(0,1,0);
-		float mass = 1.0f;
-		PARTICLES.push_back(new Particle(pos,vel,mass));
-	}
 }
 
 void myDisplay(){
@@ -193,21 +199,28 @@ void myDisplay(){
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
+	gluPerspective(90,1.0f,1,-1000);
 
-	glOrtho(-1,1,-1,1,1,-1);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
 
-	glClearColor(0,0,0,0);
-	glColor3f(1.0,1.0,1.0);
+	gluLookAt(0,0,3,0,0,0,0,1,0);
 
 	update_particles();
 	
+	/*glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();*/
 	Particle *temp_particle;
+	glPointSize(4.0f);
 	for (int i = 0; i<NUM_PARTICLES; i++){
 		temp_particle = PARTICLES[i];
+		glClearColor(0,0,0,0);
+		glColor3f(1.0,1.0,1.0);
 		glBegin(GL_POINTS);
 		glVertex3f(temp_particle->position.x,temp_particle->position.y,temp_particle->position.z);
 		glEnd();
 	}
+	glPopMatrix();
 
 	glFlush();
 	glutSwapBuffers();
