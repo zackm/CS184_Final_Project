@@ -236,7 +236,7 @@ void myDisplay(){
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	//gluPerspective(90,1.0f,1,-1000);
-	//gluOrtho2D(-1,1,-1,1);
+	gluOrtho2D(-1,1,-1,1);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
