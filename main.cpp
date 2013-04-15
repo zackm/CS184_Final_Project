@@ -1,5 +1,7 @@
 #include "Particle.h"
 
+#include "Triangle.h"
+
 #include <vector>
 
 #include <GL/glut.h>
@@ -18,15 +20,20 @@ using namespace std;
 * GLOBAL VARIABLES *
 *******************/
 
-Container CONTAINER(Vec3(1,1,1),Vec3(-1,-1,-1));
-const float TIMESTEP = .05;
-vector<Particle*> PARTICLES;
-const int NUM_PARTICLES = 300;
+Container CONTAINER(Vec3(1,1,1),Vec3(-1,-1,-1));//very simple cube for now. Later, make it a particle itself.
+vector<Particle*> PARTICLES;//particles that we do SPH on.
+vector<Triangle*> TRIANGLES;//triangles made from marching cubes to render
+const float TIMESTEP = .05;//time elapsed between iterations
+const int NUM_PARTICLES = 200;
 const Vec3 GRAVITY(0,-9.8f,0);
 const float IDEAL_DENSITY = 1.0; //for water
-const float STIFFNESS = 1.0f; //no idea what it should be set to.
+const float STIFFNESS = 1.0f; //no idea what it should be set to for water.
 const float VISCOSITY = 1.0f;
-const Container CONTAINTER(Vec3(-1,-1,-1),Vec3(1,1,1));
+
+const float GRID_TOL = .1;//either grid size or tolerance for adaptive cubes.
+const float DENSITY_TOL = 1.0f;//also used for marching grid, for density of the particles
+
+bool USE_ADAPTIVE = false; //for adaptive or uniform marching cubes.
 
 /************
 * Overloads *
@@ -151,13 +158,41 @@ void update_particles(){
 		float mass = temp_particle->mass;
 		temp_particle = new Particle(new_position,new_velocity,mass);
 
-		CONTAINER.in_container(temp_particle);
+		CONTAINER.in_container(temp_particle); //applies reflections if outside of boundary.
 
 		new_particles.push_back(temp_particle);
 	}
 	PARTICLES = new_particles;
 }
 
+/*
+Run marching cubes algorithm to generate triangles to render. Uses the particles in PARTICLES to
+calculate densities at corners of cubes (or squares in 2D). There are 16 cases for squares in
+the marching cubes algorithm, 256 for cubes (really 15 up to rotations and reflections).
+*/
+void marching_cubes(){
+	/*we need to break up screen into squares. We should store the squares in an efficient data
+	structure so we reuse values previously calculated through iterations.
+	*/
+
+
+
+	//generate verticies
+
+
+
+	//generate densities at verticies
+
+
+
+	//check marching cubes cases to add new triangles to list.
+
+
+}
+
+/*****************
+* OpenGL Methods *
+*****************/
 void initScene(){
 	//create a list of random particles
 	float x,y,z;
@@ -200,14 +235,16 @@ void myDisplay(){
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(90,1.0f,1,-1000);
+	//gluPerspective(90,1.0f,1,-1000);
+	//gluOrtho2D(-1,1,-1,1);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
-	gluLookAt(0,0,3,0,0,0,0,1,0);
+	//gluLookAt(0,0,3,0,0,0,0,1,0);
 
 	update_particles();
+	marching_cubes();
 	
 	Particle *temp_particle;
 	glPointSize(4.0f);
