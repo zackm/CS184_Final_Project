@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <iostream>
 
+#include <cmath>
+
 #include "Vec3.h"
 
 #include "Container.h"
@@ -334,7 +336,7 @@ int main(int argc, char* argv[]){
 	//The size and position of the window
 	glutInitWindowSize(400,400);
 	glutInitWindowPosition(0,0);
-	glutCreateWindow("Tyler and Zack AS3");
+	glutCreateWindow("Tyler and Zack Final Project");
 
 	initScene();
 
