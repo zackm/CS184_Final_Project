@@ -5,18 +5,9 @@ Container::Container(Vec3 max_arg,Vec3 min_arg){
 	min = min_arg;
 }
 
-Container::Container(void)
-{
-}
-
-
-Container::~Container(void)
-{
-}
-
 bool Container::in_container(Particle *part){
 	bool in_cont = true;
-	float friction = .85f;
+	float friction = 1.0f;//.85f;
 
 	Vec3 pos = part->position;
 	Vec3 vel = part->velocity;

@@ -24,27 +24,27 @@ using namespace std;
 * GLOBAL VARIABLES *
 *******************/
 
-Container CONTAINER(Vec3(1,1,1),Vec3(-1,-1,-1));//very simple cube for now. Later, make it a particle itself.
+Container CONTAINER(Vec3(2,2,1),Vec3(-2,-2,-1));//very simple cube for now. Later, make it a particle itself.
 vector<Particle*> PARTICLES;//particles that we do SPH on.
 vector<Triangle*> TRIANGLES;//triangles made from marching cubes to render
 vector<vector<float> > GRID_DENSITY;//Grid for marching squares. Probably a better data structure we can use.
 vector<vector<Vec3> > VERTEX_MATRIX;//list of vertices corresponding to the densities on the grid.
 
 const float TIMESTEP = .05;//time elapsed between iterations
-const int NUM_PARTICLES = 200;
+const int NUM_PARTICLES = 150;
 const Vec3 GRAVITY(0,-9.8f,0);
 const float IDEAL_DENSITY = 1000.0f; //for water kg/m^3
 const float TEMPERATURE = 293.0f; //kelvin for water at 20 degrees celcius
 const float MOLAR_MASS = .0180153f;//for water
 const float BOLTZMANN = 8.31446f;//gas constant
 const float MASS = 1.0f;//could set it to any number really.
-const float STIFFNESS = .0000001f;//BOLTZMANN*TEMPERATURE/MOLAR_MASS for water;
-const float VISCOSITY = .000000001f;//1.004f for water;
+const float STIFFNESS = .00001f;//BOLTZMANN*TEMPERATURE/MOLAR_MASS;// for water;
+const float VISCOSITY = 1.004f;// for water;
 
-const float MAX_KERNEL_RADIUS = .15f;
+const float MAX_KERNEL_RADIUS = .5f;
 
-const float CUBE_TOL = .1f;//either grid size or tolerance for adaptive cubes.
-const float DENSITY_TOL = 1.0f;//also used for marching grid, for density of the particles
+const float CUBE_TOL = .15f;//either grid size or tolerance for adaptive cubes.
+const float DENSITY_TOL = 5.5f;//also used for marching grid, for density of the particles
 
 Neighbor NEIGHBOR; //neighbor object used for calculations
 const float SUPPORT_RADIUS = 10.0f;//radius of support used by neighbor function to divide space into grid
@@ -92,50 +92,54 @@ float dot(Vec3 v1, Vec3 v2){
 	return v1.x*v2.x+v1.y*v2.y+v1.z+v2.z;
 }
 
-/******************
+/******************	............These derivatives come from wolfram alpha.
 * Kernel Function *
 ******************/
-//need to add coefficient so that we normalize kernel.
-float gaussian(Vec3 r_i, Vec3 r_j){
-	//should add another parameter (max distance value)
+//Poly6 is used for all terms except pressure and viscosity
+float poly6_kernel(Vec3 r_i, Vec3 r_j){
+	
 	Vec3 diff_vec = r_i-r_j;
 	float mag = dot(diff_vec,diff_vec);
 
-	if (sqrt(mag)>MAX_KERNEL_RADIUS){
+	float h = MAX_KERNEL_RADIUS;
+
+	if (sqrt(mag)>h || sqrt(mag)==0){
 		return 0;
 	}
 
-	return exp(-4.0f*mag)/sqrt(2*PI);
+	return (315/(64*PI*pow(h,9.0f)))*pow((h*h - mag),3.0f);
 }
 
-Vec3 gaussian_grad(Vec3 r_i, Vec3 r_j){
+Vec3 gradient_kernel(Vec3 r_i, Vec3 r_j){
 	Vec3 diff_vec = r_i-r_j;
 	float mag = dot(diff_vec,diff_vec);
 
+	float h = MAX_KERNEL_RADIUS;
+
 	Vec3 v(0,0,0);
-	if (sqrt(mag)>MAX_KERNEL_RADIUS){
+	if (sqrt(mag)>h || sqrt(mag)==0){
 		return v;
 	}
 
-	float coeff = -8.0f*exp(-4.0f*mag);
+	float coeff = (45/(PI*pow(h,6.0f)))*pow((h-sqrt(mag)),2.0f)/sqrt(mag);
 
-	Vec3 grad(diff_vec.x,diff_vec.y,diff_vec.z);
-
-	return coeff*grad/sqrt(2*PI);
+	return -coeff*diff_vec;
 }
 
-float gaussian_laplacian(Vec3 r_i, Vec3 r_j){
+float laplacian_kernel(Vec3 r_i, Vec3 r_j){
+
 	Vec3 diff_vec = r_i-r_j;
 	float mag = dot(diff_vec,diff_vec);
 
-	if (sqrt(mag)>MAX_KERNEL_RADIUS){
+	float h = MAX_KERNEL_RADIUS;
+
+	if (sqrt(mag)>h || sqrt(mag)==0){
 		return 0;
 	}
 
-	float coeff = 8.0f*exp(-4.0f*mag);
+	float coeff = 15/(2*PI*pow(h,3.0f));
 
-	//I got this formula from wolfram alpha, so may want to double check it later.
-	return coeff * (8.0*(mag)-3)/sqrt(2*PI);
+	return -((6.0f*coeff)/(pow(h,3.0f)*sqrt(mag)))*((-1.0f*h*sqrt(mag))+mag);
 }
 
 /********************
@@ -151,7 +155,7 @@ float density_at_point(Vec3 point){
 		//update density. There will be a problem if the point is exactly equal to sum particle (divide by zero error).
 		Particle *temp_particle = PARTICLES[i];
 
-		density += temp_particle->mass*gaussian(point,temp_particle->position);
+		density += temp_particle->mass*poly6_kernel(point,temp_particle->position);
 	}
 
 	return density;
@@ -187,10 +191,10 @@ void update_particles(){
 		base_particle = PARTICLES[i];
 
 		Vec3 pressure_gradient(0,0,0);
-		for (int j = 0; j<NUM_PARTICLES && j!=i; j++){ // change to neighbors
+		for (int j = 0; j<NUM_PARTICLES; j++){ // change to neighbors
 			temp_particle = PARTICLES[j];
 
-			Vec3 weight = gaussian_grad(base_particle->position,temp_particle->position);
+			Vec3 weight = gradient_kernel(base_particle->position,temp_particle->position);
 			pressure_gradient += temp_particle->mass * ((pressure_list[i]+pressure_list[j])/(2.0f*density_list[j]))*weight; 
 
 		}
@@ -205,7 +209,7 @@ void update_particles(){
 		for (int j = 0; j<NUM_PARTICLES; j++){ // change to neighbors
 			temp_particle = PARTICLES[j];
 
-			float weight = gaussian_laplacian(base_particle->position,temp_particle->position);
+			float weight = laplacian_kernel(base_particle->position,temp_particle->position);
 			viscosity_laplacian += base_particle->mass*((temp_particle->velocity - base_particle->velocity)/density_list[j])*weight;
 		}
 		viscosity_list.push_back(viscosity_laplacian);
@@ -470,7 +474,7 @@ void myDisplay(){
 		temp_part = PARTICLES[i];
 		glClearColor(0,0,0,0);
 		glColor3f(1.0,0,0);
-		glVertex3f(temp_part->position.x,temp_part->position.y,temp_part->position.z-.1f);
+		glVertex3f(temp_part->position.x,temp_part->position.y,temp_part->position.z-.1);
 	}
 	glEnd();
 
@@ -546,3 +550,123 @@ int main(int argc, char* argv[]){
 
 	return 1;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//Vec3 poly6_gradient(Vec3 r_i, Vec3 r_j){
+//
+//	Vec3 diff_vec = r_i-r_j;
+//	float mag = dot(diff_vec,diff_vec);
+//
+//	float h = MAX_KERNEL_RADIUS;
+//
+//	Vec3 v(0,0,0);
+//	if (sqrt(mag)>h){
+//		return v;
+//	}
+//
+//
+//}
+//
+//float poly6_laplacian(Vec3 r_i, Vec3 r_j){
+//}
+
+//spiky is used for pressure
+//float spiky_kernel(Vec3 r_i, Vec3 r_j){
+//
+//	Vec3 diff_vec = r_i-r_j;
+//	float mag = dot(diff_vec,diff_vec);
+//
+//	float h = MAX_KERNEL_RADIUS;
+//
+//	if (sqrt(mag)>h){
+//		return 0;
+//	}
+//
+//	return (15/(PI*pow(h,6.0f)))*pow((h-sqrt(mag)),3.0f);
+//}
+
+//float spiky_laplacian(Vec3 r_i, Vec3 r_j){
+//	Vec3 diff_vec = r_i-r_j;
+//	float mag = dot(diff_vec,diff_vec);
+//
+//	float h = MAX_KERNEL_RADIUS;
+//
+//	if (sqrt(mag)>h){
+//		return 0;
+//	}
+//
+//	return (90/(PI*pow(h,6.0f)))*((-h*h/sqrt(mag))+3.0f*h - 2.0f*sqrt(mag));
+//}
+
+////viscosity kernel
+//float viscosity_kernel(Vec3 r_i, Vec3 r_j){
+//
+//	Vec3 diff_vec = r_i-r_j;
+//	float mag = dot(diff_vec,diff_vec);
+//
+//	float h = MAX_KERNEL_RADIUS;
+//
+//	if (sqrt(mag)>h){
+//		return 0;
+//	}
+//
+//	return (15/(2*PI*h*h*h))*(-.5f*(pow(mag/h,3.0f))+(pow(mag/h,2.0f))+.5f*(h/mag)-1);
+//}
+//
+//Vec3 viscosity_gradient(Vec3 r_i, Vec3 r_j){
+//}
+
+//Gaussian is an extra kernel type we could use.
+//float gaussian(Vec3 r_i, Vec3 r_j){
+//	//should add another parameter (max distance value)
+//	Vec3 diff_vec = r_i-r_j;
+//	float mag = dot(diff_vec,diff_vec);
+//
+//	if (sqrt(mag)>MAX_KERNEL_RADIUS){
+//		return 0;
+//	}
+//
+//	return exp(-4.0f*mag)/sqrt(2*PI);
+//}
+//
+//Vec3 gaussian_grad(Vec3 r_i, Vec3 r_j){
+//	Vec3 diff_vec = r_i-r_j;
+//	float mag = dot(diff_vec,diff_vec);
+//
+//	Vec3 v(0,0,0);
+//	if (sqrt(mag)>MAX_KERNEL_RADIUS){
+//		return v;
+//	}
+//
+//	float coeff = -8.0f*exp(-4.0f*mag);
+//
+//	Vec3 grad(diff_vec.x,diff_vec.y,diff_vec.z);
+//
+//	return coeff*grad/sqrt(2*PI);
+//}
+//
+//float gaussian_laplacian(Vec3 r_i, Vec3 r_j){
+//	Vec3 diff_vec = r_i-r_j;
+//	float mag = dot(diff_vec,diff_vec);
+//
+//	if (sqrt(mag)>MAX_KERNEL_RADIUS){
+//		return 0;
+//	}
+//
+//	float coeff = 8.0f*exp(-4.0f*mag);
+//
+//	//I got this formula from wolfram alpha, so may want to double check it later.
+//	return coeff * (8.0*(mag)-3)/sqrt(2*PI);
+//}

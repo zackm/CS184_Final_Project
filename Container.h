@@ -11,7 +11,7 @@ public:
 	
 	bool in_container(Particle*);
 	Container(Vec3,Vec3);
-	Container(void);
-	~Container(void);
+	Container(void){};
+	~Container(void){};
 };
 
