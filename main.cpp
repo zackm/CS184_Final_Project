@@ -48,7 +48,7 @@ const float CUBE_TOL = .1f;//either grid size or tolerance for adaptive cubes.
 const float DENSITY_TOL = 5.5f;//also used for marching grid, for density of the particles
 
 Neighbor NEIGHBOR; //neighbor object used for calculations
-const float SUPPORT_RADIUS = 10.0f;//radius of support used by neighbor function to divide space into grid
+const float SUPPORT_RADIUS = 0.5f;//radius of support used by neighbor function to divide space into grid
 
 bool USE_ADAPTIVE = false; //for adaptive or uniform marching cubes.
 
@@ -164,8 +164,13 @@ void update_particles(){
 		base_particle = PARTICLES[i];
 
 		Vec3 pressure_gradient(0,0,0);
-		for (int j = 0; j<NUM_PARTICLES; j++){ // change to neighbors
-			temp_particle = PARTICLES[j];
+
+        vector<int> neighbor_vec = base_particle->neighbors;
+		for (int j = 0; j<PARTICLES[i]->num_neighbors(); j++){ // changed to neighbors
+			temp_particle = PARTICLES[neighbor_vec[j]];
+            if (i == neighbor_vec[j]) {
+                continue;
+            }
 
 			Vec3 weight = gradient_kernel(base_particle->position,temp_particle->position);
 			pressure_gradient += weight * temp_particle->mass * ((pressure_list[i]+pressure_list[j])/(2.0f*density_list[j])); 
@@ -179,8 +184,9 @@ void update_particles(){
 		base_particle = PARTICLES[i];
 
 		Vec3 viscosity_laplacian(0,0,0);
-		for (int j = 0; j<NUM_PARTICLES; j++){ // change to neighbors
-			temp_particle = PARTICLES[j];
+        vector<int> neighbor_vec = base_particle->neighbors;
+		for (int j = 0; j<PARTICLES[i]->num_neighbors(); j++){ // changed to neighbors
+			temp_particle = PARTICLES[neighbor_vec[j]];
 
 			float weight = laplacian_kernel(base_particle->position,temp_particle->position);
 			viscosity_laplacian += ((temp_particle->velocity - base_particle->velocity)/density_list[j])*weight * base_particle->mass;
@@ -492,7 +498,26 @@ void myDisplay(){
 	//gluLookAt(0,0,3,0,0,0,0,1,0);
 
 	//NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS);
+    // workaround until PARTICLE pointer stuff working
+//    int width = CONTAINER.max.x - CONTAINER.min.x;
+//    for (int i = 0; i < width/SUPPORT_RADIUS*width/SUPPORT_RADIUS; i++) {
+//        NEIGHBOR.box_particles.push_back(vector<int>());
+//    }
+//    for (int i = 0; i < PARTICLES.size(); i++) {
+//        Particle *temp_part = PARTICLES[i];
+//        // set particle box #
+//        int box_number = NEIGHBOR.compute_box_num(temp_part->position, SUPPORT_RADIUS, CONTAINER.min.x, CONTAINER.max.x);
+//        temp_part->box = box_number;
+//        // add to list in neighbor
+//        NEIGHBOR.add_to_box_particles(box_number, i);
+//    }
+//    for (int i = 0; i < PARTICLES.size(); i++) {
+//        NEIGHBOR.set_particle_neighbors(i, PARTICLES[i]);
+//    }
+    // end workaround
+    
 	update_particles();
+    NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER);
 	marching_cubes();
 
 	//draw particles
@@ -502,7 +527,13 @@ void myDisplay(){
 	for (int i = 0; i<PARTICLES.size(); i++){
 		temp_part = PARTICLES[i];
 		glClearColor(0,0,0,0);
-		glColor3f(1.0,0,0);
+        
+        // alternate particle colors depending on box in grid
+        if (temp_part->box % 2 == 0) {
+            glColor3f(1.0,0,0);
+        } else {
+            glColor3f(0,1.0,1.0);
+        }
 		glVertex3f(temp_part->position.x,temp_part->position.y,temp_part->position.z-.1);
 	}
 	glEnd();
