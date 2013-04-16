@@ -6,6 +6,8 @@ public:
 	Vec3 operator + (Vec3);
 	Vec3 operator - (Vec3);
 	void operator += (Vec3);
+	Vec3 operator * (float);
+	Vec3 operator / (float);
 
 	Vec3(void){};
 	Vec3(float,float,float);

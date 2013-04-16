@@ -28,10 +28,11 @@ Container CONTAINER(Vec3(2,2,1),Vec3(-2,-2,-1));//very simple cube for now. Late
 vector<Particle*> PARTICLES;//particles that we do SPH on.
 vector<Triangle*> TRIANGLES;//triangles made from marching cubes to render
 vector<vector<float> > GRID_DENSITY;//Grid for marching squares. Probably a better data structure we can use.
+vector<vector<bool> > GRID_BOOL; //bools corresponding to that grid
 vector<vector<Vec3> > VERTEX_MATRIX;//list of vertices corresponding to the densities on the grid.
 
 const float TIMESTEP = .01;//time elapsed between iterations
-const int NUM_PARTICLES = 50;
+const int NUM_PARTICLES = 10;
 const Vec3 GRAVITY(0,-9.8f,0);
 const float IDEAL_DENSITY = 1000.0f; //for water kg/m^3
 const float TEMPERATURE = 293.0f; //kelvin for water at 20 degrees celcius
@@ -53,41 +54,9 @@ bool USE_ADAPTIVE = false; //for adaptive or uniform marching cubes.
 
 const float PI = 3.1415926;
 
-/************
-* Overloads *
-************/
-Vec3 operator * (float t, const Vec3& arg_vec){
-	Vec3 new_vec;
-	new_vec.x = arg_vec.x*t;
-	new_vec.y = arg_vec.y*t;
-	new_vec.z = arg_vec.z*t;
-	return new_vec;
-}
-
-Vec3 operator * (const Vec3& arg_vec,float t){
-	Vec3 new_vec;
-	new_vec.x = arg_vec.x*t;
-	new_vec.y = arg_vec.y*t;
-	new_vec.z = arg_vec.z*t;
-	return new_vec;
-}
-
-Vec3 operator / (float t, const Vec3& arg_vec){
-	Vec3 new_vec;
-	new_vec.x = arg_vec.x/t;
-	new_vec.y = arg_vec.y/t;
-	new_vec.z = arg_vec.z/t;
-	return new_vec;
-}
-
-Vec3 operator / (const Vec3& arg_vec,float t){
-	Vec3 new_vec;
-	new_vec.x = arg_vec.x/t;
-	new_vec.y = arg_vec.y/t;
-	new_vec.z = arg_vec.z/t;
-	return new_vec;
-}
-
+/*
+simple dot product between two vectors.
+*/
 float dot(Vec3 v1, Vec3 v2){
 	return v1.x*v2.x+v1.y*v2.y+v1.z+v2.z;
 }
@@ -97,7 +66,7 @@ float dot(Vec3 v1, Vec3 v2){
 ******************/
 //Poly6 is used for all terms except pressure and viscosity
 float poly6_kernel(Vec3 r_i, Vec3 r_j){
-	
+
 	Vec3 diff_vec = r_i-r_j;
 	float mag = dot(diff_vec,diff_vec);
 
@@ -123,7 +92,7 @@ Vec3 gradient_kernel(Vec3 r_i, Vec3 r_j){
 
 	float coeff = (45/(PI*pow(h,6.0f)))*pow((h-sqrt(mag)),2.0f)/sqrt(mag);
 
-	return -coeff*diff_vec;
+	return diff_vec*(-coeff);
 }
 
 float laplacian_kernel(Vec3 r_i, Vec3 r_j){
@@ -146,7 +115,7 @@ float laplacian_kernel(Vec3 r_i, Vec3 r_j){
 * Physics Functions *
 ********************/
 Vec3 kinematic_polynomial(Vec3 acc, Vec3 vel, Vec3 pos,float t){
-	return .5f*acc*t*t+vel*t+pos;
+	return acc*t*t*.5f+vel*t+pos;
 }
 
 float density_at_point(Vec3 point){
@@ -160,6 +129,10 @@ float density_at_point(Vec3 point){
 
 	return density;
 }
+
+/*******************
+* Particle Methods *
+*******************/
 
 /*
 Create a new list of particles from the old list. Then, throw the old list.
@@ -195,7 +168,7 @@ void update_particles(){
 			temp_particle = PARTICLES[j];
 
 			Vec3 weight = gradient_kernel(base_particle->position,temp_particle->position);
-			pressure_gradient += temp_particle->mass * ((pressure_list[i]+pressure_list[j])/(2.0f*density_list[j]))*weight; 
+			pressure_gradient += weight * temp_particle->mass * ((pressure_list[i]+pressure_list[j])/(2.0f*density_list[j])); 
 
 		}
 		pressure_grad_list.push_back(pressure_gradient);
@@ -210,7 +183,7 @@ void update_particles(){
 			temp_particle = PARTICLES[j];
 
 			float weight = laplacian_kernel(base_particle->position,temp_particle->position);
-			viscosity_laplacian += base_particle->mass*((temp_particle->velocity - base_particle->velocity)/density_list[j])*weight;
+			viscosity_laplacian += ((temp_particle->velocity - base_particle->velocity)/density_list[j])*weight * base_particle->mass;
 		}
 		viscosity_list.push_back(viscosity_laplacian);
 	}
@@ -220,8 +193,8 @@ void update_particles(){
 		temp_particle = PARTICLES[i];
 
 		//using Navier Stokes, calculate the change in velocity.
-		Vec3 acceleration = -1.0f*pressure_grad_list[i]/density_list[i]
-		+ GRAVITY + VISCOSITY * viscosity_list[i]/density_list[i];
+		Vec3 acceleration = pressure_grad_list[i]/density_list[i]*(-1.0f)
+		+ GRAVITY + (viscosity_list[i]/density_list[i])*VISCOSITY;
 
 		Vec3 velocity = temp_particle->velocity;
 		Vec3 position = temp_particle->position;
@@ -229,7 +202,7 @@ void update_particles(){
 		Vec3 new_position = kinematic_polynomial(acceleration,velocity,position,TIMESTEP);
 		Vec3 new_velocity = temp_particle->velocity + acceleration*TIMESTEP;
 		float mass = temp_particle->mass;
-		
+
 		temp_particle = new Particle(new_position,new_velocity,mass);
 
 		CONTAINER.in_container(temp_particle); //applies reflections if outside of boundary.
@@ -237,6 +210,172 @@ void update_particles(){
 		new_particles.push_back(temp_particle);
 	}
 	PARTICLES = new_particles;
+}
+
+/************************
+* Marching Cube Methods *
+************************/
+/*
+Returns a list of pointers to the different triangles that need to be made for the marching cube case 
+corresponding to the input int. Should call some global list of all possible triangles (up to transformation)
+to make a particular triangle.
+*/
+vector<Triangle*> make_triangles(int cube_case, int i, int j){
+	//cube define by the corner (i,j), (i,j+1), (i+1,j), and (i+1,j+1).
+	Vec3 vertex_1 = VERTEX_MATRIX[i][j];
+	Vec3 vertex_2 = VERTEX_MATRIX[i][j+1];
+	Vec3 vertex_3 = VERTEX_MATRIX[i+1][j];
+	Vec3 vertex_4 = VERTEX_MATRIX[i+1][j+1];
+	float weight_1 = GRID_DENSITY[i][j];
+	float weight_2 = GRID_DENSITY[i][j+1];
+	float weight_3 = GRID_DENSITY[i+1][j];
+	float weight_4 = GRID_DENSITY[i+1][j+1];
+
+	vector<Triangle*> tri_list;
+	Triangle* tri1, *tri2, *tri3;
+	Vec3 midpoint_1, midpoint_2;
+
+	if(cube_case==0){
+		//no triangles, no corners activated
+	}else if(cube_case==1){
+		//only corner 11 is turned on.
+		tri1 = new Triangle(vertex_4,vertex_2,vertex_3,weight_4,weight_2,weight_3,DENSITY_TOL);
+		tri_list.push_back(tri1);
+	}else if(cube_case==2){
+		//only corner 10 is turned on
+		tri1 = new Triangle(vertex_3,vertex_4,vertex_1,weight_3,weight_4,weight_1,DENSITY_TOL);
+		tri_list.push_back(tri1);
+	}else if(cube_case==3){
+		//10 and 11
+		midpoint_1 = vertex_3+(vertex_1-vertex_3)*((DENSITY_TOL-weight_3)/(weight_1-weight_3));
+		tri1 = new Triangle(vertex_3,vertex_4,midpoint_1);
+
+		midpoint_2 = vertex_4+(vertex_2-vertex_4)*((DENSITY_TOL-weight_4)/(weight_2-weight_4));
+		tri2 = new Triangle(vertex_4,midpoint_1,midpoint_2);
+
+		tri_list.push_back(tri1);
+		tri_list.push_back(tri2);
+	}else if(cube_case==4){
+		//only corner 01 is turned on
+		tri1 = new Triangle(vertex_2,vertex_1,vertex_4,weight_2,weight_1,weight_4,DENSITY_TOL);
+		tri_list.push_back(tri1);
+	}else if(cube_case==5){
+		//01 and 11 turned on
+		midpoint_1 = vertex_2+(vertex_1-vertex_2)*((DENSITY_TOL-weight_2)/(weight_1-weight_2));
+		tri1 = new Triangle(vertex_4,vertex_2,midpoint_1);
+
+		midpoint_2 = vertex_4+(vertex_3-vertex_4)*((DENSITY_TOL-weight_4)/(weight_3-weight_4));
+		tri2 = new Triangle(vertex_4,midpoint_1,midpoint_2);
+		
+		tri_list.push_back(tri1);
+		tri_list.push_back(tri2);
+	}else if(cube_case==6){
+		//only 10 and 01 turned on
+		midpoint_1 = vertex_2+(vertex_1-vertex_2)*((DENSITY_TOL-weight_2)/(weight_1-weight_2));
+		midpoint_2 = vertex_2+(vertex_4-vertex_2)*((DENSITY_TOL-weight_2)/(weight_4-weight_2));
+		tri1 = new Triangle(vertex_2,midpoint_1,midpoint_2);
+
+		midpoint_1 = vertex_3+(vertex_4-vertex_3)*((DENSITY_TOL-weight_3)/(weight_4-weight_3));
+		midpoint_2 = vertex_3+(vertex_1-vertex_3)*((DENSITY_TOL-weight_3)/(weight_1-weight_3));
+		tri2 = new Triangle(vertex_3,midpoint_1,midpoint_2);
+		
+		tri_list.push_back(tri1);
+		tri_list.push_back(tri2);
+	}else if(cube_case==7){
+		//only 10, 01, and 11 turned on
+		midpoint_1 = vertex_2+(vertex_1-vertex_2)*((DENSITY_TOL-weight_2)/(weight_1-weight_2));
+		tri1 = new Triangle(vertex_4,vertex_2,midpoint_1);
+
+		midpoint_2 = vertex_3+(vertex_1-vertex_3)*((DENSITY_TOL-weight_3)/(weight_1-weight_3));
+		tri2 = new Triangle(vertex_4,midpoint_1,midpoint_2);
+
+		tri3 = new Triangle(vertex_4,midpoint_2,vertex_3);
+		
+		tri_list.push_back(tri1);
+		tri_list.push_back(tri2);
+		tri_list.push_back(tri3);
+	}else if(cube_case==8){
+		//only corner 00 is turned on
+		tri1 = new Triangle(vertex_1,vertex_3,vertex_2,weight_1,weight_3,weight_2,DENSITY_TOL);
+		tri_list.push_back(tri1);
+	}else if(cube_case==9){
+		//only 00 and 11 turned on
+		midpoint_1 = vertex_1+(vertex_3-vertex_1)*((DENSITY_TOL-weight_1)/(weight_3-weight_1));
+		midpoint_2 = vertex_1+(vertex_2-vertex_1)*((DENSITY_TOL-weight_1)/(weight_2-weight_1));
+		tri1 = new Triangle(vertex_1,midpoint_1,midpoint_2);
+
+		midpoint_1 = vertex_4+(vertex_2-vertex_4)*((DENSITY_TOL-weight_4)/(weight_2-weight_4));
+		midpoint_2 = vertex_4+(vertex_3-vertex_4)*((DENSITY_TOL-weight_4)/(weight_3-weight_4));
+		tri2 = new Triangle(vertex_4,midpoint_1,midpoint_2);
+		
+		tri_list.push_back(tri1);
+		tri_list.push_back(tri2);
+	}else if(cube_case==10){
+		//only 00 and 10 turned on
+		midpoint_1 = vertex_3+(vertex_4-vertex_3)*((DENSITY_TOL-weight_3)/(weight_4-weight_3));
+		tri1 = new Triangle(vertex_1,vertex_3,midpoint_1);
+
+		midpoint_2 = vertex_1+(vertex_2-vertex_1)*((DENSITY_TOL-weight_1)/(weight_2-weight_1));
+		tri2 = new Triangle(vertex_1,midpoint_1,midpoint_2);
+		
+		tri_list.push_back(tri1);
+		tri_list.push_back(tri2);
+	}else if(cube_case==11){
+		//00, 10, 11
+		midpoint_1 = vertex_4+(vertex_2-vertex_4)*((DENSITY_TOL-weight_4)/(weight_2-weight_4));
+		tri1 = new Triangle(vertex_3,vertex_4,midpoint_1);
+
+		midpoint_2 = vertex_1+(vertex_2-vertex_1)*((DENSITY_TOL-weight_1)/(weight_2-weight_1));
+		tri2 = new Triangle(vertex_3,midpoint_1,midpoint_2);
+
+		tri3 = new Triangle(vertex_3,midpoint_2,vertex_1);
+		
+		tri_list.push_back(tri1);
+		tri_list.push_back(tri2);
+		tri_list.push_back(tri3);
+	}else if(cube_case==12){
+		//00 and 01 turned on
+		midpoint_1 = vertex_2+(vertex_4-vertex_2)*((DENSITY_TOL-weight_2)/(weight_4-weight_2));
+		tri1 = new Triangle(vertex_1,vertex_2,midpoint_1);
+
+		midpoint_2 = vertex_1+(vertex_3-vertex_1)*((DENSITY_TOL-weight_1)/(weight_3-weight_1));
+		tri2 = new Triangle(vertex_1,midpoint_1,midpoint_2);
+		
+		tri_list.push_back(tri1);
+		tri_list.push_back(tri2);
+	}else if(cube_case==13){
+		//00, 01, 11
+		midpoint_1 = vertex_4+(vertex_3-vertex_4)*((DENSITY_TOL-weight_4)/(weight_3-weight_4));
+		tri1 = new Triangle(vertex_2,midpoint_1,vertex_4);
+
+		midpoint_2 = vertex_1+(vertex_3-vertex_1)*((DENSITY_TOL-weight_1)/(weight_3-weight_1));
+		tri2 = new Triangle(vertex_2,midpoint_2,midpoint_1);
+
+		tri3 = new Triangle(vertex_2,vertex_1,midpoint_2);
+		
+		tri_list.push_back(tri1);
+		tri_list.push_back(tri2);
+		tri_list.push_back(tri3);
+	}else if(cube_case==14){
+		//00, 01, 10
+		midpoint_1 = vertex_2+(vertex_4-vertex_2)*((DENSITY_TOL-weight_2)/(weight_4-weight_2));
+		tri1 = new Triangle(vertex_1,midpoint_1,vertex_2);
+
+		midpoint_2 = vertex_3+(vertex_4-vertex_3)*((DENSITY_TOL-weight_3)/(weight_4-weight_3));
+		tri2 = new Triangle(vertex_1,midpoint_2,midpoint_1);
+
+		tri3 = new Triangle(vertex_1,vertex_3,midpoint_2);
+		
+		tri_list.push_back(tri1);
+		tri_list.push_back(tri2);
+		tri_list.push_back(tri3);
+	}else if(cube_case==15){
+		tri1 = new Triangle(vertex_1,vertex_3,vertex_2);
+		tri2 = new Triangle(vertex_2,vertex_3,vertex_4);
+		tri_list.push_back(tri1);
+		tri_list.push_back(tri2);
+	}
+	return tri_list;
 }
 
 /*
@@ -258,6 +397,7 @@ void marching_cubes(){
 
 	VERTEX_MATRIX.clear();
 	GRID_DENSITY.clear();
+	GRID_BOOL.clear();
 	TRIANGLES.clear();
 
 	float error = .001;
@@ -267,6 +407,7 @@ void marching_cubes(){
 	for (float x = CONTAINER.min.x; x<CONTAINER.max.x+error; x = x+step){
 		vector<float> y_list;
 		vector<Vec3> vec_list;
+		vector<bool> bool_list;
 
 		for (float y = CONTAINER.min.y; y<CONTAINER.max.y+error; y = y+step){
 			Vec3 vertex(x,y,0);
@@ -275,145 +416,31 @@ void marching_cubes(){
 
 			y_list.push_back(density);
 			vec_list.push_back(vertex);
+			bool_list.push_back(density>DENSITY_TOL);
 		}
 
 		GRID_DENSITY.push_back(y_list);
+		GRID_BOOL.push_back(bool_list);
 		VERTEX_MATRIX.push_back(vec_list);
 	}
 
 	//check marching cubes cases to add new triangles to list. It would be good to use bit operations for speed.
-	int n = GRID_DENSITY.size();//this implies uniform. Will need to change this.
-	int m = n;
+	const int n = GRID_DENSITY.size();//this implies uniform. Will need to change this.
+	const int m = n;
 
 	int i,j; //i indicates the row, j indicates the column. 
 	i = j = 0;
 
 	bool squares_left = true;
+	vector<Triangle*> tri_list;
+	Vec3 vertex_1,vertex_2,vertex_3;
 	while (squares_left){ //need to change this later
+		tri_list.clear();
 
-		vector<float> first_row_density = GRID_DENSITY[i];
-		vector<Vec3> first_row_vertices = VERTEX_MATRIX[i];
-		vector<float> second_row_density = GRID_DENSITY[i+1];
-		vector<Vec3> second_row_vertices = VERTEX_MATRIX[i+1];
+		int cube_case = GRID_BOOL[i][j]*8+GRID_BOOL[i][j+1]*4+GRID_BOOL[i+1][j]*2+GRID_BOOL[i+1][j+1];
+		tri_list = make_triangles(cube_case,i,j);
 
-		float density_00 = first_row_density[j];
-		float density_01 = first_row_density[j+1];
-		float density_10 = second_row_density[j];
-		float density_11 = second_row_density[j+1];
-
-		bool corner_00 = density_00>DENSITY_TOL,
-			 corner_01 = density_01>DENSITY_TOL,
-			 corner_10 = density_10>DENSITY_TOL,
-			 corner_11 = density_11>DENSITY_TOL;
-
-		//now check the case and add the corresponding triangle type.
-		if (corner_00){
-			if (corner_01){
-				if (corner_10){
-					if (corner_11){
-						//make whole square out of two triangles.
-						Triangle* tri1 = new Triangle(first_row_vertices[j],second_row_vertices[j],first_row_vertices[j+1]);
-						Triangle* tri2 = new Triangle(second_row_vertices[j],second_row_vertices[j+1],first_row_vertices[j+1]);
-						TRIANGLES.push_back(tri1);
-						TRIANGLES.push_back(tri2);
-					}else{
-						Triangle* tri1 = new Triangle(first_row_vertices[j],second_row_vertices[j],(second_row_vertices[j]+second_row_vertices[j+1])/2.0f);
-						Triangle* tri2 = new Triangle((second_row_vertices[j]+second_row_vertices[j+1])/2.0f,(first_row_vertices[j+1]+second_row_vertices[j+1])/2.0f,first_row_vertices[j]);
-						Triangle* tri3 = new Triangle((first_row_vertices[j+1]+second_row_vertices[j+1])/2.0f,first_row_vertices[j+1],first_row_vertices[j]);
-						TRIANGLES.push_back(tri1);
-						TRIANGLES.push_back(tri2);
-						TRIANGLES.push_back(tri3);
-					}
-				}else{
-					if (corner_11){
-						Triangle* tri1 = new Triangle(first_row_vertices[j+1],first_row_vertices[j],(second_row_vertices[j]+first_row_vertices[j])/2.0f);
-						Triangle* tri2 = new Triangle((second_row_vertices[j]+first_row_vertices[j])/2.0f,(second_row_vertices[j]+second_row_vertices[j+1])/2.0f,first_row_vertices[j+1]);
-						Triangle* tri3 = new Triangle((second_row_vertices[j]+second_row_vertices[j+1])/2.0f,second_row_vertices[j+1],first_row_vertices[j+1]);
-						TRIANGLES.push_back(tri1);
-						TRIANGLES.push_back(tri2);
-						TRIANGLES.push_back(tri3);
-					}else{
-						Triangle* tri1 = new Triangle(first_row_vertices[j],(first_row_vertices[j]+second_row_vertices[j])/2,first_row_vertices[j+1]);
-						Triangle* tri2 = new Triangle(first_row_vertices[j+1],(first_row_vertices[j]+second_row_vertices[j])/2,(first_row_vertices[j+1]+second_row_vertices[j+1])/2.0f);
-						TRIANGLES.push_back(tri1);
-						TRIANGLES.push_back(tri2);
-					}
-				}
-			}else{
-				if (corner_10){
-					if (corner_11){
-						Triangle* tri1 = new Triangle(second_row_vertices[j],second_row_vertices[j+1],(first_row_vertices[j+1]+second_row_vertices[j+1])/2.0f);
-						Triangle* tri2 = new Triangle((first_row_vertices[j+1]+second_row_vertices[j+1])/2.0f,(first_row_vertices[j]+first_row_vertices[j+1])/2.0f,second_row_vertices[j]);
-						Triangle* tri3 = new Triangle((first_row_vertices[j]+first_row_vertices[j+1])/2.0f,first_row_vertices[j],second_row_vertices[j]);
-						TRIANGLES.push_back(tri1);
-						TRIANGLES.push_back(tri2);
-						TRIANGLES.push_back(tri3);
-					}else{
-						Triangle* tri1 = new Triangle(first_row_vertices[j],second_row_vertices[j],(second_row_vertices[j]+second_row_vertices[j+1])/2.0f);
-						Triangle* tri2 = new Triangle((second_row_vertices[j]+second_row_vertices[j+1])/2.0f,(first_row_vertices[j]+first_row_vertices[j+1])/2.0f,first_row_vertices[j]);
-						TRIANGLES.push_back(tri1);
-						TRIANGLES.push_back(tri2);
-					}
-				}else{
-					if (corner_11){
-						Triangle* tri1 = new Triangle(first_row_vertices[j],(first_row_vertices[j]+second_row_vertices[j])/2.0f,(first_row_vertices[j]+first_row_vertices[j+1])/2.0f);
-						Triangle* tri2 = new Triangle(second_row_vertices[j+1],(first_row_vertices[j+1]+second_row_vertices[j+1])/2.0f,(second_row_vertices[j]+second_row_vertices[j+1])/2.0f);
-						TRIANGLES.push_back(tri1);
-						TRIANGLES.push_back(tri2);
-					}else{
-						Triangle* tri = new Triangle(first_row_vertices[j],(second_row_vertices[j]+first_row_vertices[j])/2.0f,(first_row_vertices[j+1]+first_row_vertices[j])/2.0f);
-						TRIANGLES.push_back(tri);
-					}
-				}
-			}
-		}else{
-			if (corner_01){
-				if (corner_10){
-					if (corner_11){
-						Triangle* tri1 = new Triangle(second_row_vertices[j+1],first_row_vertices[j+1],(first_row_vertices[j+1]+first_row_vertices[j])/2.0f);
-						Triangle* tri2 = new Triangle((first_row_vertices[j+1]+first_row_vertices[j])/2.0f,(first_row_vertices[j]+second_row_vertices[j])/2.0f,second_row_vertices[j+1]);
-						Triangle* tri3 = new Triangle((first_row_vertices[j]+second_row_vertices[j])/2.0f,second_row_vertices[j],second_row_vertices[j+1]);
-						TRIANGLES.push_back(tri1);
-						TRIANGLES.push_back(tri2);
-						TRIANGLES.push_back(tri3);
-					}else{
-						Triangle* tri1 = new Triangle(first_row_vertices[j+1],(first_row_vertices[j]+first_row_vertices[j+1])/2.0f,(first_row_vertices[j+1]+second_row_vertices[j+1])/2.0f);
-						Triangle* tri2 = new Triangle(second_row_vertices[j],(second_row_vertices[j]+second_row_vertices[j+1])/2.0f,(first_row_vertices[j]+second_row_vertices[j])/2.0f);
-						TRIANGLES.push_back(tri1);
-						TRIANGLES.push_back(tri2);
-					}
-				}else{
-					if (corner_11){
-						Triangle* tri1 = new Triangle(first_row_vertices[j+1],(first_row_vertices[j+1]+first_row_vertices[j])/2.0f,(second_row_vertices[j+1]+second_row_vertices[j])/2.0f);
-						Triangle* tri2 = new Triangle((second_row_vertices[j+1]+second_row_vertices[j])/2.0f, second_row_vertices[j+1],first_row_vertices[j+1]);
-						TRIANGLES.push_back(tri1);
-						TRIANGLES.push_back(tri2);
-					}else{
-						Triangle* tri = new Triangle((first_row_vertices[j]+first_row_vertices[j+1])/2.0f,(second_row_vertices[j+1]+first_row_vertices[j+1])/2.0f,first_row_vertices[j+1]);
-						TRIANGLES.push_back(tri);
-					}
-				}
-			}else{
-				if (corner_10){
-					if (corner_11){
-						Triangle* tri1 = new Triangle(second_row_vertices[j],second_row_vertices[j+1],(second_row_vertices[j+1]+first_row_vertices[j+1])/2.0f);
-						Triangle* tri2 = new Triangle((second_row_vertices[j+1]+first_row_vertices[j+1])/2.0f,(second_row_vertices[j]+first_row_vertices[j])/2.0f,second_row_vertices[j]);
-						TRIANGLES.push_back(tri1);
-						TRIANGLES.push_back(tri2);
-					}else{
-						Triangle* tri = new Triangle((first_row_vertices[j]+second_row_vertices[j])/2.0f,second_row_vertices[j],(second_row_vertices[j+1]+second_row_vertices[j])/2.0f);
-						TRIANGLES.push_back(tri);
-					}
-				}else{
-					if (corner_11){
-						Triangle* tri = new Triangle(second_row_vertices[j+1],(first_row_vertices[j+1]+second_row_vertices[j+1])/2.0f,(second_row_vertices[j+1]+second_row_vertices[j])/2.0f);
-						TRIANGLES.push_back(tri);
-					}else{
-						//do nothing, no corners are turned on.
-					}
-				}
-			}
-		}
+		TRIANGLES.insert(TRIANGLES.end(),tri_list.begin(),tri_list.end());
 
 		//increment i and j or prepare to break loop
 		if (j==n-2){
@@ -464,7 +491,7 @@ void myDisplay(){
 
 	//gluLookAt(0,0,3,0,0,0,0,1,0);
 
-    //NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS);
+	//NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS);
 	update_particles();
 	marching_cubes();
 
@@ -671,4 +698,194 @@ int main(int argc, char* argv[]){
 //
 //	//I got this formula from wolfram alpha, so may want to double check it later.
 //	return coeff * (8.0*(mag)-3)/sqrt(2*PI);
+//}
+
+
+		//vector<float> first_row_density = GRID_DENSITY[i];
+		//vector<Vec3> first_row_vertices = VERTEX_MATRIX[i];
+		//vector<float> second_row_density = GRID_DENSITY[i+1];
+		//vector<Vec3> second_row_vertices = VERTEX_MATRIX[i+1];
+
+		//density[0][0] = 
+		//float density_00 = first_row_density[j];
+		//float density_01 = first_row_density[j+1];
+		//float density_10 = second_row_density[j];
+		//float GRID_DENSITY[i+1][j+1] = second_row_density[j+1];
+
+		//bool corner_00 = (GRID_DENSITY[i][j]>DENSITY_TOL),
+		//	corner_01 = (GRID_DENSITY[i][j+1]>DENSITY_TOL),
+		//	GRID_BOOL[i+1][j] = (GRID_DENSITY[i+1][j]>DENSITY_TOL),
+		//	corner_11 = (GRID_DENSITY[i+1][j+1]>DENSITY_TOL);
+
+		/*int corner_0 = (density_00>DENSITY_TOL) ? 1 : 0,
+			corner_1 = (density_01>DENSITY_TOL) ? 1 : 0,
+			corner_2 = (density_10>DENSITY_TOL) ? 1 : 0,
+			corner_3 = (GRID_DENSITY[i+1][j+1]>DENSITY_TOL) ? 1 : 0;
+			*/
+		////now check the case and add the corresponding triangle type.
+		//if (GRID_BOOL[0][0]){
+		//	if (GRID_BOOL[i][j+1]){
+		//		if (GRID_BOOL[i+1][j]){
+		//			if (GRID_BOOL[i+1][j+1]){
+		//				//make whole square out of two triangles.
+		//				Triangle* tri1 = new Triangle(VERTEX_MATRIX[i][j],VERTEX_MATRIX[i+1][j],VERTEX_MATRIX[i][j+1]);
+		//				Triangle* tri2 = new Triangle(VERTEX_MATRIX[i+1][j],VERTEX_MATRIX[i+1][j+1],VERTEX_MATRIX[i][j+1]);
+		//				TRIANGLES.push_back(tri1);
+		//				TRIANGLES.push_back(tri2);
+		//			}else{
+		//				vertex_1 = VERTEX_MATRIX[i][j];
+		//				vertex_2 = VERTEX_MATRIX[i+1][j];
+		//				vertex_3 = VERTEX_MATRIX[i+1][j+1];
+		//				Triangle* tri1 = new Triangle(VERTEX_MATRIX[i][j],VERTEX_MATRIX[i+1][j],(VERTEX_MATRIX[i+1][j]+VERTEX_MATRIX[i+1][j+1])/2.0f);
+		//				
+		//				vertex_2 = ;
+		//				vertex_3 = ;
+		//				Triangle* tri2 = new Triangle((VERTEX_MATRIX[i+1][j]+VERTEX_MATRIX[i+1][j+1])/2.0f,(VERTEX_MATRIX[i][j+1]+VERTEX_MATRIX[i+1][j+1])/2.0f,VERTEX_MATRIX[i][j]);
+		//				
+		//				vertex_2 = ;
+		//				vertex_3 = ;
+		//				Triangle* tri3 = new Triangle((VERTEX_MATRIX[i][j+1]+VERTEX_MATRIX[i+1][j+1])/2.0f,VERTEX_MATRIX[i][j+1],VERTEX_MATRIX[i][j]);
+		//				
+		//				TRIANGLES.push_back(tri1);
+		//				TRIANGLES.push_back(tri2);
+		//				TRIANGLES.push_back(tri3);
+		//			}
+		//		}else{
+		//			if (GRID_BOOL[i+1][j+1]){
+		//				Triangle* tri1 = new Triangle(VERTEX_MATRIX[i][j+1],VERTEX_MATRIX[i][j],(VERTEX_MATRIX[i+1][j]+VERTEX_MATRIX[i][j])/2.0f);
+		//				Triangle* tri2 = new Triangle((VERTEX_MATRIX[i+1][j]+VERTEX_MATRIX[i][j])/2.0f,(VERTEX_MATRIX[i+1][j]+VERTEX_MATRIX[i+1][j+1])/2.0f,VERTEX_MATRIX[i][j+1]);
+		//				Triangle* tri3 = new Triangle((VERTEX_MATRIX[i+1][j]+VERTEX_MATRIX[i+1][j+1])/2.0f,VERTEX_MATRIX[i+1][j+1],VERTEX_MATRIX[i][j+1]);
+		//				TRIANGLES.push_back(tri1);
+		//				TRIANGLES.push_back(tri2);
+		//				TRIANGLES.push_back(tri3);
+		//			}else{
+		//				Triangle* tri1 = new Triangle(VERTEX_MATRIX[i][j],(VERTEX_MATRIX[i][j]+VERTEX_MATRIX[i+1][j])/2,VERTEX_MATRIX[i][j+1]);
+		//				Triangle* tri2 = new Triangle(VERTEX_MATRIX[i][j+1],(VERTEX_MATRIX[i][j]+VERTEX_MATRIX[i+1][j])/2,(VERTEX_MATRIX[i][j+1]+VERTEX_MATRIX[i+1][j+1])/2.0f);
+		//				TRIANGLES.push_back(tri1);
+		//				TRIANGLES.push_back(tri2);
+		//			}
+		//		}
+		//	}else{
+		//		if (GRID_BOOL[i+1][j]){
+		//			if (GRID_BOOL[i+1][j+1]){
+		//				Triangle* tri1 = new Triangle(VERTEX_MATRIX[i+1][j],VERTEX_MATRIX[i+1][j+1],(VERTEX_MATRIX[i][j+1]+VERTEX_MATRIX[i+1][j+1])/2.0f);
+		//				Triangle* tri2 = new Triangle((VERTEX_MATRIX[i][j+1]+VERTEX_MATRIX[i+1][j+1])/2.0f,(VERTEX_MATRIX[i][j]+VERTEX_MATRIX[i][j+1])/2.0f,VERTEX_MATRIX[i+1][j]);
+		//				Triangle* tri3 = new Triangle((VERTEX_MATRIX[i][j]+VERTEX_MATRIX[i][j+1])/2.0f,VERTEX_MATRIX[i][j],VERTEX_MATRIX[i+1][j]);
+		//				TRIANGLES.push_back(tri1);
+		//				TRIANGLES.push_back(tri2);
+		//				TRIANGLES.push_back(tri3);
+		//			}else{
+		//				Triangle* tri1 = new Triangle(VERTEX_MATRIX[i][j],VERTEX_MATRIX[i+1][j],(VERTEX_MATRIX[i+1][j]+VERTEX_MATRIX[i+1][j+1])/2.0f);
+		//				Triangle* tri2 = new Triangle((VERTEX_MATRIX[i+1][j]+VERTEX_MATRIX[i+1][j+1])/2.0f,(VERTEX_MATRIX[i][j]+VERTEX_MATRIX[i][j+1])/2.0f,VERTEX_MATRIX[i][j]);
+		//				TRIANGLES.push_back(tri1);
+		//				TRIANGLES.push_back(tri2);
+		//			}
+		//		}else{
+		//			if (GRID_BOOL[i+1][j+1]){
+		//				Triangle* tri1 = new Triangle(VERTEX_MATRIX[i][j],(VERTEX_MATRIX[i][j]+VERTEX_MATRIX[i+1][j])/2.0f,(VERTEX_MATRIX[i][j]+VERTEX_MATRIX[i][j+1])/2.0f);
+		//				Triangle* tri2 = new Triangle(VERTEX_MATRIX[i+1][j+1],(VERTEX_MATRIX[i][j+1]+VERTEX_MATRIX[i+1][j+1])/2.0f,(VERTEX_MATRIX[i+1][j]+VERTEX_MATRIX[i+1][j+1])/2.0f);
+		//				TRIANGLES.push_back(tri1);
+		//				TRIANGLES.push_back(tri2);
+		//			}else{
+		//				vertex_1 = VERTEX_MATRIX[i][j];
+		//				vertex_2 = VERTEX_MATRIX[i+1][j];
+		//				vertex_3 = VERTEX_MATRIX[i][j+1];
+		//				Triangle* tri = new Triangle(vertex_1,vertex_2,vertex_3,GRID_DENSITY[i][j],GRID_DENSITY[i+1][j],GRID_DENSITY[i][j+1],DENSITY_TOL);
+		//				TRIANGLES.push_back(tri);
+		//			}
+		//		}
+		//	}
+		//}else{
+		//	if (GRID_BOOL[i][j+1]){
+		//		if (GRID_BOOL[i+1][j]){
+		//			if (GRID_BOOL[i+1][j+1]){
+		//				Triangle* tri1 = new Triangle(VERTEX_MATRIX[i+1][j+1],VERTEX_MATRIX[i][j+1],(VERTEX_MATRIX[i][j+1]+VERTEX_MATRIX[i][j])/2.0f);
+		//				Triangle* tri2 = new Triangle((VERTEX_MATRIX[i][j+1]+VERTEX_MATRIX[i][j])/2.0f,(VERTEX_MATRIX[i][j]+VERTEX_MATRIX[i+1][j])/2.0f,VERTEX_MATRIX[i+1][j+1]);
+		//				Triangle* tri3 = new Triangle((VERTEX_MATRIX[i][j]+VERTEX_MATRIX[i+1][j])/2.0f,VERTEX_MATRIX[i+1][j],VERTEX_MATRIX[i+1][j+1]);
+		//				TRIANGLES.push_back(tri1);
+		//				TRIANGLES.push_back(tri2);
+		//				TRIANGLES.push_back(tri3);
+		//			}else{
+		//				Triangle* tri1 = new Triangle(VERTEX_MATRIX[i][j+1],(VERTEX_MATRIX[i][j]+VERTEX_MATRIX[i][j+1])/2.0f,(VERTEX_MATRIX[i][j+1]+VERTEX_MATRIX[i+1][j+1])/2.0f);
+		//				Triangle* tri2 = new Triangle(VERTEX_MATRIX[i+1][j],(VERTEX_MATRIX[i+1][j]+VERTEX_MATRIX[i+1][j+1])/2.0f,(VERTEX_MATRIX[i][j]+VERTEX_MATRIX[i+1][j])/2.0f);
+		//				TRIANGLES.push_back(tri1);
+		//				TRIANGLES.push_back(tri2);
+		//			}
+		//		}else{
+		//			if (GRID_BOOL[i+1][j+1]){
+		//				Triangle* tri1 = new Triangle(VERTEX_MATRIX[i][j+1],(VERTEX_MATRIX[i][j+1]+VERTEX_MATRIX[i][j])/2.0f,(VERTEX_MATRIX[i+1][j+1]+VERTEX_MATRIX[i+1][j])/2.0f);
+		//				Triangle* tri2 = new Triangle((VERTEX_MATRIX[i+1][j+1]+VERTEX_MATRIX[i+1][j])/2.0f, VERTEX_MATRIX[i+1][j+1],VERTEX_MATRIX[i][j+1]);
+		//				TRIANGLES.push_back(tri1);
+		//				TRIANGLES.push_back(tri2);
+		//			}else{
+		//				vertex_1 = VERTEX_MATRIX[i][j+1];
+		//				vertex_2 = VERTEX_MATRIX[i][j];
+		//				vertex_3 = VERTEX_MATRIX[i+1][j+1];
+		//				Triangle* tri = new Triangle(vertex_1,vertex_2,vertex_3,GRID_DENSITY[i][j+1],GRID_DENSITY[i][j],GRID_DENSITY[i+1][j+1],DENSITY_TOL);
+		//				
+		//				TRIANGLES.push_back(tri);
+		//			}
+		//		}
+		//	}else{
+		//		if (GRID_BOOL[i+1][j]){
+		//			if (GRID_BOOL[i+1][j+1]){
+		//				Triangle* tri1 = new Triangle(VERTEX_MATRIX[i+1][j],VERTEX_MATRIX[i+1][j+1],(VERTEX_MATRIX[i+1][j+1]+VERTEX_MATRIX[i][j+1])/2.0f);
+		//				Triangle* tri2 = new Triangle((VERTEX_MATRIX[i+1][j+1]+VERTEX_MATRIX[i][j+1])/2.0f,(VERTEX_MATRIX[i+1][j]+VERTEX_MATRIX[i][j])/2.0f,VERTEX_MATRIX[i+1][j]);
+		//				TRIANGLES.push_back(tri1);
+		//				TRIANGLES.push_back(tri2);
+		//			}else{
+		//				vertex_1 = VERTEX_MATRIX[i+1][j];
+		//				vertex_2 = VERTEX_MATRIX[i+1][j+1];
+		//				vertex_3 = VERTEX_MATRIX[i][j];
+		//				Triangle* tri = new Triangle(vertex_1,vertex_2,vertex_3,GRID_DENSITY[i+1][j],GRID_DENSITY[i+1][j+1],GRID_DENSITY[i][j],DENSITY_TOL);
+		//				TRIANGLES.push_back(tri);
+		//			}
+		//		}else{
+		//			if (GRID_BOOL[i+1][j+1]){
+		//				vertex_1 = VERTEX_MATRIX[i+1][j+1];
+		//				vertex_2 = VERTEX_MATRIX[i][j+1];
+		//				vertex_3 = VERTEX_MATRIX[i+1][j];
+		//				Triangle* tri = new Triangle(vertex_1,vertex_2,vertex_3,GRID_DENSITY[i+1][j+1],GRID_DENSITY[i][j+1],GRID_DENSITY[i+1][j],DENSITY_TOL);
+		//				TRIANGLES.push_back(tri);
+		//			}else{
+		//				//do nothing, no corners are turned on.
+		//			}
+		//		}
+		//	}
+		//}
+
+
+///************
+//* Overloads *
+//************/
+//Vec3 operator * (float t, const Vec3& arg_vec){
+//	Vec3 new_vec;
+//	new_vec.x = arg_vec.x*t;
+//	new_vec.y = arg_vec.y*t;
+//	new_vec.z = arg_vec.z*t;
+//	return new_vec;
+//}
+//
+////Vec3 operator * (const Vec3& arg_vec,float t){
+////	Vec3 new_vec;
+////	new_vec.x = arg_vec.x*t;
+////	new_vec.y = arg_vec.y*t;
+////	new_vec.z = arg_vec.z*t;
+////	return new_vec;
+////}
+//
+//Vec3 operator / (float t, const Vec3& arg_vec){
+//	Vec3 new_vec;
+//	new_vec.x = arg_vec.x/t;
+//	new_vec.y = arg_vec.y/t;
+//	new_vec.z = arg_vec.z/t;
+//	return new_vec;
+//}
+//
+//Vec3 operator / (const Vec3& arg_vec,float t){
+//	Vec3 new_vec;
+//	new_vec.x = arg_vec.x/t;
+//	new_vec.y = arg_vec.y/t;
+//	new_vec.z = arg_vec.z/t;
+//	return new_vec;
 //}

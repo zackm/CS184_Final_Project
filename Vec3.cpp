@@ -27,3 +27,19 @@ void Vec3::operator += (Vec3 arg_vec){
 	y += arg_vec.y;
 	z += arg_vec.z;
 }
+
+Vec3 Vec3::operator *(float t){
+	Vec3 new_vec;
+	new_vec.x = x*t;
+	new_vec.y = y*t;
+	new_vec.z = z*t;
+	return new_vec;
+}
+
+Vec3 Vec3::operator /(float t){
+	Vec3 new_vec;
+	new_vec.x = x/t;
+	new_vec.y = y/t;
+	new_vec.z = z/t;
+	return new_vec;
+}
