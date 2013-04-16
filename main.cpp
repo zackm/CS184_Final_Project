@@ -22,7 +22,7 @@ using namespace std;
 * GLOBAL VARIABLES *
 *******************/
 
-Container CONTAINER(Vec3(1,1,1),Vec3(-1,-1,-1));//very simple cube for now. Later, make it a particle itself.
+Container CONTAINER(Vec3(2,2,2),Vec3(-2,-2,-2));//very simple cube for now. Later, make it a particle itself.
 vector<Particle*> PARTICLES;//particles that we do SPH on.
 vector<Triangle*> TRIANGLES;//triangles made from marching cubes to render
 vector<vector<float> > GRID_DENSITY;//Grid for marching squares. Probably a better data structure we can use.
@@ -30,11 +30,11 @@ vector<vector<Vec3> > VERTEX_MATRIX;//list of vertices corresponding to the dens
 const float TIMESTEP = .05;//time elapsed between iterations
 const int NUM_PARTICLES = 20;
 const Vec3 GRAVITY(0,-9.8f,0);
-const float IDEAL_DENSITY = 1.0; //for water
+const float IDEAL_DENSITY = 1.0f; //for water
 const float STIFFNESS = 1.0f; //no idea what it should be set to for water.
-const float VISCOSITY = 1.0f;
+const float VISCOSITY = .01f;
 
-const float CUBE_TOL = .05f;//either grid size or tolerance for adaptive cubes.
+const float CUBE_TOL = .1f;//either grid size or tolerance for adaptive cubes.
 const float DENSITY_TOL = 1.0f;//also used for marching grid, for density of the particles
 
 bool USE_ADAPTIVE = false; //for adaptive or uniform marching cubes.
@@ -332,7 +332,7 @@ void marching_cubes(){
 						TRIANGLES.push_back(tri1);
 						TRIANGLES.push_back(tri2);
 					}else{
-						Triangle* tri = new Triangle(first_row_vertices[j],second_row_vertices[j],first_row_vertices[j+1]);
+						Triangle* tri = new Triangle(first_row_vertices[j],(second_row_vertices[j]+first_row_vertices[j])/2.0f,(first_row_vertices[j+1]+first_row_vertices[j])/2.0f);
 						TRIANGLES.push_back(tri);
 					}
 				}
@@ -341,7 +341,12 @@ void marching_cubes(){
 			if (corner_01){
 				if (corner_10){
 					if (corner_11){
-						
+						Triangle* tri1 = new Triangle(second_row_vertices[j+1],first_row_vertices[j+1],(first_row_vertices[j+1]+first_row_vertices[j])/2.0f);
+						Triangle* tri2 = new Triangle((first_row_vertices[j+1]+first_row_vertices[j])/2.0f,(first_row_vertices[j]+second_row_vertices[j])/2.0f,second_row_vertices[j+1]);
+						Triangle* tri3 = new Triangle((first_row_vertices[j]+second_row_vertices[j])/2.0f,second_row_vertices[j],second_row_vertices[j+1]);
+						TRIANGLES.push_back(tri1);
+						TRIANGLES.push_back(tri2);
+						TRIANGLES.push_back(tri3);
 					}else{
 						Triangle* tri1 = new Triangle(first_row_vertices[j+1],(first_row_vertices[j]+first_row_vertices[j+1])/2.0f,(first_row_vertices[j+1]+second_row_vertices[j+1])/2.0f);
 						Triangle* tri2 = new Triangle(second_row_vertices[j],(second_row_vertices[j]+second_row_vertices[j+1])/2.0f,(first_row_vertices[j]+second_row_vertices[j])/2.0f);
@@ -355,7 +360,7 @@ void marching_cubes(){
 						TRIANGLES.push_back(tri1);
 						TRIANGLES.push_back(tri2);
 					}else{
-						Triangle* tri = new Triangle(first_row_vertices[j],second_row_vertices[j+1],first_row_vertices[j+1]);
+						Triangle* tri = new Triangle((first_row_vertices[j]+first_row_vertices[j+1])/2.0f,(second_row_vertices[j+1]+first_row_vertices[j+1])/2.0f,first_row_vertices[j+1]);
 						TRIANGLES.push_back(tri);
 					}
 				}
@@ -367,12 +372,12 @@ void marching_cubes(){
 						TRIANGLES.push_back(tri1);
 						TRIANGLES.push_back(tri2);
 					}else{
-						Triangle* tri = new Triangle(first_row_vertices[j],second_row_vertices[j],second_row_vertices[j+1]);
+						Triangle* tri = new Triangle((first_row_vertices[j]+second_row_vertices[j])/2.0f,second_row_vertices[j],(second_row_vertices[j+1]+second_row_vertices[j])/2.0f);
 						TRIANGLES.push_back(tri);
 					}
 				}else{
 					if (corner_11){
-						Triangle* tri = new Triangle(second_row_vertices[j],second_row_vertices[j+1],first_row_vertices[j+1]);
+						Triangle* tri = new Triangle(second_row_vertices[j],(second_row_vertices[j+1]+second_row_vertices[j])/2.0f,(first_row_vertices[j+1]+second_row_vertices[j])/2.0f);
 						TRIANGLES.push_back(tri);
 					}else{
 						//do nothing, no corners are turned on.
@@ -403,8 +408,8 @@ void initScene(){
 	//create a list of random particles
 	float x,y,z;
 	for (int i = 0; i<NUM_PARTICLES; i++){
-		x = float(rand())/(float(RAND_MAX));
-		y = float(rand())/(float(RAND_MAX))/3.0f;
+		x = float(rand())/(float(RAND_MAX))-1;
+		y = float(rand())/(float(RAND_MAX))-1;
 		z = 0;//float(rand())/(float(RAND_MAX));
 		Vec3 pos(x,y,z);
 		Vec3 vel(rand()%3,rand()%3,0);
@@ -442,7 +447,7 @@ void myDisplay(){
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	//gluPerspective(90,1.0f,1,-1000);
-	glOrtho(-1,1,-1,1,1,-1);
+	glOrtho(-2,2,-2,2,1,-1);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
