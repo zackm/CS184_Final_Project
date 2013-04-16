@@ -24,7 +24,7 @@ Container CONTAINER(Vec3(1,1,1),Vec3(-1,-1,-1));//very simple cube for now. Late
 vector<Particle*> PARTICLES;//particles that we do SPH on.
 vector<Triangle*> TRIANGLES;//triangles made from marching cubes to render
 const float TIMESTEP = .05;//time elapsed between iterations
-const int NUM_PARTICLES = 200;
+const int NUM_PARTICLES = 150;
 const Vec3 GRAVITY(0,-9.8f,0);
 const float IDEAL_DENSITY = 1.0; //for water
 const float STIFFNESS = 1.0f; //no idea what it should be set to for water.
@@ -77,6 +77,7 @@ float dot(Vec3 v1, Vec3 v2){
 /******************
 * Kernel Function *
 ******************/
+//need to add coefficient so that we normalize kernel.
 float gaussian(Vec3 r_i, Vec3 r_j){
 	//should add another parameter (max distance value)
 	Vec3 diff_vec = r_i-r_j;
@@ -96,6 +97,16 @@ Vec3 gaussian_grad(Vec3 r_i, Vec3 r_j){
 	return coeff*grad;
 }
 
+float gaussian_laplacian(Vec3 r_i, Vec3 r_j){
+	Vec3 diff_vec = r_i-r_j;
+	float mag = dot(diff_vec,diff_vec);
+
+	float coeff = 8.0f*exp(-4.0f*mag);
+
+	//I got this formula from wolfram alpha, so may want to double check it later.
+	return coeff * (8.0*(mag)-3);
+}
+
 /********************
 * Physics Functions *
 ********************/
@@ -113,6 +124,7 @@ void update_particles(){
 	vector<float> density_list;
 	vector<float> pressure_list;
 	vector<Vec3> pressure_grad_list;
+	vector<Vec3> viscosity_list;
 
 	//update using slow algorithm for now
 	Particle *base_particle, *temp_particle, *new_particle;
@@ -147,10 +159,28 @@ void update_particles(){
 		pressure_grad_list.push_back(pressure_gradient);
 	}
 
+	//Sets viscosity at each particle
+	for (int i = 0; i<NUM_PARTICLES; i++){
+		base_particle = PARTICLES[i];
+
+		Vec3 viscosity_laplacian(0,0,0);
+		for (int j = 0; j<NUM_PARTICLES; j++){
+			temp_particle = PARTICLES[j];
+
+			float weight = gaussian_laplacian(base_particle->position,temp_particle->position);
+			viscosity_laplacian += base_particle->mass*((base_particle->velocity - temp_particle->velocity)/density_list[j])*weight;
+		}
+		viscosity_list.push_back(viscosity_laplacian);
+	}
+
 	//Create new particles from old particles and from pressure gradient.
 	for (int i = 0; i<NUM_PARTICLES; i++){
 		temp_particle = PARTICLES[i];
-		Vec3 acceleration = -1.0f*pressure_grad_list[i]/density_list[i] + GRAVITY;
+
+		//using Navier Stokes, calculate the change in velocity.
+		Vec3 acceleration = -1.0f*pressure_grad_list[i]/density_list[i]
+							+ GRAVITY + VISCOSITY * viscosity_list[i]/density_list[i];
+
 		Vec3 velocity = temp_particle->velocity;
 		Vec3 position = temp_particle->position;
 		Vec3 new_position = kinematic_polynomial(acceleration,velocity,position,TIMESTEP);
@@ -174,6 +204,8 @@ void marching_cubes(){
 	/*we need to break up screen into squares. We should store the squares in an efficient data
 	structure so we reuse values previously calculated through iterations.
 	*/
+
+	//look here for cases http://users.polytech.unice.fr/~lingrand/MarchingCubes/algo.html
 
 
 
@@ -251,7 +283,7 @@ void myDisplay(){
 	for (int i = 0; i<NUM_PARTICLES; i++){
 		temp_particle = PARTICLES[i];
 		glClearColor(0,0,0,0);
-		glColor3f(1.0,1.0,1.0);
+		glColor3f(0,0,1.0);
 		glBegin(GL_POINTS);
 		glVertex3f(temp_particle->position.x,temp_particle->position.y,temp_particle->position.z);
 		glEnd();

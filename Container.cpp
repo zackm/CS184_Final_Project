@@ -15,7 +15,6 @@ Container::~Container(void)
 }
 
 bool Container::in_container(Particle *part){
-	float friction = .85;
 	bool in_cont = true;
 
 	Vec3 pos = part->position;
@@ -25,22 +24,22 @@ bool Container::in_container(Particle *part){
 	//reflect x direction
 	if (pos.x>max.x){
 		pos.x = max.x-(pos.x-max.x);
-		vel.x = -vel.x*friction;
+		vel.x = -vel.x;
 		in_cont = false;
 	}else if(pos.x<min.x){
 		pos.x = min.x+(min.x-pos.x);
-		vel.x = -vel.x*friction;
+		vel.x = -vel.x;
 		in_cont = false;
 	}
 
 	//reflect y direction
 	if (pos.y>max.y){
 		pos.y = max.y-(pos.y-max.y);
-		vel.y = -vel.y*friction;
+		vel.y = -vel.y;
 		in_cont = false;
 	}else if(pos.y<min.y){
 		pos.y = min.y+(min.y-pos.y);
-		vel.y = -vel.y*friction;
+		vel.y = -vel.y;
 		in_cont = false;
 	}
 
