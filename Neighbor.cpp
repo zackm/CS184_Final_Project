@@ -63,7 +63,7 @@ void Neighbor::place_particles(vector<Particle*> &particles, float support_rad, 
     int max = c.max.x;
     box_particles.clear();
     
-    for (int i = 0; i < width/support_rad*width/support_rad; i++) {
+    for (int i = 0; i < (width/support_rad)*(width/support_rad); i++) {
         box_particles.push_back(vector<int>());
     }
     

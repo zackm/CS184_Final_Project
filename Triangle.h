@@ -7,7 +7,7 @@ public:
 
 	Triangle(Vec3,Vec3,Vec3);
 	Triangle(Vec3,Vec3,Vec3,float,float,float,float);
-	Triangle(void);
-	~Triangle(void);
+	Triangle(void){};
+	~Triangle(void){};
 };
 

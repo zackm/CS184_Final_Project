@@ -24,12 +24,3 @@ Triangle::Triangle(Vec3 vec1, Vec3 vec2, Vec3 vec3, float w1, float w2, float w3
 		c = vec1 + (vec3-vec1)*(tol-w1)/(w3-w1);
 	}
 }
-
-Triangle::Triangle(void)
-{
-}
-
-
-Triangle::~Triangle(void)
-{
-}

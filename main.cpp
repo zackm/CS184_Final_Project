@@ -44,7 +44,7 @@ const float VISCOSITY = 1.004f;// for water;
 
 const float MAX_KERNEL_RADIUS = .5f;
 
-const float CUBE_TOL = .1f;//either grid size or tolerance for adaptive cubes.
+const float CUBE_TOL = .5f;//either grid size or tolerance for adaptive cubes.
 const float DENSITY_TOL = 5.5f;//also used for marching grid, for density of the particles
 
 Neighbor NEIGHBOR; //neighbor object used for calculations
@@ -72,7 +72,7 @@ float poly6_kernel(Vec3 r_i, Vec3 r_j){
 
 	float h = MAX_KERNEL_RADIUS;
 
-	if (sqrt(mag)>h || sqrt(mag)==0){
+	if (sqrt(mag)>h){
 		return 0;
 	}
 
@@ -166,7 +166,7 @@ void update_particles(){
 		Vec3 pressure_gradient(0,0,0);
 
         vector<int> neighbor_vec = base_particle->neighbors;
-		for (int j = 0; j<PARTICLES[i]->num_neighbors(); j++){ // changed to neighbors
+		for (int j = 0; j<neighbor_vec.size(); j++){ // changed to neighbors
 			temp_particle = PARTICLES[neighbor_vec[j]];
             if (i == neighbor_vec[j]) {
                 continue;
@@ -185,7 +185,7 @@ void update_particles(){
 
 		Vec3 viscosity_laplacian(0,0,0);
         vector<int> neighbor_vec = base_particle->neighbors;
-		for (int j = 0; j<PARTICLES[i]->num_neighbors(); j++){ // changed to neighbors
+		for (int j = 0; j<neighbor_vec.size(); j++){ // changed to neighbors
 			temp_particle = PARTICLES[neighbor_vec[j]];
 
 			float weight = laplacian_kernel(base_particle->position,temp_particle->position);
@@ -215,6 +215,7 @@ void update_particles(){
 
 		new_particles.push_back(temp_particle);
 	}
+
 	PARTICLES = new_particles;
 }
 
@@ -517,6 +518,7 @@ void myDisplay(){
     // end workaround
     
 	update_particles();
+
     NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER);
 	marching_cubes();
 
