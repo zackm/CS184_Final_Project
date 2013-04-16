@@ -32,6 +32,7 @@ vector<vector<Vec3> > VERTEX_MATRIX;//list of vertices corresponding to the dens
 
 const float TIMESTEP = .01;//time elapsed between iterations
 const int NUM_PARTICLES = 50;
+
 const Vec3 GRAVITY(0,-9.8f,0);
 const float IDEAL_DENSITY = 1000.0f; //for water kg/m^3
 const float TEMPERATURE = 293.0f; //kelvin for water at 20 degrees celcius
@@ -47,7 +48,7 @@ const float CUBE_TOL = .1f;//either grid size or tolerance for adaptive cubes.
 const float DENSITY_TOL = 5.5f;//also used for marching grid, for density of the particles
 
 Neighbor NEIGHBOR; //neighbor object used for calculations
-const float SUPPORT_RADIUS = 10.0f;//radius of support used by neighbor function to divide space into grid
+const float SUPPORT_RADIUS = 0.5f;//radius of support used by neighbor function to divide space into grid
 
 bool USE_ADAPTIVE = false; //for adaptive or uniform marching cubes.
 
@@ -191,8 +192,13 @@ void update_particles(){
 		base_particle = PARTICLES[i];
 
 		Vec3 pressure_gradient(0,0,0);
-		for (int j = 0; j<NUM_PARTICLES; j++){ // change to neighbors
-			temp_particle = PARTICLES[j];
+
+        vector<int> neighbor_vec = base_particle->neighbors;
+		for (int j = 0; j<PARTICLES[i]->num_neighbors(); j++){ // changed to neighbors
+			temp_particle = PARTICLES[neighbor_vec[j]];
+            if (i == neighbor_vec[j]) {
+                continue;
+            }
 
 			Vec3 weight = gradient_kernel(base_particle->position,temp_particle->position);
 			pressure_gradient += temp_particle->mass * ((pressure_list[i]+pressure_list[j])/(2.0f*density_list[j]))*weight; 
@@ -206,8 +212,9 @@ void update_particles(){
 		base_particle = PARTICLES[i];
 
 		Vec3 viscosity_laplacian(0,0,0);
-		for (int j = 0; j<NUM_PARTICLES; j++){ // change to neighbors
-			temp_particle = PARTICLES[j];
+        vector<int> neighbor_vec = base_particle->neighbors;
+		for (int j = 0; j<PARTICLES[i]->num_neighbors(); j++){ // changed to neighbors
+			temp_particle = PARTICLES[neighbor_vec[j]];
 
 			float weight = laplacian_kernel(base_particle->position,temp_particle->position);
 			viscosity_laplacian += base_particle->mass*((temp_particle->velocity - base_particle->velocity)/density_list[j])*weight;
@@ -464,7 +471,7 @@ void myDisplay(){
 
 	//gluLookAt(0,0,3,0,0,0,0,1,0);
 
-    //NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS);
+    NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER);
 	update_particles();
 	marching_cubes();
 
