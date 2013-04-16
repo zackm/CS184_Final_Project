@@ -10,8 +10,6 @@
 #include <stdlib.h>
 #include <iostream>
 
-#include <cmath>
-
 #include "Vec3.h"
 
 #include "Container.h"
@@ -28,13 +26,13 @@ vector<Triangle*> TRIANGLES;//triangles made from marching cubes to render
 vector<vector<float> > GRID_DENSITY;//Grid for marching squares. Probably a better data structure we can use.
 vector<vector<Vec3> > VERTEX_MATRIX;//list of vertices corresponding to the densities on the grid.
 const float TIMESTEP = .05;//time elapsed between iterations
-const int NUM_PARTICLES = 20;
+const int NUM_PARTICLES = 150;
 const Vec3 GRAVITY(0,-9.8f,0);
 const float IDEAL_DENSITY = 1.0; //for water
 const float STIFFNESS = 1.0f; //no idea what it should be set to for water.
 const float VISCOSITY = 1.0f;
 
-const float CUBE_TOL = .05f;//either grid size or tolerance for adaptive cubes.
+const float CUBE_TOL = .2f;//either grid size or tolerance for adaptive cubes.
 const float DENSITY_TOL = 1.0f;//also used for marching grid, for density of the particles
 
 bool USE_ADAPTIVE = false; //for adaptive or uniform marching cubes.
@@ -278,108 +276,7 @@ void marching_cubes(){
 			 corner_11 = density_11>DENSITY_TOL;
 
 		//now check the case and add the corresponding triangle type.
-		if (corner_00){
-			if (corner_01){
-				if (corner_10){
-					if (corner_11){
-						//make whole square out of two triangles.
-						Triangle* tri1 = new Triangle(first_row_vertices[j],second_row_vertices[j],first_row_vertices[j+1]);
-						Triangle* tri2 = new Triangle(second_row_vertices[j],second_row_vertices[j+1],first_row_vertices[j+1]);
-						TRIANGLES.push_back(tri1);
-						TRIANGLES.push_back(tri2);
-					}else{
-						Triangle* tri1 = new Triangle(first_row_vertices[j],second_row_vertices[j],(second_row_vertices[j]+second_row_vertices[j+1])/2.0f);
-						Triangle* tri2 = new Triangle((second_row_vertices[j]+second_row_vertices[j+1])/2.0f,(first_row_vertices[j+1]+second_row_vertices[j+1])/2.0f,first_row_vertices[j]);
-						Triangle* tri3 = new Triangle((first_row_vertices[j+1]+second_row_vertices[j+1])/2.0f,first_row_vertices[j+1],first_row_vertices[j]);
-						TRIANGLES.push_back(tri1);
-						TRIANGLES.push_back(tri2);
-						TRIANGLES.push_back(tri3);
-					}
-				}else{
-					if (corner_11){
-						Triangle* tri1 = new Triangle(first_row_vertices[j+1],first_row_vertices[j],(second_row_vertices[j]+first_row_vertices[j])/2.0f);
-						Triangle* tri2 = new Triangle((second_row_vertices[j]+first_row_vertices[j])/2.0f,(second_row_vertices[j]+second_row_vertices[j+1])/2.0f,first_row_vertices[j+1]);
-						Triangle* tri3 = new Triangle((second_row_vertices[j]+second_row_vertices[j+1])/2.0f,second_row_vertices[j+1],first_row_vertices[j+1]);
-						TRIANGLES.push_back(tri1);
-						TRIANGLES.push_back(tri2);
-						TRIANGLES.push_back(tri3);
-					}else{
-						Triangle* tri1 = new Triangle(first_row_vertices[j],(first_row_vertices[j]+second_row_vertices[j])/2,first_row_vertices[j+1]);
-						Triangle* tri2 = new Triangle(second_row_vertices[j+1],(first_row_vertices[j]+second_row_vertices[j])/2,second_row_vertices[j+1]);
-						TRIANGLES.push_back(tri1);
-						TRIANGLES.push_back(tri2);
-					}
-				}
-			}else{
-				if (corner_10){
-					if (corner_11){
-						Triangle* tri1 = new Triangle(second_row_vertices[j],second_row_vertices[j+1],(first_row_vertices[j+1]+second_row_vertices[j+1])/2.0f);
-						Triangle* tri2 = new Triangle((first_row_vertices[j+1]+second_row_vertices[j+1])/2.0f,(first_row_vertices[j]+first_row_vertices[j+1])/2.0f,second_row_vertices[j]);
-						Triangle* tri3 = new Triangle((first_row_vertices[j]+first_row_vertices[j+1])/2.0f,first_row_vertices[j],second_row_vertices[j]);
-						TRIANGLES.push_back(tri1);
-						TRIANGLES.push_back(tri2);
-						TRIANGLES.push_back(tri3);
-					}else{
-						Triangle* tri1 = new Triangle(first_row_vertices[j],second_row_vertices[j],(second_row_vertices[j]+second_row_vertices[j+1])/2.0f);
-						Triangle* tri2 = new Triangle((second_row_vertices[j]+second_row_vertices[j+1])/2.0f,(first_row_vertices[j]+first_row_vertices[j+1])/2.0f,first_row_vertices[j]);
-						TRIANGLES.push_back(tri1);
-						TRIANGLES.push_back(tri2);
-					}
-				}else{
-					if (corner_11){
-						Triangle* tri1 = new Triangle(first_row_vertices[j],(first_row_vertices[j]+second_row_vertices[j])/2.0f,(first_row_vertices[j]+first_row_vertices[j+1])/2.0f);
-						Triangle* tri2 = new Triangle(second_row_vertices[j+1],(first_row_vertices[j+1]+second_row_vertices[j+1])/2.0f,(second_row_vertices[j]+second_row_vertices[j+1])/2.0f);
-						TRIANGLES.push_back(tri1);
-						TRIANGLES.push_back(tri2);
-					}else{
-						Triangle* tri = new Triangle(first_row_vertices[j],second_row_vertices[j],first_row_vertices[j+1]);
-						TRIANGLES.push_back(tri);
-					}
-				}
-			}
-		}else{
-			if (corner_01){
-				if (corner_10){
-					if (corner_11){
-						
-					}else{
-						Triangle* tri1 = new Triangle(first_row_vertices[j+1],(first_row_vertices[j]+first_row_vertices[j+1])/2.0f,(first_row_vertices[j+1]+second_row_vertices[j+1])/2.0f);
-						Triangle* tri2 = new Triangle(second_row_vertices[j],(second_row_vertices[j]+second_row_vertices[j+1])/2.0f,(first_row_vertices[j]+second_row_vertices[j])/2.0f);
-						TRIANGLES.push_back(tri1);
-						TRIANGLES.push_back(tri2);
-					}
-				}else{
-					if (corner_11){
-						Triangle* tri1 = new Triangle(first_row_vertices[j+1],(first_row_vertices[j+1]+first_row_vertices[j])/2.0f,(second_row_vertices[j+1]+second_row_vertices[j])/2.0f);
-						Triangle* tri2 = new Triangle((second_row_vertices[j+1]+second_row_vertices[j])/2.0f, second_row_vertices[j+1],first_row_vertices[j+1]);
-						TRIANGLES.push_back(tri1);
-						TRIANGLES.push_back(tri2);
-					}else{
-						Triangle* tri = new Triangle(first_row_vertices[j],second_row_vertices[j+1],first_row_vertices[j+1]);
-						TRIANGLES.push_back(tri);
-					}
-				}
-			}else{
-				if (corner_10){
-					if (corner_11){
-						Triangle* tri1 = new Triangle(second_row_vertices[j],second_row_vertices[j+1],(second_row_vertices[j+1]+first_row_vertices[j+1])/2.0f);
-						Triangle* tri2 = new Triangle((second_row_vertices[j+1]+first_row_vertices[j+1])/2.0f,(second_row_vertices[j]+first_row_vertices[j])/2.0f,second_row_vertices[j]);
-						TRIANGLES.push_back(tri1);
-						TRIANGLES.push_back(tri2);
-					}else{
-						Triangle* tri = new Triangle(first_row_vertices[j],second_row_vertices[j],second_row_vertices[j+1]);
-						TRIANGLES.push_back(tri);
-					}
-				}else{
-					if (corner_11){
-						Triangle* tri = new Triangle(second_row_vertices[j],second_row_vertices[j+1],first_row_vertices[j+1]);
-						TRIANGLES.push_back(tri);
-					}else{
-						//do nothing, no corners are turned on.
-					}
-				}
-			}
-		}
+
 
 
 		//increment i and j or prepare to break loop
@@ -442,7 +339,7 @@ void myDisplay(){
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	//gluPerspective(90,1.0f,1,-1000);
-	glOrtho(-1,1,-1,1,1,-1);
+	gluOrtho2D(-1,1,-1,1);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -452,16 +349,14 @@ void myDisplay(){
 	update_particles();
 	marching_cubes();
 
-	Triangle *temp_triangle;
+	Particle *temp_particle;
 	glPointSize(4.0f);
-	for (int i = 0; i<TRIANGLES.size(); i++){
-		temp_triangle = TRIANGLES[i];
+	for (int i = 0; i<NUM_PARTICLES; i++){
+		temp_particle = PARTICLES[i];
 		glClearColor(0,0,0,0);
 		glColor3f(0,0,1.0);
-		glBegin(GL_TRIANGLES);
-		glVertex3f(temp_triangle->a.x,temp_triangle->a.y,temp_triangle->a.z);
-		glVertex3f(temp_triangle->b.x,temp_triangle->b.y,temp_triangle->b.z);
-		glVertex3f(temp_triangle->c.x,temp_triangle->c.y,temp_triangle->c.z);
+		glBegin(GL_POINTS);
+		glVertex3f(temp_particle->position.x,temp_particle->position.y,temp_particle->position.z);
 		glEnd();
 	}
 	glPopMatrix();
@@ -510,7 +405,7 @@ int main(int argc, char* argv[]){
 	//The size and position of the window
 	glutInitWindowSize(400,400);
 	glutInitWindowPosition(0,0);
-	glutCreateWindow("Tyler and Zack Final Project");
+	glutCreateWindow("Tyler and Zack AS3");
 
 	initScene();
 
