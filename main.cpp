@@ -24,17 +24,24 @@ using namespace std;
 * GLOBAL VARIABLES *
 *******************/
 
-Container CONTAINER(Vec3(2,2,2),Vec3(-2,-2,-2));//very simple cube for now. Later, make it a particle itself.
+Container CONTAINER(Vec3(1,1,1),Vec3(-1,-1,-1));//very simple cube for now. Later, make it a particle itself.
 vector<Particle*> PARTICLES;//particles that we do SPH on.
 vector<Triangle*> TRIANGLES;//triangles made from marching cubes to render
 vector<vector<float> > GRID_DENSITY;//Grid for marching squares. Probably a better data structure we can use.
 vector<vector<Vec3> > VERTEX_MATRIX;//list of vertices corresponding to the densities on the grid.
+
 const float TIMESTEP = .05;//time elapsed between iterations
-const int NUM_PARTICLES = 20;
+const int NUM_PARTICLES = 200;
 const Vec3 GRAVITY(0,-9.8f,0);
-const float IDEAL_DENSITY = 1.0f; //for water
-const float STIFFNESS = 1.0f; //no idea what it should be set to for water.
-const float VISCOSITY = .01f;
+const float IDEAL_DENSITY = 1000.0f; //for water kg/m^3
+const float TEMPERATURE = 293.0f; //kelvin for water at 20 degrees celcius
+const float MOLAR_MASS = .0180153f;//for water
+const float BOLTZMANN = 8.31446f;//gas constant
+const float MASS = 1.0f;//could set it to any number really.
+const float STIFFNESS = .0000001f;//BOLTZMANN*TEMPERATURE/MOLAR_MASS for water;
+const float VISCOSITY = .000000001f;//1.004f for water;
+
+const float MAX_KERNEL_RADIUS = .15f;
 
 const float CUBE_TOL = .1f;//either grid size or tolerance for adaptive cubes.
 const float DENSITY_TOL = 1.0f;//also used for marching grid, for density of the particles
@@ -43,6 +50,8 @@ Neighbor NEIGHBOR; //neighbor object used for calculations
 const float SUPPORT_RADIUS = 10.0f;//radius of support used by neighbor function to divide space into grid
 
 bool USE_ADAPTIVE = false; //for adaptive or uniform marching cubes.
+
+const float PI = 3.1415926;
 
 /************
 * Overloads *
@@ -92,28 +101,41 @@ float gaussian(Vec3 r_i, Vec3 r_j){
 	Vec3 diff_vec = r_i-r_j;
 	float mag = dot(diff_vec,diff_vec);
 
-	return exp(-4.0f*mag);
+	if (sqrt(mag)>MAX_KERNEL_RADIUS){
+		return 0;
+	}
+
+	return exp(-4.0f*mag)/sqrt(2*PI);
 }
 
 Vec3 gaussian_grad(Vec3 r_i, Vec3 r_j){
 	Vec3 diff_vec = r_i-r_j;
 	float mag = dot(diff_vec,diff_vec);
 
+	Vec3 v(0,0,0);
+	if (sqrt(mag)>MAX_KERNEL_RADIUS){
+		return v;
+	}
+
 	float coeff = -8.0f*exp(-4.0f*mag);
 
 	Vec3 grad(diff_vec.x,diff_vec.y,diff_vec.z);
 
-	return coeff*grad;
+	return coeff*grad/sqrt(2*PI);
 }
 
 float gaussian_laplacian(Vec3 r_i, Vec3 r_j){
 	Vec3 diff_vec = r_i-r_j;
 	float mag = dot(diff_vec,diff_vec);
 
+	if (sqrt(mag)>MAX_KERNEL_RADIUS){
+		return 0;
+	}
+
 	float coeff = 8.0f*exp(-4.0f*mag);
 
 	//I got this formula from wolfram alpha, so may want to double check it later.
-	return coeff * (8.0*(mag)-3);
+	return coeff * (8.0*(mag)-3)/sqrt(2*PI);
 }
 
 /********************
@@ -184,7 +206,7 @@ void update_particles(){
 			temp_particle = PARTICLES[j];
 
 			float weight = gaussian_laplacian(base_particle->position,temp_particle->position);
-			viscosity_laplacian += base_particle->mass*((base_particle->velocity - temp_particle->velocity)/density_list[j])*weight;
+			viscosity_laplacian += base_particle->mass*((temp_particle->velocity - base_particle->velocity)/density_list[j])*weight;
 		}
 		viscosity_list.push_back(viscosity_laplacian);
 	}
@@ -234,10 +256,6 @@ void marching_cubes(){
 
 	float error = .001;
 	float step = CUBE_TOL;
-	//float min_x = CONTAINER.min.x;
-	//float min_y = CONTAINER.min.y;
-	//float max_x = CONTAINER.max.x;
-	//float max_y = CONTAINER.max.y;
 
 	//generate verticies and densities at those verticies
 	for (float x = CONTAINER.min.x; x<CONTAINER.max.x+error; x = x+step){
@@ -391,7 +409,6 @@ void marching_cubes(){
 			}
 		}
 
-
 		//increment i and j or prepare to break loop
 		if (j==n-2){
 			if (i==m-2){
@@ -416,32 +433,14 @@ void initScene(){
 		x = float(rand())/(float(RAND_MAX))-1;
 		y = float(rand())/(float(RAND_MAX))-1;
 		z = 0;//float(rand())/(float(RAND_MAX));
+
 		Vec3 pos(x,y,z);
-		Vec3 vel(rand()%3,rand()%3,0);
-		float mass = 1.0f;
-		PARTICLES.push_back(new Particle(pos,vel,mass));
+		Vec3 vel(rand()%3,rand()%2,0);
+		PARTICLES.push_back(new Particle(pos,vel,MASS));
 	}
 
-
-	//GLfloat light_position[] = { -1.0, -1.0, -1.0, 0.0 };
-	//GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
-	//GLfloat mat_diffuse[] = { 0.5, 0.0, 0.7, 1.0 };
-	//GLfloat mat_ambient[] = { 0.1, 0.1, 0.1, 1.0 };
-	//GLfloat mat_shininess[] = { 20.0 };
-	//glShadeModel(GL_SMOOTH);
-
-	//glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
-	//glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
-	//glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
-	//glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
-	//glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-
-	//glEnable(GL_LIGHTING);
-	//glEnable(GL_LIGHT0);
 	glEnable(GL_DEPTH_TEST);
 
-
-	//set window and camera
 }
 
 void myDisplay(){
@@ -452,7 +451,7 @@ void myDisplay(){
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	//gluPerspective(90,1.0f,1,-1000);
-	glOrtho(-2,2,-2,2,1,-1);
+	glOrtho(-2,2,-2,2,2,-2);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -463,18 +462,32 @@ void myDisplay(){
 	update_particles();
 	marching_cubes();
 
+	//draw particles
+	Particle* temp_part;
+	glPointSize(4.0f);
+	glBegin(GL_POINTS);
+	for (int i = 0; i<PARTICLES.size(); i++){
+		temp_part = PARTICLES[i];
+		glClearColor(0,0,0,0);
+		glColor3f(1.0,0,0);
+		glVertex3f(temp_part->position.x,temp_part->position.y,temp_part->position.z-.1f);
+	}
+	glEnd();
+
+	//draw triangles
 	Triangle *temp_triangle;
 	glPointSize(4.0f);
 	for (int i = 0; i<TRIANGLES.size(); i++){
 		temp_triangle = TRIANGLES[i];
 		glClearColor(0,0,0,0);
-		glColor3f(0,0,1.0);
+		glColor3f(0,0,1.0f);
 		glBegin(GL_TRIANGLES);
 		glVertex3f(temp_triangle->a.x,temp_triangle->a.y,temp_triangle->a.z);
 		glVertex3f(temp_triangle->b.x,temp_triangle->b.y,temp_triangle->b.z);
 		glVertex3f(temp_triangle->c.x,temp_triangle->c.y,temp_triangle->c.z);
 		glEnd();
 	}
+
 	glPopMatrix();
 
 	glFlush();
