@@ -23,6 +23,8 @@ using namespace std;
 Container CONTAINER(Vec3(1,1,1),Vec3(-1,-1,-1));//very simple cube for now. Later, make it a particle itself.
 vector<Particle*> PARTICLES;//particles that we do SPH on.
 vector<Triangle*> TRIANGLES;//triangles made from marching cubes to render
+vector<vector<float> > GRID_DENSITY;//Grid for marching squares. Probably a better data structure we can use.
+vector<vector<Vec3> > VERTEX_MATRIX;//list of vertices corresponding to the densities on the grid.
 const float TIMESTEP = .05;//time elapsed between iterations
 const int NUM_PARTICLES = 150;
 const Vec3 GRAVITY(0,-9.8f,0);
@@ -30,7 +32,7 @@ const float IDEAL_DENSITY = 1.0; //for water
 const float STIFFNESS = 1.0f; //no idea what it should be set to for water.
 const float VISCOSITY = 1.0f;
 
-const float GRID_TOL = .1;//either grid size or tolerance for adaptive cubes.
+const float CUBE_TOL = .2f;//either grid size or tolerance for adaptive cubes.
 const float DENSITY_TOL = 1.0f;//also used for marching grid, for density of the particles
 
 bool USE_ADAPTIVE = false; //for adaptive or uniform marching cubes.
@@ -90,9 +92,9 @@ Vec3 gaussian_grad(Vec3 r_i, Vec3 r_j){
 	Vec3 diff_vec = r_i-r_j;
 	float mag = dot(diff_vec,diff_vec);
 
-	float coeff = -8.0f*sqrt(mag)*exp(-4.0f*mag);
+	float coeff = -8.0f*exp(-4.0f*mag);
 
-	Vec3 grad(diff_vec.x/sqrt(mag),diff_vec.y/sqrt(mag),diff_vec.z/sqrt(mag));
+	Vec3 grad(diff_vec.x,diff_vec.y,diff_vec.z);
 
 	return coeff*grad;
 }
@@ -112,6 +114,18 @@ float gaussian_laplacian(Vec3 r_i, Vec3 r_j){
 ********************/
 Vec3 kinematic_polynomial(Vec3 acc, Vec3 vel, Vec3 pos,float t){
 	return .5f*acc*t*t+vel*t+pos;
+}
+
+float density_at_point(Vec3 point){
+	float density = 0;
+	for (int i = 0; i<NUM_PARTICLES; i++){
+		//update density. There will be a problem if the point is exactly equal to sum particle (divide by zero error).
+		Particle *temp_particle = PARTICLES[i];
+
+		density += temp_particle->mass*gaussian(point,temp_particle->position);
+	}
+
+	return density;
 }
 
 /*
@@ -134,12 +148,7 @@ void update_particles(){
 	for (int i = 0; i<NUM_PARTICLES; i++){
 		density = 0;
 		base_particle = PARTICLES[i];
-
-		for (int j = 0; j<NUM_PARTICLES; j++){
-			//update density
-			temp_particle = PARTICLES[j];
-			density += temp_particle->mass*gaussian(base_particle->position,temp_particle->position);
-		}
+		density += density_at_point(base_particle->position);
 		density_list.push_back(density);
 		pressure_list.push_back(STIFFNESS*(density-IDEAL_DENSITY));
 	}
@@ -154,7 +163,7 @@ void update_particles(){
 
 			Vec3 weight = gaussian_grad(base_particle->position,temp_particle->position);
 			pressure_gradient += temp_particle->mass * ((pressure_list[i]+pressure_list[j])/(2.0f*density_list[j]))*weight; 
-								 
+
 		}
 		pressure_grad_list.push_back(pressure_gradient);
 	}
@@ -179,7 +188,7 @@ void update_particles(){
 
 		//using Navier Stokes, calculate the change in velocity.
 		Vec3 acceleration = -1.0f*pressure_grad_list[i]/density_list[i]
-							+ GRAVITY + VISCOSITY * viscosity_list[i]/density_list[i];
+		+ GRAVITY + VISCOSITY * viscosity_list[i]/density_list[i];
 
 		Vec3 velocity = temp_particle->velocity;
 		Vec3 position = temp_particle->position;
@@ -205,21 +214,83 @@ void marching_cubes(){
 	structure so we reuse values previously calculated through iterations.
 	*/
 
-	//look here for cases http://users.polytech.unice.fr/~lingrand/MarchingCubes/algo.html
+	/*look here for cases http://users.polytech.unice.fr/~lingrand/MarchingCubes/algo.html
+	For now just making the 16 triangle types as is and enqueuing in list. Would be better to
+	make them dynamically.
+
+	Also, only doing uniform marching squares, not doing adaptive squares.
+	*/
+
+	VERTEX_MATRIX.clear();
+	GRID_DENSITY.clear();
+	TRIANGLES.clear();
+
+	float error = .001;
+	float step = CUBE_TOL;
+	//float min_x = CONTAINER.min.x;
+	//float min_y = CONTAINER.min.y;
+	//float max_x = CONTAINER.max.x;
+	//float max_y = CONTAINER.max.y;
+
+	//generate verticies and densities at those verticies
+	for (float x = CONTAINER.min.x; x<CONTAINER.max.x+error; x = x+step){
+		vector<float> y_list;
+		vector<Vec3> vec_list;
+
+		for (float y = CONTAINER.min.y; y<CONTAINER.max.y+error; y = y+step){
+			Vec3 vertex(x,y,0);
+
+			float density = density_at_point(vertex);
+
+			y_list.push_back(density);
+			vec_list.push_back(vertex);
+		}
+
+		GRID_DENSITY.push_back(y_list);
+		VERTEX_MATRIX.push_back(vec_list);
+	}
+
+	//check marching cubes cases to add new triangles to list. It would be good to use bit operations for speed.
+	int n = GRID_DENSITY.size();//this implies uniform. Will need to change this.
+	int m = n;
+
+	int i,j; //i indicates the row, j indicates the column. 
+	i = j = 0;
+
+	bool squares_left = true;
+	while (squares_left){ //need to change this later
+
+		vector<float> first_row_density = GRID_DENSITY[i];
+		vector<Vec3> first_row_vertices = VERTEX_MATRIX[i];
+		vector<float> second_row_density = GRID_DENSITY[i+1];
+		vector<Vec3> second_row_vertices = VERTEX_MATRIX[i+1];
+
+		float density_00 = first_row_density[j];
+		float density_01 = first_row_density[j+1];
+		float density_10 = second_row_density[j];
+		float density_11 = second_row_density[j+1];
+
+		bool corner_00 = density_00>DENSITY_TOL,
+			 corner_01 = density_01>DENSITY_TOL,
+			 corner_10 = density_10>DENSITY_TOL,
+			 corner_11 = density_11>DENSITY_TOL;
+
+		//now check the case and add the corresponding triangle type.
 
 
 
-	//generate verticies
-
-
-
-	//generate densities at verticies
-
-
-
-	//check marching cubes cases to add new triangles to list.
-
-
+		//increment i and j or prepare to break loop
+		if (j==n-2){
+			if (i==m-2){
+				squares_left = false;
+			}else{
+				j = 0;
+				i++;
+			}
+		}else{
+			j++;
+		}
+	}
 }
 
 /*****************
@@ -277,7 +348,7 @@ void myDisplay(){
 
 	update_particles();
 	marching_cubes();
-	
+
 	Particle *temp_particle;
 	glPointSize(4.0f);
 	for (int i = 0; i<NUM_PARTICLES; i++){
