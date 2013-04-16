@@ -1,0 +1,23 @@
+CS184 Final Project Proposal
+
+Team:
+Tyler Brabham and Zack Mayeda
+
+We plan to create a live fluid simulation, specifically simulating liquid in a container. We will model the fluid as particles interacting, and use the Lagrangian method of smoothed particle hydrodynamics to model the particle behavior. We will implement a neighbor algorithm for the particles to speed up computation.
+
+We will work closely on the entire project, but we will split up some main portions of the work as follows:
+Tyler: particle interaction
+Zack: neighbor algorithm & caustics/raytracing
+
+Milestones (we will complete as many as time permits):
+- 2D simulation where particles are drawn as a colored isosurface
+- move simulation into 3D
+- implement neighbor algorithm
+- raytraced reflections and caustics
+- texture mapping on the container
+- various shaped containers
+- interaction with solid objects
+- user interaction: toggle particle/isosurface, change viscosity, change number of particles
+- port to WebGL
+
+We discussed our idea with Jiamin.
