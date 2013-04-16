@@ -46,11 +46,11 @@ bool Container::in_container(Particle *part){
 	//reflect z direction
 	if (pos.z>max.z){
 		pos.z = max.z-(pos.z-max.z);
-		vel.z = -vel.z*friction;
+		vel.z = -vel.z;
 		in_cont = false;
 	}else if(pos.z<min.z){
 		pos.z = min.z+(min.z-pos.z);
-		vel.z = -vel.z*friction;
+		vel.z = -vel.z;
 		in_cont = false;
 	}
 
