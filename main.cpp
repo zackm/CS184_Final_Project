@@ -16,6 +16,8 @@
 
 #include "Container.h"
 
+#include "Neighbor.h"
+
 using namespace std;
 
 /*******************
@@ -36,6 +38,9 @@ const float VISCOSITY = .01f;
 
 const float CUBE_TOL = .1f;//either grid size or tolerance for adaptive cubes.
 const float DENSITY_TOL = 1.0f;//also used for marching grid, for density of the particles
+
+Neighbor NEIGHBOR; //neighbor object used for calculations
+const float SUPPORT_RADIUS = 10.0f;//radius of support used by neighbor function to divide space into grid
 
 bool USE_ADAPTIVE = false; //for adaptive or uniform marching cubes.
 
@@ -160,7 +165,7 @@ void update_particles(){
 		base_particle = PARTICLES[i];
 
 		Vec3 pressure_gradient(0,0,0);
-		for (int j = 0; j<NUM_PARTICLES && j!=i; j++){
+		for (int j = 0; j<NUM_PARTICLES && j!=i; j++){ // change to neighbors
 			temp_particle = PARTICLES[j];
 
 			Vec3 weight = gaussian_grad(base_particle->position,temp_particle->position);
@@ -175,7 +180,7 @@ void update_particles(){
 		base_particle = PARTICLES[i];
 
 		Vec3 viscosity_laplacian(0,0,0);
-		for (int j = 0; j<NUM_PARTICLES; j++){
+		for (int j = 0; j<NUM_PARTICLES; j++){ // change to neighbors
 			temp_particle = PARTICLES[j];
 
 			float weight = gaussian_laplacian(base_particle->position,temp_particle->position);
@@ -454,6 +459,7 @@ void myDisplay(){
 
 	//gluLookAt(0,0,3,0,0,0,0,1,0);
 
+    //NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS);
 	update_particles();
 	marching_cubes();
 
