@@ -21,6 +21,7 @@ glut32.dll
 
 # XCode Files
 *.1
+final
 
 #documents
 *.pdf
