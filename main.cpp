@@ -30,8 +30,8 @@ vector<Triangle*> TRIANGLES;//triangles made from marching cubes to render
 vector<vector<float> > GRID_DENSITY;//Grid for marching squares. Probably a better data structure we can use.
 vector<vector<Vec3> > VERTEX_MATRIX;//list of vertices corresponding to the densities on the grid.
 
-const float TIMESTEP = .05;//time elapsed between iterations
-const int NUM_PARTICLES = 150;
+const float TIMESTEP = .01;//time elapsed between iterations
+const int NUM_PARTICLES = 50;
 const Vec3 GRAVITY(0,-9.8f,0);
 const float IDEAL_DENSITY = 1000.0f; //for water kg/m^3
 const float TEMPERATURE = 293.0f; //kelvin for water at 20 degrees celcius
@@ -43,7 +43,7 @@ const float VISCOSITY = 1.004f;// for water;
 
 const float MAX_KERNEL_RADIUS = .5f;
 
-const float CUBE_TOL = .15f;//either grid size or tolerance for adaptive cubes.
+const float CUBE_TOL = .1f;//either grid size or tolerance for adaptive cubes.
 const float DENSITY_TOL = 5.5f;//also used for marching grid, for density of the particles
 
 Neighbor NEIGHBOR; //neighbor object used for calculations
@@ -225,9 +225,11 @@ void update_particles(){
 
 		Vec3 velocity = temp_particle->velocity;
 		Vec3 position = temp_particle->position;
+
 		Vec3 new_position = kinematic_polynomial(acceleration,velocity,position,TIMESTEP);
 		Vec3 new_velocity = temp_particle->velocity + acceleration*TIMESTEP;
 		float mass = temp_particle->mass;
+		
 		temp_particle = new Particle(new_position,new_velocity,mass);
 
 		CONTAINER.in_container(temp_particle); //applies reflections if outside of boundary.
@@ -332,7 +334,7 @@ void marching_cubes(){
 						TRIANGLES.push_back(tri3);
 					}else{
 						Triangle* tri1 = new Triangle(first_row_vertices[j],(first_row_vertices[j]+second_row_vertices[j])/2,first_row_vertices[j+1]);
-						Triangle* tri2 = new Triangle(second_row_vertices[j+1],(first_row_vertices[j]+second_row_vertices[j])/2,second_row_vertices[j+1]);
+						Triangle* tri2 = new Triangle(first_row_vertices[j+1],(first_row_vertices[j]+second_row_vertices[j])/2,(first_row_vertices[j+1]+second_row_vertices[j+1])/2.0f);
 						TRIANGLES.push_back(tri1);
 						TRIANGLES.push_back(tri2);
 					}
@@ -404,7 +406,7 @@ void marching_cubes(){
 					}
 				}else{
 					if (corner_11){
-						Triangle* tri = new Triangle(second_row_vertices[j],(second_row_vertices[j+1]+second_row_vertices[j])/2.0f,(first_row_vertices[j+1]+second_row_vertices[j])/2.0f);
+						Triangle* tri = new Triangle(second_row_vertices[j+1],(first_row_vertices[j+1]+second_row_vertices[j+1])/2.0f,(second_row_vertices[j+1]+second_row_vertices[j])/2.0f);
 						TRIANGLES.push_back(tri);
 					}else{
 						//do nothing, no corners are turned on.
