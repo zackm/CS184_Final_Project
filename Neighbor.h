@@ -18,6 +18,8 @@ public:
     vector<vector<int> > box_particles; // vector of particle numbers for each box
     
     Neighbor(void){};
-    void place_particles(vector<Particle*>,float,Container);
-    int compute_box_num(Vec3,float,int,int,int);
+    void place_particles(vector<Particle*>&,float,Container);
+    int compute_box_num(Vec3,float,int,int);
+    void add_to_box_particles(int,int);
+    void set_particle_neighbors(int, Particle*);
 };

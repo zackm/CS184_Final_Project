@@ -7,8 +7,21 @@
 
 using namespace std;
 
-int Neighbor::compute_box_num(Vec3 pos, float support_rad, int width, int min, int max) {
+void Neighbor::add_to_box_particles(int box_num,int particle_num) {
+    box_particles[box_num].push_back(particle_num);
+}
+
+void Neighbor::set_particle_neighbors(int particle_num, Particle *p) {
+    vector<int> list = box_particles[particle_num];
+    for (int i = 0; i < box_particles[particle_num].size(); i++) {
+        p->neighbors.push_back(list[i]);
+    }
+}
+
+
+int Neighbor::compute_box_num(Vec3 pos, float support_rad, int min, int max) {
     int row = -1,col =-1;
+    int width = max - min;
     int blocks_per_row = width / support_rad;
     // find row and column number of box
 //    cout<<"Position: "<<pos.x<<", "<<pos.y<<endl;
@@ -43,7 +56,7 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, int width, int min, i
     return num;
 }
 
-void Neighbor::place_particles(vector<Particle*> particles, float support_rad, Container c) {
+void Neighbor::place_particles(vector<Particle*> &particles, float support_rad, Container c) {
     // assuming square container
     int width = c.max.x - c.min.x;
     int min = c.min.x;
@@ -58,7 +71,7 @@ void Neighbor::place_particles(vector<Particle*> particles, float support_rad, C
     int box_num;
     for (int i = 0; i < particles.size(); i++) {
         // determine box #
-        box_num = compute_box_num(particles[i]->position, support_rad, width, min, max);
+        box_num = compute_box_num(particles[i]->position, support_rad, min, max);
         // set box # in particle
         particles[i]->box = box_num;
         // add particle number to corresponding box
@@ -71,6 +84,10 @@ void Neighbor::place_particles(vector<Particle*> particles, float support_rad, C
         int particle_num;
         vector<int> neighbor_boxes; // contains the numbers of all the neighboring boxes
         box_num = particles[i]->box;
+        
+        // each particle is a neighbor to particles in the same box
+        neighbor_boxes.push_back(box_num);
+        
         if (box_num < box_per_row && box_num != 0 && box_num != box_per_row - 1) {
             // bottom row, not on left or right edge
             neighbor_boxes.push_back(box_num-1);
@@ -145,7 +162,9 @@ void Neighbor::place_particles(vector<Particle*> particles, float support_rad, C
             vector<int> neighbor_vec = box_particles[neighbor_boxes[j]]; // particles in a neighboring box
             for (int k = 0; k < neighbor_vec.size(); k++) {
                 particle_num = neighbor_vec[k]; // number of a neighboring particle
-                particles[i]->neighbors.push_back(particle_num);
+                if (particle_num != i) {
+                    particles[i]->neighbors.push_back(particle_num);
+                }
             }
         }
     }

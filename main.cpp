@@ -471,8 +471,26 @@ void myDisplay(){
 
 	//gluLookAt(0,0,3,0,0,0,0,1,0);
 
-    NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER);
+    // workaround until PARTICLE pointer stuff working
+//    int width = CONTAINER.max.x - CONTAINER.min.x;
+//    for (int i = 0; i < width/SUPPORT_RADIUS*width/SUPPORT_RADIUS; i++) {
+//        NEIGHBOR.box_particles.push_back(vector<int>());
+//    }
+//    for (int i = 0; i < PARTICLES.size(); i++) {
+//        Particle *temp_part = PARTICLES[i];
+//        // set particle box #
+//        int box_number = NEIGHBOR.compute_box_num(temp_part->position, SUPPORT_RADIUS, CONTAINER.min.x, CONTAINER.max.x);
+//        temp_part->box = box_number;
+//        // add to list in neighbor
+//        NEIGHBOR.add_to_box_particles(box_number, i);
+//    }
+//    for (int i = 0; i < PARTICLES.size(); i++) {
+//        NEIGHBOR.set_particle_neighbors(i, PARTICLES[i]);
+//    }
+    // end workaround
+    
 	update_particles();
+    NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER);
 	marching_cubes();
 
 	//draw particles
@@ -482,7 +500,13 @@ void myDisplay(){
 	for (int i = 0; i<PARTICLES.size(); i++){
 		temp_part = PARTICLES[i];
 		glClearColor(0,0,0,0);
-		glColor3f(1.0,0,0);
+        
+        // alternate particle colors depending on box in grid
+        if (temp_part->box % 2 == 0) {
+            glColor3f(1.0,0,0);
+        } else {
+            glColor3f(0,1.0,1.0);
+        }
 		glVertex3f(temp_part->position.x,temp_part->position.y,temp_part->position.z-.1);
 	}
 	glEnd();
