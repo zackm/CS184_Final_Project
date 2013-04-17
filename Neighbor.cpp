@@ -162,7 +162,10 @@ void Neighbor::place_particles(vector<Particle*> &particles, float support_rad, 
             vector<int> neighbor_vec = box_particles[neighbor_boxes[j]]; // particles in a neighboring box
             for (int k = 0; k < neighbor_vec.size(); k++) {
                 particle_num = neighbor_vec[k]; // number of a neighboring particle
-                if (particle_num != i) {
+                Vec3 a = particles[i]->position;
+                Vec3 b = particles[k]->position;
+                float dist = sqrt(pow((a.x - b.x),2) - pow((a.y - b.y),2));
+                if (particle_num != i && dist <= support_rad) {
                     particles[i]->neighbors.push_back(particle_num);
                 }
             }

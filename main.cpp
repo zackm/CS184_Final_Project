@@ -32,23 +32,23 @@ vector<vector<bool> > GRID_BOOL; //bools corresponding to that grid
 vector<vector<Vec3> > VERTEX_MATRIX;//list of vertices corresponding to the densities on the grid.
 
 const float TIMESTEP = .01;//time elapsed between iterations
-const int NUM_PARTICLES = 10;
+const int NUM_PARTICLES = 150;
 const Vec3 GRAVITY(0,-9.8f,0);
 const float IDEAL_DENSITY = 1000.0f; //for water kg/m^3
 const float TEMPERATURE = 293.0f; //kelvin for water at 20 degrees celcius
 const float MOLAR_MASS = .0180153f;//for water
 const float BOLTZMANN = 8.31446f;//gas constant
 const float MASS = 1.0f;//could set it to any number really.
-const float STIFFNESS = .00001f;//BOLTZMANN*TEMPERATURE/MOLAR_MASS;// for water;
+const float STIFFNESS = 0.0001f;//BOLTZMANN*TEMPERATURE/MOLAR_MASS;// for water;
 const float VISCOSITY = 1.004f;// for water;
 
 const float MAX_KERNEL_RADIUS = .5f;
 
-const float CUBE_TOL = .5f;//either grid size or tolerance for adaptive cubes.
+const float CUBE_TOL = .1f;//either grid size or tolerance for adaptive cubes.
 const float DENSITY_TOL = 5.5f;//also used for marching grid, for density of the particles
 
 Neighbor NEIGHBOR; //neighbor object used for calculations
-const float SUPPORT_RADIUS = 0.5f;//radius of support used by neighbor function to divide space into grid
+const float SUPPORT_RADIUS = 0.25f;//radius of support used by neighbor function to divide space into grid
 
 bool USE_ADAPTIVE = false; //for adaptive or uniform marching cubes.
 
@@ -140,6 +140,7 @@ To do this, calculate all quanities in Navier-Stokes, then use timestep to
 update particle location from old location and velocity.
 */
 void update_particles(){
+    
 	vector<Particle*> new_particles;
 	vector<float> density_list;
 	vector<float> pressure_list;
@@ -497,28 +498,9 @@ void myDisplay(){
 	glLoadIdentity();
 
 	//gluLookAt(0,0,3,0,0,0,0,1,0);
-
-	//NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS);
-    // workaround until PARTICLE pointer stuff working
-//    int width = CONTAINER.max.x - CONTAINER.min.x;
-//    for (int i = 0; i < width/SUPPORT_RADIUS*width/SUPPORT_RADIUS; i++) {
-//        NEIGHBOR.box_particles.push_back(vector<int>());
-//    }
-//    for (int i = 0; i < PARTICLES.size(); i++) {
-//        Particle *temp_part = PARTICLES[i];
-//        // set particle box #
-//        int box_number = NEIGHBOR.compute_box_num(temp_part->position, SUPPORT_RADIUS, CONTAINER.min.x, CONTAINER.max.x);
-//        temp_part->box = box_number;
-//        // add to list in neighbor
-//        NEIGHBOR.add_to_box_particles(box_number, i);
-//    }
-//    for (int i = 0; i < PARTICLES.size(); i++) {
-//        NEIGHBOR.set_particle_neighbors(i, PARTICLES[i]);
-//    }
-    // end workaround
     
+//    NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER);
 	update_particles();
-
     NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER);
 	marching_cubes();
 
