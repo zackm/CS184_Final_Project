@@ -39,7 +39,7 @@ const float TEMPERATURE = 293.0f; //kelvin for water at 20 degrees celcius
 const float MOLAR_MASS = .0180153f;//for water
 const float BOLTZMANN = 8.31446f;//gas constant
 const float MASS = 1.0f;//could set it to any number really.
-const float STIFFNESS = .1f;//BOLTZMANN*TEMPERATURE/MOLAR_MASS;// for water;
+const float STIFFNESS = .01f;//BOLTZMANN*TEMPERATURE/MOLAR_MASS;// for water;
 const float VISCOSITY = 1.004f;// for water;
 const float COLLISION_RADIUS = .01f;//collision between particles.
 
