@@ -173,6 +173,7 @@ To do this, calculate all quanities in Navier-Stokes, then use timestep to
 update particle location from old location and velocity.
 */
 void update_particles(){
+    
 	vector<Particle*> new_particles;
 	vector<float> density_list;
 	vector<float> pressure_list;
@@ -531,25 +532,6 @@ void myDisplay(){
 	glLoadIdentity();
 
 	//gluLookAt(0,0,3,0,0,0,0,1,0);
-
-	//NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS);
-    // workaround until PARTICLE pointer stuff working
-//    int width = CONTAINER.max.x - CONTAINER.min.x;
-//    for (int i = 0; i < width/SUPPORT_RADIUS*width/SUPPORT_RADIUS; i++) {
-//        NEIGHBOR.box_particles.push_back(vector<int>());
-//    }
-//    for (int i = 0; i < PARTICLES.size(); i++) {
-//        Particle *temp_part = PARTICLES[i];
-//        // set particle box #
-//        int box_number = NEIGHBOR.compute_box_num(temp_part->position, SUPPORT_RADIUS, CONTAINER.min.x, CONTAINER.max.x);
-//        temp_part->box = box_number;
-//        // add to list in neighbor
-//        NEIGHBOR.add_to_box_particles(box_number, i);
-//    }
-//    for (int i = 0; i < PARTICLES.size(); i++) {
-//        NEIGHBOR.set_particle_neighbors(i, PARTICLES[i]);
-//    }
-    // end workaround
     
 	//collide_particles();
 	//NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER);
