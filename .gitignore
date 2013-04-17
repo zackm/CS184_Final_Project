@@ -25,6 +25,7 @@ final
 
 #documents
 *.pdf
+*.ppt
 
 #VS files
 *.sdf

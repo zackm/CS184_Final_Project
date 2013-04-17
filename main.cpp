@@ -24,7 +24,7 @@ using namespace std;
 * GLOBAL VARIABLES *
 *******************/
 
-Container CONTAINER(Vec3(2,2,1),Vec3(-2,-2,-1));//very simple cube for now. Later, make it a particle itself.
+Container CONTAINER(Vec3(1,1,1),Vec3(0,0,0));//very simple cube for now. Later, make it a particle itself.
 vector<Particle*> PARTICLES;//particles that we do SPH on.
 vector<Triangle*> TRIANGLES;//triangles made from marching cubes to render
 vector<vector<float> > GRID_DENSITY;//Grid for marching squares. Probably a better data structure we can use.
@@ -32,23 +32,23 @@ vector<vector<bool> > GRID_BOOL; //bools corresponding to that grid
 vector<vector<Vec3> > VERTEX_MATRIX;//list of vertices corresponding to the densities on the grid.
 
 const float TIMESTEP = .01;//time elapsed between iterations
-const int NUM_PARTICLES = 10;
+const int NUM_PARTICLES = 200;
 const Vec3 GRAVITY(0,-9.8f,0);
 const float IDEAL_DENSITY = 1000.0f; //for water kg/m^3
 const float TEMPERATURE = 293.0f; //kelvin for water at 20 degrees celcius
 const float MOLAR_MASS = .0180153f;//for water
 const float BOLTZMANN = 8.31446f;//gas constant
 const float MASS = 1.0f;//could set it to any number really.
-const float STIFFNESS = .00001f;//BOLTZMANN*TEMPERATURE/MOLAR_MASS;// for water;
+const float STIFFNESS = .1f;//BOLTZMANN*TEMPERATURE/MOLAR_MASS;// for water;
 const float VISCOSITY = 1.004f;// for water;
+const float COLLISION_RADIUS = .01f;//collision between particles.
 
-const float MAX_KERNEL_RADIUS = .5f;
-
-const float CUBE_TOL = .5f;//either grid size or tolerance for adaptive cubes.
-const float DENSITY_TOL = 5.5f;//also used for marching grid, for density of the particles
+const float MAX_KERNEL_RADIUS = .1f;
+const float CUBE_TOL = .1f;//either grid size or tolerance for adaptive cubes, reciprocal must be an integer for now.
+const float DENSITY_TOL = .5f;//also used for marching grid, for density of the particles
 
 Neighbor NEIGHBOR; //neighbor object used for calculations
-const float SUPPORT_RADIUS = 0.5f;//radius of support used by neighbor function to divide space into grid
+const float SUPPORT_RADIUS = .1f;//radius of support used by neighbor function to divide space into grid
 
 bool USE_ADAPTIVE = false; //for adaptive or uniform marching cubes.
 
@@ -118,21 +118,54 @@ Vec3 kinematic_polynomial(Vec3 acc, Vec3 vel, Vec3 pos,float t){
 	return acc*t*t*.5f+vel*t+pos;
 }
 
-float density_at_point(Vec3 point){
-	float density = 0;
-	for (int i = 0; i<NUM_PARTICLES; i++){
-		//update density. There will be a problem if the point is exactly equal to sum particle (divide by zero error).
-		Particle *temp_particle = PARTICLES[i];
+/*******************
+* Particle Methods *
+*******************/
+void collide_particles(){
+	Particle *base_particle, *temp_particle, *new_particle;
+	float number_density = 0, density = 0, pressure = 0;
 
+	for (int i = 0; i<NUM_PARTICLES; i++){
+		base_particle = PARTICLES[i];
+		vector<int> neighbor_vec = base_particle->neighbors;
+
+	}
+}
+
+float density_at_particle(Particle* part){
+	float density = poly6_kernel(part->position,part->position);
+	Particle* temp_particle;
+	vector<int> neighbor_vec = part->neighbors;
+	for (int i = 0; i<neighbor_vec.size(); i++){ // changed to neighbors
+
+		temp_particle = PARTICLES[neighbor_vec[i]];
+		if (i == neighbor_vec[i]) {
+			continue;
+		}
+
+		density += temp_particle->mass*poly6_kernel(part->position,temp_particle->position);
+	}
+	return density;
+}
+
+float density_at_point(Vec3 point){
+	//first should generate a list of the particles we need to check, using the box for this point.
+	int box_number = NEIGHBOR.compute_box_num(point,SUPPORT_RADIUS,CONTAINER.min.x,CONTAINER.max.x);
+
+	Particle* temp_particle;
+	vector<int> neighbor_vec = NEIGHBOR.box_particles[box_number];
+	float density = 0;
+	for (int i = 0; i<neighbor_vec.size(); i++){
+		//update density. There will be a problem if the point is exactly equal to sum particle (divide by zero error).
+		temp_particle = PARTICLES[neighbor_vec[i]];
+		if (i == neighbor_vec[i]) {
+			continue;
+		}
 		density += temp_particle->mass*poly6_kernel(point,temp_particle->position);
 	}
 
 	return density;
 }
-
-/*******************
-* Particle Methods *
-*******************/
 
 /*
 Create a new list of particles from the old list. Then, throw the old list.
@@ -154,7 +187,7 @@ void update_particles(){
 	for (int i = 0; i<NUM_PARTICLES; i++){
 		density = 0;
 		base_particle = PARTICLES[i];
-		density += density_at_point(base_particle->position);
+		density = density_at_particle(base_particle);
 		density_list.push_back(density);
 		pressure_list.push_back(STIFFNESS*(density-IDEAL_DENSITY));
 	}
@@ -164,8 +197,9 @@ void update_particles(){
 		base_particle = PARTICLES[i];
 
 		Vec3 pressure_gradient(0,0,0);
-
+		
         vector<int> neighbor_vec = base_particle->neighbors;
+		int n = neighbor_vec.size();
 		for (int j = 0; j<neighbor_vec.size(); j++){ // changed to neighbors
 			temp_particle = PARTICLES[neighbor_vec[j]];
             if (i == neighbor_vec[j]) {
@@ -470,11 +504,11 @@ void initScene(){
 	//create a list of random particles
 	float x,y,z;
 	for (int i = 0; i<NUM_PARTICLES; i++){
-		x = float(rand())/(float(RAND_MAX))-1;
-		y = float(rand())/(float(RAND_MAX))-1;
+		x = float(rand())/(float(RAND_MAX));
+		y = float(rand())/(float(RAND_MAX));
 		z = 0;//float(rand())/(float(RAND_MAX));
 
-		Vec3 pos(x,y,z);
+		Vec3 pos(x,y/5.0f,z);
 		Vec3 vel(rand()%3,rand()%2,0);
 		PARTICLES.push_back(new Particle(pos,vel,MASS));
 	}
@@ -491,7 +525,7 @@ void myDisplay(){
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	//gluPerspective(90,1.0f,1,-1000);
-	glOrtho(-2,2,-2,2,2,-2);
+	glOrtho(CONTAINER.min.x,CONTAINER.max.x,CONTAINER.min.y,CONTAINER.max.y,CONTAINER.min.z,CONTAINER.max.z);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -517,10 +551,12 @@ void myDisplay(){
 //    }
     // end workaround
     
-	update_particles();
+	//collide_particles();
+	//NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER);
 
+	update_particles();
     NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER);
-	marching_cubes();
+	//marching_cubes();
 
 	//draw particles
 	Particle* temp_part;

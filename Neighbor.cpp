@@ -48,7 +48,7 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, int min, int max) {
 //    cout<<"Num = "<<num<<" = "<<col<<" + "<<row<<" * "<<blocks_per_row<<endl;
 //    cout<<endl;
     if (num > blocks_per_row * blocks_per_row || num < 0) {
-        cout<<"Error, incorrect box # assigned in Neighbor: "<<num<<endl;
+        //cout<<"Error, incorrect box # assigned in Neighbor: "<<num<<endl;
         num = 0; // temporarily fix bug where y position is ~38
 //        exit(0);
     }
