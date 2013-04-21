@@ -32,7 +32,7 @@ vector<vector<bool> > GRID_BOOL; //bools corresponding to that grid
 vector<vector<Vec3> > VERTEX_MATRIX;//list of vertices corresponding to the densities on the grid.
 
 const float TIMESTEP = .01;//time elapsed between iterations
-const int NUM_PARTICLES = 100;
+const int NUM_PARTICLES = 250;
 const Vec3 GRAVITY(0,-9.8f,0);
 const float IDEAL_DENSITY = 1000.0f; //for water kg/m^3
 const float TEMPERATURE = 293.0f; //kelvin for water at 20 degrees celcius
@@ -549,7 +549,7 @@ void initScene(){
 	for (int i = 0; i<NUM_PARTICLES; i++){
 		x = float(rand())/(float(RAND_MAX));
 		y = float(rand())/(float(RAND_MAX));
-		z = 0;//float(rand())/(float(RAND_MAX));
+		z = float(rand())/(float(RAND_MAX));
 
 		Vec3 pos(x,y,z);
 		Vec3 vel(.5f,1.0f,0);
@@ -573,13 +573,13 @@ void myDisplay(){
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	//gluPerspective(90,1.0f,1,-1000);
-	glOrtho(CONTAINER.min.x,CONTAINER.max.x,CONTAINER.min.y,CONTAINER.max.y,CONTAINER.min.z,CONTAINER.max.z);
+	gluPerspective(90,1.0f,.1,-1000);
+	//glOrtho(CONTAINER.min.x,CONTAINER.max.x,CONTAINER.min.y,CONTAINER.max.y,CONTAINER.min.z,CONTAINER.max.z);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
-	//gluLookAt(0,0,3,0,0,0,0,1,0);
+	gluLookAt(1.2,1.2,1.2,0,0,0,0,1,0);
 
 	run_time_step();
 
@@ -617,6 +617,51 @@ void myDisplay(){
 		glVertex3f(temp_triangle->c.x,temp_triangle->c.y,temp_triangle->c.z);
 		glEnd();
 	}
+
+	//Draw wireframe container
+	glPolygonMode(GL_FRONT, GL_LINE);
+	glPolygonMode(GL_BACK, GL_LINE);
+
+	glDisable(GL_LIGHTING);
+	glClearColor (0.0, 0.0, 0.0, 0.0);
+	glColor3f(1.0f,1.0f,1.0f);
+
+	glBegin(GL_POLYGON);
+	glVertex3f(CONTAINER.min.x,CONTAINER.min.y,CONTAINER.max.z);
+	glVertex3f(CONTAINER.min.x,CONTAINER.max.y,CONTAINER.max.z);
+	glVertex3f(CONTAINER.max.x,CONTAINER.max.y,CONTAINER.max.z);
+	glVertex3f(CONTAINER.max.x,CONTAINER.min.y,CONTAINER.max.z);
+	glEnd();
+
+	glBegin(GL_POLYGON);
+	glVertex3f(CONTAINER.min.x,CONTAINER.min.y,CONTAINER.min.z);
+	glVertex3f(CONTAINER.min.x,CONTAINER.max.y,CONTAINER.min.z);
+	glVertex3f(CONTAINER.max.x,CONTAINER.max.y,CONTAINER.min.z);
+	glVertex3f(CONTAINER.max.x,CONTAINER.min.y,CONTAINER.min.z);
+	glEnd();
+
+	glBegin(GL_LINES);
+	glVertex3f(CONTAINER.min.x,CONTAINER.min.y,CONTAINER.min.z);
+	glVertex3f(CONTAINER.min.x,CONTAINER.min.y,CONTAINER.max.z);
+	glEnd();
+
+	glBegin(GL_LINES);
+	glVertex3f(CONTAINER.min.x,CONTAINER.max.y,CONTAINER.min.z);
+	glVertex3f(CONTAINER.min.x,CONTAINER.max.y,CONTAINER.max.z);
+	glEnd();
+
+	glBegin(GL_LINES);
+	glVertex3f(CONTAINER.max.x,CONTAINER.max.y,CONTAINER.min.z);
+	glVertex3f(CONTAINER.max.x,CONTAINER.max.y,CONTAINER.max.z);
+	glEnd();
+
+	glBegin(GL_LINES);
+	glVertex3f(CONTAINER.max.x,CONTAINER.min.y,CONTAINER.min.z);
+	glVertex3f(CONTAINER.max.x,CONTAINER.min.y,CONTAINER.max.z);
+	glEnd();
+
+	glPolygonMode(GL_FRONT, GL_FILL); // fill mode
+	glPolygonMode(GL_BACK, GL_FILL);
 
 	glPopMatrix();
 
