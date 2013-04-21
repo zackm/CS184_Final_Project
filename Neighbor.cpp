@@ -19,40 +19,55 @@ void Neighbor::set_particle_neighbors(int particle_num, Particle *p) {
 }
 
 
-int Neighbor::compute_box_num(Vec3 pos, float support_rad, int min, int max) {
+int Neighbor::compute_box_num(Vec3 pos, float support_rad, int min_width, int max_width) {
     int row = -1,col =-1;
-    int width = max - min;
+    int width = max_width - min_width;
     int blocks_per_row = width / support_rad;
-    // find row and column number of box
-//    cout<<"Position: "<<pos.x<<", "<<pos.y<<endl;
-    
-    float curr_x = min, curr_y = min;
 
-	for (int i = 0; i < blocks_per_row && curr_x < float(max); i++) {
+    float curr_x = min_width, curr_y = min_width;
+
+	float col_point = abs(pos.x - curr_x);
+	float row_point = abs(pos.y - curr_y);
+
+	////if(col_point>curr_x || row_point>curr_y || col_point<0 || row_point<0){
+	////	//point is not inside the container.
+	////	return 0;
+	////}
+
+	//row = floor(row_point/support_rad);
+	//col = floor(col_point/support_rad);
+
+	//int num = col + row*blocks_per_row - 1;
+
+	//return num;//int(max(float(num),0.0f));
+
+	for (int i = 0; i < blocks_per_row && curr_x < float(max_width); i++) {
 		float col_point = abs(curr_x - pos.x);
         float row_point = abs(curr_y - pos.y);
-//        cout<<"Col Point: "<<curr_x<<" - "<<pos.x<<" = "<<col_point<<endl;
-//        cout<<"Row Point: "<<curr_y<<" - "<<pos.y<<" = "<<row_point<<endl;
+
 		if (col_point <= support_rad) {
 			col = i;
 		}
         if (row_point <= support_rad) {
 			row = i;
 		}
-        if (row != -1 && col != -1) { break; }
+
+        if (row != -1 && col != -1) { 
+			break;
+		}
         curr_x += support_rad;
         curr_y += support_rad;
 	}
     
     int num = col + row * blocks_per_row;
-//    cout<<"Num = "<<num<<" = "<<col<<" + "<<row<<" * "<<blocks_per_row<<endl;
-//    cout<<endl;
+    //cout<<"Num = "<<num<<" = "<<col<<" + "<<row<<" * "<<blocks_per_row<<endl;
+   // cout<<endl;
     if (num > blocks_per_row * blocks_per_row || num < 0) {
-        //cout<<"Error, incorrect box # assigned in Neighbor: "<<num<<endl;
+        cout<<"Error, incorrect box # assigned in Neighbor: "<<num<<endl;
         num = 0; // temporarily fix bug where y position is ~38
-//        exit(0);
+       // exit(0);
     }
-    // compute box num given row & col
+     //compute box num given row & col
     return num;
 }
 

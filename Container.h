@@ -9,7 +9,7 @@ class Container{
 public:
 	Vec3 max,min;
 	
-	bool in_container(Particle*);
+	bool in_container(Particle*,float);
 	Container(Vec3,Vec3);
 	Container(void){};
 	~Container(void){};

@@ -1,19 +1,23 @@
 #include "Container.h"
 
+const float COLLISOIN_DISTANCE = .01;
+
 Container::Container(Vec3 max_arg,Vec3 min_arg){
 	max = max_arg;
 	min = min_arg;
 }
 
-bool Container::in_container(Particle *part){
+bool Container::in_container(Particle *part,float t){
+	//We should check time as well.
+
 	bool in_cont = true;
-	float friction = 1.0f;//.85f;
+	float friction = .95f;
 
 	Vec3 pos = part->position;
 	Vec3 vel = part->velocity;
 	float mass = part->mass;
 
-	//reflect x direction
+	//reflect x position
 	if (pos.x>max.x){
 		pos.x = max.x-(pos.x-max.x);
 		vel.x = -vel.x*friction;
@@ -24,7 +28,7 @@ bool Container::in_container(Particle *part){
 		in_cont = false;
 	}
 
-	//reflect y direction
+	//reflect y position
 	if (pos.y>max.y){
 		pos.y = max.y-(pos.y-max.y);
 		vel.y = -vel.y*friction;
@@ -35,7 +39,7 @@ bool Container::in_container(Particle *part){
 		in_cont = false;
 	}
 
-	//reflect z direction
+	//reflect z position
 	if (pos.z>max.z){
 		pos.z = max.z-(pos.z-max.z);
 		vel.z = -vel.z*friction;
@@ -46,8 +50,10 @@ bool Container::in_container(Particle *part){
 		in_cont = false;
 	}
 
-	Particle reflected_part(pos,vel,mass);
-
-	(*part) = reflected_part;
+	part->position = pos;
+	part->velocity = vel;
 	return in_cont;
+
+
+	
 }
