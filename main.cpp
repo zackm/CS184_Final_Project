@@ -24,7 +24,7 @@ using namespace std;
 * GLOBAL VARIABLES *
 *******************/
 
-Container CONTAINER(Vec3(2,2,2),Vec3(0,0,0));//very simple cube for now. Later, make it a particle itself.
+Container CONTAINER(Vec3(1,1,1),Vec3(0,0,0));//very simple cube for now. Later, make it a particle itself.
 vector<Particle*> PARTICLES;//particles that we do SPH on.
 vector<Triangle*> TRIANGLES;//triangles made from marching cubes to render
 vector<vector<vector<float> > > GRID_DENSITY;//Grid for marching squares. Probably a better data structure we can use.
@@ -33,15 +33,15 @@ vector<vector<vector<Vec3> > > VERTEX_MATRIX;//list of vertices corresponding to
 
 const float TIMESTEP = .01;//time elapsed between iterations
 int NUM_PARTICLES = 350;
-Vec3 GRAVITY(0,-9.8,0);
+Vec3 GRAVITY(0,-9.8f,0);
 const float MAX_DISPLACEMENT = 10.0f; //the maximum amount that a particle can be displaced, use when we get NaN.
-const float IDEAL_DENSITY = 1000.0f; //for water kg/m^3
 const float MASS = .01f;//could set it to any number really.
 const float STIFFNESS = 0.0f;//10000.0f;//1000.0f;//BOLTZMANN*TEMPERATURE/MOLAR_MASS;// for water; //0 for liquids actually, assuming incompressible.
 const float VISCOSITY = 1.004f;// for water;
-const float ELECTRIC_CONST = 1e2;
+const float ELECTRIC_CONST = 1e5;
 const float DRAG = 1200.0f;
-const float SURFACE_TENSION = 1e5;
+const float SURFACE_TENSION = 1e2;
+const float PRESSURE = 10.0f;
 
 const float CUBE_TOL = .125f;//either grid size or tolerance for adaptive cubes, reciprocal must be an integer for now.
 const float DENSITY_TOL = 1.5f;//also used for marching grid, for density of the particles
@@ -61,7 +61,7 @@ float dot(Vec3 v1, Vec3 v2){
 	return v1.x*v2.x+v1.y*v2.y+v1.z+v2.z;
 }
 
-/******************	............These derivatives come from wolfram alpha.
+/******************
 * Kernel Function *
 ******************/
 //default is used for all terms except pressure and viscosity
@@ -108,10 +108,10 @@ float default_laplacian(Vec3 r_i,Vec3 r_j){
 
 	float coeff = -945.0f/(32.0f*PI*pow(h,9.0f));
 
-	return coeff * pow((h*h - mag),2.0f) * (3.0f*h*h - 7.0f*mag);
+	return coeff * (h*h - mag) * (3.0f*h*h - 7.0f*mag);
 }
 
-Vec3 gradient_kernel(Vec3 r_i, Vec3 r_j){
+Vec3 pressure_kernel_gradient(Vec3 r_i, Vec3 r_j){
 	Vec3 diff_vec = r_i-r_j;
 	float mag = dot(diff_vec,diff_vec);
 
@@ -127,8 +127,7 @@ Vec3 gradient_kernel(Vec3 r_i, Vec3 r_j){
 	return diff_vec*(-coeff)/(sqrt(mag));
 }
 
-float laplacian_kernel(Vec3 r_i, Vec3 r_j){
-
+float viscosity_kernel_laplacian(Vec3 r_i, Vec3 r_j){
 	Vec3 diff_vec = r_i-r_j;
 	float mag = dot(diff_vec,diff_vec);
 
@@ -215,7 +214,7 @@ void run_time_step(){
 		density_list.push_back(density);
 
 		//changed this to not include stiffness at all
-		pressure_list.push_back(STIFFNESS*(density-IDEAL_DENSITY));
+		pressure_list.push_back(STIFFNESS*(PRESSURE));
 	}
 
 	//Sets pressure gradient at each point using densities from last loop
@@ -232,7 +231,7 @@ void run_time_step(){
 				continue;
 			}
 
-			Vec3 weight = gradient_kernel(base_particle->position,temp_particle->position);
+			Vec3 weight = pressure_kernel_gradient(base_particle->position,temp_particle->position);
 			pressure_gradient += weight * temp_particle->mass * ((pressure_list[i]+pressure_list[j])/(2.0f*density_list[j])); 
 
 		}
@@ -248,8 +247,8 @@ void run_time_step(){
 		for (int j = 0; j<neighbor_vec.size(); j++){ // changed to neighbors
 			temp_particle = PARTICLES[neighbor_vec[j]];
 
-			float weight = laplacian_kernel(base_particle->position,temp_particle->position);
-			viscosity_laplacian += ((base_particle->velocity - temp_particle->velocity)/density_list[i])*weight * temp_particle->mass;
+			float weight = viscosity_kernel_laplacian(base_particle->position,temp_particle->position);
+			viscosity_laplacian += ((temp_particle->velocity - base_particle->velocity)/density_list[i])*weight * temp_particle->mass;
 		}
 		viscosity_list.push_back(viscosity_laplacian*VISCOSITY);
 	}
@@ -282,6 +281,7 @@ void run_time_step(){
 
 		float length = sqrt(dot(normal,normal));
 		if(length>0.0){
+			normal = normal/sqrt(length);
 			tension_list.push_back(normal*(-1.0f*color_list[i]));
 		}else{
 			Vec3 v(0,0,0);
@@ -297,17 +297,11 @@ void run_time_step(){
 		vector<int> neighbor_vec = base_particle->neighbors;
 		for (int j = 0; j<neighbor_vec.size(); j++){
 			temp_particle = PARTICLES[neighbor_vec[j]];
-			Vec3 diff_vec = base_particle->position - temp_particle->position;
+			Vec3 diff_vec = temp_particle->position - base_particle->position;
 			float length = sqrt(dot(diff_vec,diff_vec));
 			Vec3 electric_repulsion;
-			if(length>0){
-				electric_repulsion = diff_vec/(max(pow(length,3.0f),.1f));
-			}else{
-				electric_repulsion.x = 0.0f;
-				electric_repulsion.y = 1.0f;
-				electric_repulsion.z = 0.0f;
-
-			}
+			electric_repulsion = diff_vec/(max(pow(length,3.0f),.01f));
+			
 			repulsion += electric_repulsion * (default_kernel(base_particle->position,temp_particle->position))*(temp_particle->mass / density_list[j]);
 
 		}
@@ -324,7 +318,8 @@ void run_time_step(){
 		//First add external forces
 		Vec3 acceleration = GRAVITY - ((velocity*DRAG) + tension_list[i]*SURFACE_TENSION
 						    + (viscosity_list[i]*VISCOSITY)
-							+ repulsion_list[i]*ELECTRIC_CONST)/density_list[i];
+							+ repulsion_list[i]*ELECTRIC_CONST
+							- pressure_grad_list[i])/density_list[i];
 
 		Vec3 position = temp_particle->position;
 
@@ -341,9 +336,7 @@ void run_time_step(){
 
 	PARTICLES = new_particles;
 
-	/***************************
-	* Reset Neighbor Structure *
-	***************************/
+	//reset neighbor structure 
 	NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER);
 }
 
@@ -358,7 +351,8 @@ void initScene(){
 	float noise = .5f;
 	float x,y,z,v_x,v_y,v_z;
 
-	//float step = .033f;
+	////Semi random grid of particles
+	//float step = .05f;
 	//for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
 	//	for(float j = CONTAINER.min.y; j<(CONTAINER.max.y/2.0f); j=j+step){
 	//		noise = float(rand())/(float(RAND_MAX))*.05f;
