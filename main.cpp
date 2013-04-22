@@ -32,24 +32,25 @@ vector<vector<vector<bool> > > GRID_BOOL; //bools corresponding to that grid
 vector<vector<vector<Vec3> > > VERTEX_MATRIX;//list of vertices corresponding to the densities on the grid.
 
 const float TIMESTEP = .01;//time elapsed between iterations
-const int NUM_PARTICLES = 250;
+int NUM_PARTICLES = 500;
 const Vec3 GRAVITY(0,-9.8f,0);
 const float IDEAL_DENSITY = 1000.0f; //for water kg/m^3
 const float TEMPERATURE = 293.0f; //kelvin for water at 20 degrees celcius
 const float MOLAR_MASS = .0180153f;//for water
 const float BOLTZMANN = 8.31446f;//gas constant
-const float MASS = .000001f;//could set it to any number really.
-const float STIFFNESS = BOLTZMANN*TEMPERATURE/MOLAR_MASS;// for water;
+const float MASS = .001f;//could set it to any number really.
+const float STIFFNESS = 0.0f;//10000.0f;//1000.0f;//BOLTZMANN*TEMPERATURE/MOLAR_MASS;// for water; //0 for liquids actually, assuming incompressible.
 const float VISCOSITY = 1.004f;// for water;
 const float COLLISION_RADIUS = .001f;//collision between particles.
 const float GAMMA = 1.0f; //gas constant.
+const float DRAG = 5.5f;
 
-const float MAX_KERNEL_RADIUS = .4f;
-const float CUBE_TOL = .25f;//either grid size or tolerance for adaptive cubes, reciprocal must be an integer for now.
+const float MAX_KERNEL_RADIUS = 1.0f;
+const float CUBE_TOL = .125f;//either grid size or tolerance for adaptive cubes, reciprocal must be an integer for now.
 const float DENSITY_TOL = 1.5f;//also used for marching grid, for density of the particles
 
 Neighbor NEIGHBOR; //neighbor object used for calculations
-const float SUPPORT_RADIUS = .025f;//radius of support used by neighbor function to divide space into grid
+const float SUPPORT_RADIUS = .0125f;//radius of support used by neighbor function to divide space into grid
 
 bool USE_ADAPTIVE = false; //for adaptive or uniform marching cubes.
 
@@ -215,6 +216,7 @@ void run_time_step(){
 	vector<float> pressure_list;
 	vector<Vec3> pressure_grad_list;
 	vector<Vec3> viscosity_list;
+	vector<Vec3> tension_list;
 
 	//update using slow algorithm for now
 	Particle *base_particle, *temp_particle, *new_particle;
@@ -237,7 +239,7 @@ void run_time_step(){
 
 		vector<int> neighbor_vec = base_particle->neighbors;
 		int n = neighbor_vec.size();
-		for (int j = 0; j<neighbor_vec.size(); j++){ // changed to neighbors
+		for (int j = 0; j<n; j++){ // changed to neighbors
 			temp_particle = PARTICLES[neighbor_vec[j]];
 			if (i == neighbor_vec[j]) {
 				continue;
@@ -265,15 +267,29 @@ void run_time_step(){
 		viscosity_list.push_back(viscosity_laplacian);
 	}
 
+	////Sets color field at each point for surface tension
+	//for (int i = 0; i<NUM_PARTICLES; i++){
+	//	base_particle = PARTICLES[i];
+
+	//	Vec3 viscosity_laplacian(0,0,0);
+	//	vector<int> neighbor_vec = base_particle->neighbors;
+	//	for (int j = 0; j<neighbor_vec.size(); j++){
+	//		temp_particle = PARTICLES[j];
+
+	//	}
+	//}
+
+
 	//Create new particles from old particles and from pressure gradient.
 	for (int i = 0; i<NUM_PARTICLES; i++){
 		temp_particle = PARTICLES[i];
 
 		//using Navier Stokes, calculate the change in velocity.
-		Vec3 acceleration = pressure_grad_list[i]/density_list[i]*(-1.0f)
-			+ GRAVITY + (viscosity_list[i]/density_list[i])*VISCOSITY;
-
 		Vec3 velocity = temp_particle->velocity;
+
+		Vec3 acceleration = pressure_grad_list[i]/density_list[i]*(-1.0f)
+			+ GRAVITY + (viscosity_list[i]/density_list[i])*VISCOSITY - velocity*DRAG;
+
 		Vec3 position = temp_particle->position;
 
 		Vec3 new_position = kinematic_polynomial(position,velocity,acceleration,TIMESTEP);
@@ -586,24 +602,39 @@ void marching_cubes(){
 void initScene(){
 	//create a list of random particles
 	Particle* new_part;
+	float noise = .5f;
 	float x,y,z,v_x,v_y,v_z;
-	for (int i = 0; i<NUM_PARTICLES; i++){
-		x = float(rand())/(float(RAND_MAX));
-		y = float(rand())/(float(RAND_MAX));
-		z = float(rand())/(float(RAND_MAX));
 
-		v_x = 2.0f*float(rand())/(float(RAND_MAX))-1;
-		v_y = 2.0f*float(rand())/(float(RAND_MAX))-1;
-		v_z = 2.0f*float(rand())/(float(RAND_MAX))-1;
-
-
-		Vec3 pos(x,y,z);
-		Vec3 vel(v_x,v_y,v_z);
-		float mass = (float(rand())/(float(RAND_MAX)))*5.0f;
-		//also need to instantiate the other fields
-		new_part = new Particle(pos,vel,MASS);
-		PARTICLES.push_back(new_part);
+	float step = .05f;
+	for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
+		for(float j = CONTAINER.min.y; j<(CONTAINER.max.y/2.0f); j=j+step){
+			noise = float(rand())/(float(RAND_MAX))*.05f;
+			Vec3 pos(i+noise,j+noise,0);
+			Vec3 vel(0,0,0);
+			new_part = new Particle(pos,vel,MASS);
+			PARTICLES.push_back(new_part);
+		}
 	}
+	NUM_PARTICLES = PARTICLES.size();
+
+	////random particles
+	//for (int i = 0; i<NUM_PARTICLES; i++){
+	//	x = .2f+float(rand())/(float(RAND_MAX))*.1f;
+	//	y = float(rand())/(float(RAND_MAX))/5.0 + .4f;
+	//	z = 0.0f;//.2f + float(rand())/(float(RAND_MAX))*.1f;
+
+	//	v_x = -.5f+float(rand())/(float(RAND_MAX))*2.0f*noise;
+	//	v_y = -0.2+float(rand())/(float(RAND_MAX))*noise;
+	//	v_z = 0.0f;//-0.2+float(rand())/(float(RAND_MAX))*noise;
+
+
+	//	Vec3 pos(x,y,z);
+	//	Vec3 vel(v_x,v_y,v_z);
+	//	float mass = 4.0f+(float(rand())/(float(RAND_MAX)))*5.0f;
+	//	//also need to instantiate the other fields
+	//	new_part = new Particle(pos,vel,MASS);
+	//	PARTICLES.push_back(new_part);
+	//}
 	NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER);
 
 	glEnable(GL_DEPTH_TEST);
@@ -617,13 +648,13 @@ void myDisplay(){
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(90,1.0f,.1,-1000);
-	//glOrtho(CONTAINER.min.x,CONTAINER.max.x,CONTAINER.min.y,CONTAINER.max.y,CONTAINER.min.z,CONTAINER.max.z);
+	//gluPerspective(90,1.0f,.1,-1000);
+	glOrtho(CONTAINER.min.x,CONTAINER.max.x,CONTAINER.min.y,CONTAINER.max.y,CONTAINER.min.z,CONTAINER.max.z);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
-	gluLookAt(1.2,1.2,1.2,0,0,0,0,1,0);
+	//gluLookAt(1.2,1.2,1.2,0,0,0,0,1,0);
 
 	run_time_step();
 
@@ -631,12 +662,11 @@ void myDisplay(){
 
 	//draw particles
 	Particle* temp_part;
-	glPointSize(4.0f);
-	glBegin(GL_POINTS);
 	for (int i = 0; i<PARTICLES.size(); i++){
 		temp_part = PARTICLES[i];
 		glClearColor(0,0,0,0);
-
+		glPointSize(4.0f);
+		glBegin(GL_POINTS);
 		// alternate particle colors depending on box in grid
 		/* if (temp_part->box % 2 == 0) {
 		glColor3f(1.0,0,0);
@@ -645,14 +675,14 @@ void myDisplay(){
 		}*/
 		glColor3f(0,0,1.0);
 		glVertex3f(temp_part->position.x,temp_part->position.y,temp_part->position.z);
+		glEnd();
 	}
-	glEnd();
 
 	//draw triangles
 	Triangle *temp_triangle;
-	glPointSize(4.0f);
 	for (int i = 0; i<TRIANGLES.size(); i++){
 		temp_triangle = TRIANGLES[i];
+
 		glClearColor(0,0,0,0);
 		glColor3f(0,0,1.0f);
 		glBegin(GL_TRIANGLES);
