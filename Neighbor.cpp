@@ -8,14 +8,14 @@
 using namespace std;
 
 void Neighbor::add_to_box_particles(int box_num,int particle_num) {
-    box_particles[box_num].push_back(particle_num);
+	box_particles[box_num].push_back(particle_num);
 }
 
 void Neighbor::set_particle_neighbors(int particle_num, Particle *p) {
-    vector<int> list = box_particles[particle_num];
-    for (int i = 0; i < box_particles[particle_num].size(); i++) {
-        p->neighbors.push_back(list[i]);
-    }
+	vector<int> list = box_particles[particle_num];
+	for (int i = 0; i < box_particles[particle_num].size(); i++) {
+		p->neighbors.push_back(list[i]);
+	}
 }
 
 
@@ -30,16 +30,17 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, float min_width, floa
 	float col_point, row_point, depth_point;
 
 	////if(col_point>curr_x || row_point>curr_y || col_point<0 || row_point<0){
-	////	//point is not inside the container.
+	////	point is not inside the container.
+	////	cout<<'h'<<endl;
 	////	return 0;
 	////}
 
-	//row = floor(row_point/support_rad);
-	//col = floor(col_point/support_rad);
+	////row = floor(row_point/support_rad);
+	////col = floor(col_point/support_rad);
 
 	//int num = col + row*box_per_row - 1;
 
-	//return num;//int(max(float(num),0.0f));
+	////return num;//int(max(float(num),0.0f));
 
 	for (int i = 0; i < box_per_row && curr_x < max_width; i++) {
         col_point = abs(pos.x - curr_x);
@@ -540,4 +541,3 @@ void Neighbor::place_particles(vector<Particle*> &particles, float support_rad, 
 //            }
         }
     }
-    
