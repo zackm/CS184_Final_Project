@@ -32,7 +32,7 @@ vector<vector<vector<bool> > > GRID_BOOL; //bools corresponding to that grid
 vector<vector<vector<Vec3> > > VERTEX_MATRIX;//list of vertices corresponding to the densities on the grid.
 
 const float TIMESTEP = .01;//time elapsed between iterations
-const int NUM_PARTICLES = 250;
+const int NUM_PARTICLES = 500;
 const Vec3 GRAVITY(0,-9.8f,0);
 const float IDEAL_DENSITY = 1000.0f; //for water kg/m^3
 const float TEMPERATURE = 293.0f; //kelvin for water at 20 degrees celcius
@@ -173,6 +173,7 @@ float density_at_particle(Particle* part){
 	float density = poly6_kernel(part->position,part->position);
 	Particle* temp_particle;
 	vector<int> neighbor_vec = part->neighbors;
+
 	for (int i = 0; i<neighbor_vec.size(); i++){ // changed to neighbors
 
 		temp_particle = PARTICLES[neighbor_vec[i]];
@@ -221,6 +222,7 @@ void run_time_step(){
 	float number_density = 0, density = 0, pressure = 0;
 
 	//Sets density at each point
+
 	for (int i = 0; i<NUM_PARTICLES; i++){
 		density = 0;
 		base_particle = PARTICLES[i];
@@ -638,10 +640,10 @@ void myDisplay(){
 		glClearColor(0,0,0,0);
 
 		// alternate particle colors depending on box in grid
-		/* if (temp_part->box % 2 == 0) {
-		glColor3f(1.0,0,0);
+		/*if (temp_part->box % 2 == 0) {
+            glColor3f(1.0,0,0);
 		} else {
-		glColor3f(0,1.0,1.0);
+            glColor3f(0,1.0,1.0);
 		}*/
 		glColor3f(0,0,1.0);
 		glVertex3f(temp_part->position.x,temp_part->position.y,temp_part->position.z);
