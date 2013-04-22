@@ -24,7 +24,7 @@ using namespace std;
 * GLOBAL VARIABLES *
 *******************/
 
-Container CONTAINER(Vec3(1,1,1),Vec3(0,0,0));//very simple cube for now. Later, make it a particle itself.
+Container CONTAINER(Vec3(2,2,2),Vec3(0,0,0));//very simple cube for now. Later, make it a particle itself.
 vector<Particle*> PARTICLES;//particles that we do SPH on.
 vector<Triangle*> TRIANGLES;//triangles made from marching cubes to render
 vector<vector<vector<float> > > GRID_DENSITY;//Grid for marching squares. Probably a better data structure we can use.
@@ -32,7 +32,7 @@ vector<vector<vector<bool> > > GRID_BOOL; //bools corresponding to that grid
 vector<vector<vector<Vec3> > > VERTEX_MATRIX;//list of vertices corresponding to the densities on the grid.
 
 const float TIMESTEP = .01;//time elapsed between iterations
-int NUM_PARTICLES = 200;
+int NUM_PARTICLES = 350;
 Vec3 GRAVITY(0,-9.8,0);
 const float MAX_DISPLACEMENT = 10.0f; //the maximum amount that a particle can be displaced, use when we get NaN.
 const float IDEAL_DENSITY = 1000.0f; //for water kg/m^3
@@ -40,8 +40,8 @@ const float MASS = .01f;//could set it to any number really.
 const float STIFFNESS = 0.0f;//10000.0f;//1000.0f;//BOLTZMANN*TEMPERATURE/MOLAR_MASS;// for water; //0 for liquids actually, assuming incompressible.
 const float VISCOSITY = 1.004f;// for water;
 const float ELECTRIC_CONST = 1e2;
-const float DRAG = 10.0f;
-const float SURFACE_TENSION = 100.0f;
+const float DRAG = 1200.0f;
+const float SURFACE_TENSION = 1e5;
 
 const float CUBE_TOL = .125f;//either grid size or tolerance for adaptive cubes, reciprocal must be an integer for now.
 const float DENSITY_TOL = 1.5f;//also used for marching grid, for density of the particles
@@ -249,7 +249,7 @@ void run_time_step(){
 			temp_particle = PARTICLES[neighbor_vec[j]];
 
 			float weight = laplacian_kernel(base_particle->position,temp_particle->position);
-			viscosity_laplacian += ((temp_particle->velocity - base_particle->velocity)/density_list[i])*weight * temp_particle->mass;
+			viscosity_laplacian += ((base_particle->velocity - temp_particle->velocity)/density_list[i])*weight * temp_particle->mass;
 		}
 		viscosity_list.push_back(viscosity_laplacian*VISCOSITY);
 	}
@@ -322,9 +322,9 @@ void run_time_step(){
 		Vec3 velocity = temp_particle->velocity;
 
 		//First add external forces
-		Vec3 acceleration = GRAVITY - (velocity*DRAG) + tension_list[i]*SURFACE_TENSION
-						    + (viscosity_list[i]/density_list[i])*VISCOSITY
-							+ repulsion_list[i]*ELECTRIC_CONST/temp_particle->mass;
+		Vec3 acceleration = GRAVITY - ((velocity*DRAG) + tension_list[i]*SURFACE_TENSION
+						    + (viscosity_list[i]*VISCOSITY)
+							+ repulsion_list[i]*ELECTRIC_CONST)/density_list[i];
 
 		Vec3 position = temp_particle->position;
 
@@ -347,290 +347,7 @@ void run_time_step(){
 	NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER);
 }
 
-/************************
-* Marching Cube Methods *
-************************/
-/*
-Returns a list of pointers to the different triangles that need to be made for the marching cube case 
-corresponding to the input int. Should call some global list of all possible triangles (up to transformation)
-to make a particular triangle.
-*/
-vector<Triangle*> make_triangles(int i, int j, int k){
-	//cube define by the corner (i,j), (i,j+1), (i+1,j), and (i+1,j+1).
 
-	int cube_case = GRID_BOOL[i][j][k]*8+GRID_BOOL[i][j+1][k]*4+GRID_BOOL[i+1][j][k]*2+GRID_BOOL[i+1][j+1][k];
-
-	Vec3 vertex_1 = VERTEX_MATRIX[i][j][k];
-	Vec3 vertex_2 = VERTEX_MATRIX[i][j+1][k];
-	Vec3 vertex_3 = VERTEX_MATRIX[i+1][j][k];
-	Vec3 vertex_4 = VERTEX_MATRIX[i+1][j+1][k];
-	float weight_1 = GRID_DENSITY[i][j][k];
-	float weight_2 = GRID_DENSITY[i][j+1][k];
-	float weight_3 = GRID_DENSITY[i+1][j][k];
-	float weight_4 = GRID_DENSITY[i+1][j+1][k];
-
-	vector<Triangle*> tri_list;
-	Triangle* tri1, *tri2, *tri3;
-	Vec3 midpoint_1, midpoint_2;
-
-	if(cube_case==0){
-		//no triangles, no corners activated
-	}else if(cube_case==1){
-		//only corner 11 is turned on.
-		tri1 = new Triangle(vertex_4,vertex_2,vertex_3,weight_4,weight_2,weight_3,DENSITY_TOL);
-		tri_list.push_back(tri1);
-	}else if(cube_case==2){
-		//only corner 10 is turned on
-		tri1 = new Triangle(vertex_3,vertex_4,vertex_1,weight_3,weight_4,weight_1,DENSITY_TOL);
-		tri_list.push_back(tri1);
-	}else if(cube_case==3){
-		//10 and 11
-		midpoint_1 = vertex_3+(vertex_1-vertex_3)*((DENSITY_TOL-weight_3)/(weight_1-weight_3));
-		tri1 = new Triangle(vertex_3,vertex_4,midpoint_1);
-
-		midpoint_2 = vertex_4+(vertex_2-vertex_4)*((DENSITY_TOL-weight_4)/(weight_2-weight_4));
-		tri2 = new Triangle(vertex_4,midpoint_1,midpoint_2);
-
-		tri_list.push_back(tri1);
-		tri_list.push_back(tri2);
-	}else if(cube_case==4){
-		//only corner 01 is turned on
-		tri1 = new Triangle(vertex_2,vertex_1,vertex_4,weight_2,weight_1,weight_4,DENSITY_TOL);
-		tri_list.push_back(tri1);
-	}else if(cube_case==5){
-		//01 and 11 turned on
-		midpoint_1 = vertex_2+(vertex_1-vertex_2)*((DENSITY_TOL-weight_2)/(weight_1-weight_2));
-		tri1 = new Triangle(vertex_4,vertex_2,midpoint_1);
-
-		midpoint_2 = vertex_4+(vertex_3-vertex_4)*((DENSITY_TOL-weight_4)/(weight_3-weight_4));
-		tri2 = new Triangle(vertex_4,midpoint_1,midpoint_2);
-
-		tri_list.push_back(tri1);
-		tri_list.push_back(tri2);
-	}else if(cube_case==6){
-		//only 10 and 01 turned on
-		midpoint_1 = vertex_2+(vertex_1-vertex_2)*((DENSITY_TOL-weight_2)/(weight_1-weight_2));
-		midpoint_2 = vertex_2+(vertex_4-vertex_2)*((DENSITY_TOL-weight_2)/(weight_4-weight_2));
-		tri1 = new Triangle(vertex_2,midpoint_1,midpoint_2);
-
-		midpoint_1 = vertex_3+(vertex_4-vertex_3)*((DENSITY_TOL-weight_3)/(weight_4-weight_3));
-		midpoint_2 = vertex_3+(vertex_1-vertex_3)*((DENSITY_TOL-weight_3)/(weight_1-weight_3));
-		tri2 = new Triangle(vertex_3,midpoint_1,midpoint_2);
-
-		tri_list.push_back(tri1);
-		tri_list.push_back(tri2);
-	}else if(cube_case==7){
-		//only 10, 01, and 11 turned on
-		midpoint_1 = vertex_2+(vertex_1-vertex_2)*((DENSITY_TOL-weight_2)/(weight_1-weight_2));
-		tri1 = new Triangle(vertex_4,vertex_2,midpoint_1);
-
-		midpoint_2 = vertex_3+(vertex_1-vertex_3)*((DENSITY_TOL-weight_3)/(weight_1-weight_3));
-		tri2 = new Triangle(vertex_4,midpoint_1,midpoint_2);
-
-		tri3 = new Triangle(vertex_4,midpoint_2,vertex_3);
-
-		tri_list.push_back(tri1);
-		tri_list.push_back(tri2);
-		tri_list.push_back(tri3);
-	}else if(cube_case==8){
-		//only corner 00 is turned on
-		tri1 = new Triangle(vertex_1,vertex_3,vertex_2,weight_1,weight_3,weight_2,DENSITY_TOL);
-		tri_list.push_back(tri1);
-	}else if(cube_case==9){
-		//only 00 and 11 turned on
-		midpoint_1 = vertex_1+(vertex_3-vertex_1)*((DENSITY_TOL-weight_1)/(weight_3-weight_1));
-		midpoint_2 = vertex_1+(vertex_2-vertex_1)*((DENSITY_TOL-weight_1)/(weight_2-weight_1));
-		tri1 = new Triangle(vertex_1,midpoint_1,midpoint_2);
-
-		midpoint_1 = vertex_4+(vertex_2-vertex_4)*((DENSITY_TOL-weight_4)/(weight_2-weight_4));
-		midpoint_2 = vertex_4+(vertex_3-vertex_4)*((DENSITY_TOL-weight_4)/(weight_3-weight_4));
-		tri2 = new Triangle(vertex_4,midpoint_1,midpoint_2);
-
-		tri_list.push_back(tri1);
-		tri_list.push_back(tri2);
-	}else if(cube_case==10){
-		//only 00 and 10 turned on
-		midpoint_1 = vertex_3+(vertex_4-vertex_3)*((DENSITY_TOL-weight_3)/(weight_4-weight_3));
-		tri1 = new Triangle(vertex_1,vertex_3,midpoint_1);
-
-		midpoint_2 = vertex_1+(vertex_2-vertex_1)*((DENSITY_TOL-weight_1)/(weight_2-weight_1));
-		tri2 = new Triangle(vertex_1,midpoint_1,midpoint_2);
-
-		tri_list.push_back(tri1);
-		tri_list.push_back(tri2);
-	}else if(cube_case==11){
-		//00, 10, 11
-		midpoint_1 = vertex_4+(vertex_2-vertex_4)*((DENSITY_TOL-weight_4)/(weight_2-weight_4));
-		tri1 = new Triangle(vertex_3,vertex_4,midpoint_1);
-
-		midpoint_2 = vertex_1+(vertex_2-vertex_1)*((DENSITY_TOL-weight_1)/(weight_2-weight_1));
-		tri2 = new Triangle(vertex_3,midpoint_1,midpoint_2);
-
-		tri3 = new Triangle(vertex_3,midpoint_2,vertex_1);
-
-		tri_list.push_back(tri1);
-		tri_list.push_back(tri2);
-		tri_list.push_back(tri3);
-	}else if(cube_case==12){
-		//00 and 01 turned on
-		midpoint_1 = vertex_2+(vertex_4-vertex_2)*((DENSITY_TOL-weight_2)/(weight_4-weight_2));
-		tri1 = new Triangle(vertex_1,vertex_2,midpoint_1);
-
-		midpoint_2 = vertex_1+(vertex_3-vertex_1)*((DENSITY_TOL-weight_1)/(weight_3-weight_1));
-		tri2 = new Triangle(vertex_1,midpoint_1,midpoint_2);
-
-		tri_list.push_back(tri1);
-		tri_list.push_back(tri2);
-	}else if(cube_case==13){
-		//00, 01, 11
-		midpoint_1 = vertex_4+(vertex_3-vertex_4)*((DENSITY_TOL-weight_4)/(weight_3-weight_4));
-		tri1 = new Triangle(vertex_2,midpoint_1,vertex_4);
-
-		midpoint_2 = vertex_1+(vertex_3-vertex_1)*((DENSITY_TOL-weight_1)/(weight_3-weight_1));
-		tri2 = new Triangle(vertex_2,midpoint_2,midpoint_1);
-
-		tri3 = new Triangle(vertex_2,vertex_1,midpoint_2);
-
-		tri_list.push_back(tri1);
-		tri_list.push_back(tri2);
-		tri_list.push_back(tri3);
-	}else if(cube_case==14){
-		//00, 01, 10
-		midpoint_1 = vertex_2+(vertex_4-vertex_2)*((DENSITY_TOL-weight_2)/(weight_4-weight_2));
-		tri1 = new Triangle(vertex_1,midpoint_1,vertex_2);
-
-		midpoint_2 = vertex_3+(vertex_4-vertex_3)*((DENSITY_TOL-weight_3)/(weight_4-weight_3));
-		tri2 = new Triangle(vertex_1,midpoint_2,midpoint_1);
-
-		tri3 = new Triangle(vertex_1,vertex_3,midpoint_2);
-
-		tri_list.push_back(tri1);
-		tri_list.push_back(tri2);
-		tri_list.push_back(tri3);
-	}else if(cube_case==15){
-		tri1 = new Triangle(vertex_1,vertex_3,vertex_2);
-		tri2 = new Triangle(vertex_2,vertex_3,vertex_4);
-		tri_list.push_back(tri1);
-		tri_list.push_back(tri2);
-	}
-	return tri_list;
-}
-
-/*
-Run marching cubes algorithm to generate triangles to render. Uses the particles in PARTICLES to
-calculate densities at corners of cubes (or squares in 2D). There are 16 cases for squares in
-the marching cubes algorithm, 256 for cubes (really 15 up to rotations and reflections).
-*/
-void marching_cubes(){
-	/*we need to break up screen into squares. We should store the squares in an efficient data
-	structure so we reuse values previously calculated through iterations.
-	*/
-
-	/*look here for cases http://users.polytech.unice.fr/~lingrand/MarchingCubes/algo.html
-	For now just making the 16 triangle types as is and enqueuing in list. Would be better to
-	make them dynamically.
-
-	Also, only doing uniform marching squares, not doing adaptive squares.
-	*/
-
-	VERTEX_MATRIX.clear();
-	GRID_DENSITY.clear();
-	GRID_BOOL.clear();
-	TRIANGLES.clear();
-
-	float error = .0001;
-	float step = CUBE_TOL;
-
-	//generate verticies and densities at those verticies
-	for (float x = CONTAINER.min.x; x<CONTAINER.max.x+error; x = x+step){
-		vector<vector<float> > yz_list;
-		vector<vector<Vec3> >vec_yz_list;
-		vector<vector<bool> > bool_yz_list;
-
-		for (float y = CONTAINER.min.y; y<CONTAINER.max.y+error; y = y+step){
-			vector<float> z_list;
-			vector<Vec3> vec_z_list;
-			vector<bool> bool_z_list;
-
-			for (float z = CONTAINER.min.z; z<CONTAINER.max.z+error; z = z+step){
-				Vec3 vertex(x,y,z);
-				float density = density_at_point(vertex);
-
-				z_list.push_back(density);
-				vec_z_list.push_back(vertex);
-				bool_z_list.push_back(density>DENSITY_TOL);
-			}
-			yz_list.push_back(z_list);
-			vec_yz_list.push_back(vec_z_list);
-			bool_yz_list.push_back(bool_z_list);
-		}
-
-		GRID_DENSITY.push_back(yz_list);
-		GRID_BOOL.push_back(bool_yz_list);
-		VERTEX_MATRIX.push_back(vec_yz_list);
-	}
-
-	//check marching cubes cases to add new triangles to list. It would be good to use bit operations for speed.
-	int m,n,p;//= GRID_DENSITY.size();//this implies uniform. Will need to change this.
-	m = n = p = GRID_BOOL.size();
-
-	int i,j,k; //i indicates the row, j indicates the column. 
-	i = j = k = 0;
-
-	bool squares_left = true;
-	vector<Triangle*> tri_list;
-	Vec3 vertex_1,vertex_2,vertex_3;
-	for (int i = 0; i<m-1;i++){
-		for (int j = 0; j<n-1;j++){
-			for (int k = 0; k<p-1;k++){
-				tri_list.clear();
-				tri_list = make_triangles(i,j,k);
-				TRIANGLES.insert(TRIANGLES.end(),tri_list.begin(),tri_list.end());
-
-				tri_list.clear();
-				tri_list = make_triangles(i,j,k+1);
-				TRIANGLES.insert(TRIANGLES.end(),tri_list.begin(),tri_list.end());
-			}	
-		}
-	}
-	//while (squares_left){ //need to change this later
-	//	tri_list.clear();
-	//	tri_list = make_triangles(i,j,k);
-	//	TRIANGLES.insert(TRIANGLES.end(),tri_list.begin(),tri_list.end());
-
-	//	tri_list.clear();
-	//	tri_list = make_triangles(i,j,k+1);
-	//	TRIANGLES.insert(TRIANGLES.end(),tri_list.begin(),tri_list.end());
-
-	//	//increment i and j and k or prepare to break loop
-	//	if(k==p-2){
-	//		if (j==n-2){
-	//			if (i==m-2){
-	//				squares_left = false;
-	//			}else{
-	//				j = 0;
-	//				i++;
-	//			}
-	//		}else{
-	//			j++;
-	//		}
-	//	}else{
-	//		k++;
-	//	}
-
-	//	if (j==n-2){
-	//		if (i==m-2){
-
-	//			squares_left = false;
-	//		}else{
-	//			j = 0;
-	//			i++;
-	//		}
-	//	}else{
-	//		j++;
-	//	}
-	//}
-}
 
 /*****************
 * OpenGL Methods *
@@ -641,36 +358,36 @@ void initScene(){
 	float noise = .5f;
 	float x,y,z,v_x,v_y,v_z;
 
-	float step = .05f;
-	for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
-		for(float j = CONTAINER.min.y; j<(CONTAINER.max.y/2.0f); j=j+step){
-			noise = float(rand())/(float(RAND_MAX))*.05f;
-			Vec3 pos(i+noise,j+noise,0);
-			Vec3 vel(0,0,0);
-			new_part = new Particle(pos,vel,MASS);
-			PARTICLES.push_back(new_part);
-		}
-	}
-	NUM_PARTICLES = PARTICLES.size();
-
-	////random particles
-	//for (int i = 0; i<NUM_PARTICLES; i++){
-	//	x = .2f+float(rand())/(float(RAND_MAX))*.1f;
-	//	y = float(rand())/(float(RAND_MAX))/5.0 + .4f;
-	//	z = 0.0f;//.2f + float(rand())/(float(RAND_MAX))*.1f;
-
-	//	v_x = -.5f+float(rand())/(float(RAND_MAX))*2.0f*noise;
-	//	v_y = -0.2+float(rand())/(float(RAND_MAX))*noise;
-	//	v_z = 0.0f;//-0.2+float(rand())/(float(RAND_MAX))*noise;
-
-
-	//	Vec3 pos(x,y,z);
-	//	Vec3 vel(v_x,v_y,v_z);
-	//	float mass = 4.0f+(float(rand())/(float(RAND_MAX)))*5.0f;
-	//	//also need to instantiate the other fields
-	//	new_part = new Particle(pos,vel,MASS);
-	//	PARTICLES.push_back(new_part);
+	//float step = .033f;
+	//for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
+	//	for(float j = CONTAINER.min.y; j<(CONTAINER.max.y/2.0f); j=j+step){
+	//		noise = float(rand())/(float(RAND_MAX))*.05f;
+	//		Vec3 pos(i+noise,j+noise,0);
+	//		Vec3 vel(0,0,0);
+	//		new_part = new Particle(pos,vel,MASS);
+	//		PARTICLES.push_back(new_part);
+	//	}
 	//}
+	//NUM_PARTICLES = PARTICLES.size();
+
+	//random particles
+	for (int i = 0; i<NUM_PARTICLES; i++){
+		x = .2f+float(rand())/(float(RAND_MAX))*.1f;
+		y = float(rand())/(float(RAND_MAX))/5.0 + .4f;
+		z = 0.0f;//.2f + float(rand())/(float(RAND_MAX))*.1f;
+
+		v_x = -.5f+float(rand())/(float(RAND_MAX))*2.0f*noise;
+		v_y = -0.2+float(rand())/(float(RAND_MAX))*noise;
+		v_z = 0.0f;//-0.2+float(rand())/(float(RAND_MAX))*noise;
+
+
+		Vec3 pos(x,y,z);
+		Vec3 vel(v_x,v_y,v_z);
+		float mass = 4.0f+(float(rand())/(float(RAND_MAX)))*5.0f;
+		//also need to instantiate the other fields
+		new_part = new Particle(pos,vel,MASS);
+		PARTICLES.push_back(new_part);
+	}
 	NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER);
 
 	glEnable(GL_DEPTH_TEST);
@@ -796,105 +513,5 @@ int main(int argc, char* argv[]){
 
 	glutMainLoop();
 
-	return 1;
+	return 0;
 }
-
-
-
-////Gaussian is an extra kernel type we could use.
-//float gaussian(Vec3 r_i, Vec3 r_j){
-//	//should add another parameter (max distance value)
-//	Vec3 diff_vec = r_i-r_j;
-//	float r = sqrt(dot(diff_vec,diff_vec));
-//	float h = MAX_KERNEL_RADIUS;
-//	float q = r/h;
-//
-//	if (q>1){
-//		return 0;
-//	}
-//
-//	return exp(-4.0f*q)/sqrt(2*PI);
-//}
-//
-//Vec3 gaussian_grad(Vec3 r_i, Vec3 r_j){
-//	Vec3 diff_vec = r_i-r_j;
-//	float r = sqrt(dot(diff_vec,diff_vec));
-//	float h = MAX_KERNEL_RADIUS;
-//	float q = r/h;
-//
-//	Vec3 v(0,0,0);
-//	if (q>1){
-//		return v;
-//	}
-//
-//	float coeff = -4.0f*exp(-4.0f*q)/(h*h);
-//
-//	Vec3 grad(-diff_vec.x,-diff_vec.y,-diff_vec.z);
-//
-//	return grad*coeff/sqrt(2*PI);
-//}
-//
-//float gaussian_laplacian(Vec3 r_i, Vec3 r_j){
-//	Vec3 diff_vec = r_i-r_j;
-//	float r = sqrt(dot(diff_vec,diff_vec));
-//	float h = MAX_KERNEL_RADIUS;
-//	float q = r/h;
-//
-//	if (q>1){
-//		return 0;
-//	}else if(r==0){
-//		return 8/(h*h);
-//	}
-//
-//	float coeff = 8.0f*exp(-4.0f*q);
-//
-//	//I got this formula from wolfram alpha, so may want to double check it later.
-//	return coeff * (2-(1/q))/(h*h*sqrt(2*PI));
-//}
-//
-////Kernel from Roy website
-//float roy_kernel(Vec3 r_i, Vec3 r_j){
-//	Vec3 diff_vec = r_i-r_j;
-//	float length = sqrt(dot(diff_vec,diff_vec)), h = MAX_KERNEL_RADIUS;
-//	float q = length/h;
-//
-//	if (q<=1 && q>=0){
-//		return (1/PI)*(1/(h*h*h))*(1 + 1.5f*q*q + .75f*q*q*q);
-//	}else if(q<=2 && q>=1 ){
-//		return (1/PI)*(1/(h*h*h))*.25f*pow((2-q),3.0f);
-//	}else{
-//		return 0;
-//	}
-//}
-//
-//Vec3 roy_gradient(Vec3 r_i, Vec3 r_j){
-//	Vec3 diff_vec = r_i-r_j;
-//	float length = sqrt(dot(diff_vec,diff_vec)), h = MAX_KERNEL_RADIUS;
-//	float q = length/h;
-//
-//	if (q<=1 && q>=0){
-//		Vec3 new_vec(diff_vec.x,diff_vec.y,diff_vec.z);
-//		new_vec = new_vec * (1/(length*h));
-//		return new_vec * (1/PI)*(1/(h*h*h))*q*(3+(2.25f*q));
-//	}else if(q<=2 && q>=1 ){
-//		Vec3 new_vec(diff_vec.x,diff_vec.y,diff_vec.z);
-//		new_vec = new_vec * (1/(length*h));
-//		return new_vec * q*q * ((1/PI)*(1/(h*h*h))*.25f);
-//	}else{
-//		return Vec3(0,0,0);
-//	}
-//}
-//
-//float roy_laplacian(Vec3 r_i, Vec3 r_j){
-//	Vec3 diff_vec = r_i-r_j;
-//	float length = sqrt(dot(diff_vec,diff_vec)), h = MAX_KERNEL_RADIUS;
-//	float q = length/h;
-//
-//	if (q<=1 && q>=0){
-//		return (1/PI)*(1/(h*h*h))*9.0f*(h*length + length*length)/(h*h*h*length);
-//	}else if(q<=2 && q>=1 ){
-//		return 1.0f*(1/PI)*(1/(h*h*h))*.25f*(12.0f * length/(h*h*h));
-//	}else{
-//		return 0;
-//	}
-//}
