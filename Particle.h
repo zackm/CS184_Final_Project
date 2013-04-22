@@ -6,8 +6,8 @@
 #pragma once
 class Particle{
 public:
-	Vec3 position, velocity, acceleration; //in units meters and meters/sec
-	float mass, density, pressure, thermal_energy; //in units kg
+	Vec3 position, velocity; //in units meters and meters/sec
+	float mass; //in units kg
     int box; // index of containing box (for neighbor function)
     std::vector<int> neighbors; // vector of neighboring particle numbers (for neighbor function)
 

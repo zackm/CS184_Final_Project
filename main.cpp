@@ -27,9 +27,9 @@ using namespace std;
 Container CONTAINER(Vec3(1,1,1),Vec3(0,0,0));//very simple cube for now. Later, make it a particle itself.
 vector<Particle*> PARTICLES;//particles that we do SPH on.
 vector<Triangle*> TRIANGLES;//triangles made from marching cubes to render
-vector<vector<float> > GRID_DENSITY;//Grid for marching squares. Probably a better data structure we can use.
-vector<vector<bool> > GRID_BOOL; //bools corresponding to that grid
-vector<vector<Vec3> > VERTEX_MATRIX;//list of vertices corresponding to the densities on the grid.
+vector<vector<vector<float> > > GRID_DENSITY;//Grid for marching squares. Probably a better data structure we can use.
+vector<vector<vector<bool> > > GRID_BOOL; //bools corresponding to that grid
+vector<vector<vector<Vec3> > > VERTEX_MATRIX;//list of vertices corresponding to the densities on the grid.
 
 const float TIMESTEP = .01;//time elapsed between iterations
 const int NUM_PARTICLES = 250;
@@ -38,15 +38,15 @@ const float IDEAL_DENSITY = 1000.0f; //for water kg/m^3
 const float TEMPERATURE = 293.0f; //kelvin for water at 20 degrees celcius
 const float MOLAR_MASS = .0180153f;//for water
 const float BOLTZMANN = 8.31446f;//gas constant
-const float MASS = 10.0f;//could set it to any number really.
-const float STIFFNESS = .01f;//BOLTZMANN*TEMPERATURE/MOLAR_MASS;// for water;
+const float MASS = .000001f;//could set it to any number really.
+const float STIFFNESS = BOLTZMANN*TEMPERATURE/MOLAR_MASS;// for water;
 const float VISCOSITY = 1.004f;// for water;
 const float COLLISION_RADIUS = .001f;//collision between particles.
 const float GAMMA = 1.0f; //gas constant.
 
-const float MAX_KERNEL_RADIUS = .05f;
-const float CUBE_TOL = .025f;//either grid size or tolerance for adaptive cubes, reciprocal must be an integer for now.
-const float DENSITY_TOL = .5f;//also used for marching grid, for density of the particles
+const float MAX_KERNEL_RADIUS = .4f;
+const float CUBE_TOL = .25f;//either grid size or tolerance for adaptive cubes, reciprocal must be an integer for now.
+const float DENSITY_TOL = 1.5f;//also used for marching grid, for density of the particles
 
 Neighbor NEIGHBOR; //neighbor object used for calculations
 const float SUPPORT_RADIUS = .025f;//radius of support used by neighbor function to divide space into grid
@@ -187,14 +187,14 @@ float density_at_particle(Particle* part){
 
 float density_at_point(Vec3 point){
 	//first should generate a list of the particles we need to check, using the box for this point.
-	int box_number = NEIGHBOR.compute_box_num(point,SUPPORT_RADIUS,CONTAINER.min.x,CONTAINER.max.x);
+	//int box_number = NEIGHBOR.compute_box_num(point,SUPPORT_RADIUS,CONTAINER.min.x,CONTAINER.max.x);
 
 	Particle* temp_particle;
-	vector<int> neighbor_vec = NEIGHBOR.box_particles[box_number];
+	//vector<int> neighbor_vec = NEIGHBOR.box_particles[box_number];
 	float density = 0;
-	for (int i = 0; i<neighbor_vec.size(); i++){
+	for (int i = 0; i<PARTICLES.size(); i++){
 		//update density. There will be a problem if the point is exactly equal to sum particle (divide by zero error).
-		temp_particle = PARTICLES[neighbor_vec[i]];
+		temp_particle = PARTICLES[i];
 		//if (i == neighbor_vec[i]) {
 		//	continue;
 		//}
@@ -303,16 +303,19 @@ Returns a list of pointers to the different triangles that need to be made for t
 corresponding to the input int. Should call some global list of all possible triangles (up to transformation)
 to make a particular triangle.
 */
-vector<Triangle*> make_triangles(int cube_case, int i, int j){
+vector<Triangle*> make_triangles(int i, int j, int k){
 	//cube define by the corner (i,j), (i,j+1), (i+1,j), and (i+1,j+1).
-	Vec3 vertex_1 = VERTEX_MATRIX[i][j];
-	Vec3 vertex_2 = VERTEX_MATRIX[i][j+1];
-	Vec3 vertex_3 = VERTEX_MATRIX[i+1][j];
-	Vec3 vertex_4 = VERTEX_MATRIX[i+1][j+1];
-	float weight_1 = GRID_DENSITY[i][j];
-	float weight_2 = GRID_DENSITY[i][j+1];
-	float weight_3 = GRID_DENSITY[i+1][j];
-	float weight_4 = GRID_DENSITY[i+1][j+1];
+
+	int cube_case = GRID_BOOL[i][j][k]*8+GRID_BOOL[i][j+1][k]*4+GRID_BOOL[i+1][j][k]*2+GRID_BOOL[i+1][j+1][k];
+
+	Vec3 vertex_1 = VERTEX_MATRIX[i][j][k];
+	Vec3 vertex_2 = VERTEX_MATRIX[i][j+1][k];
+	Vec3 vertex_3 = VERTEX_MATRIX[i+1][j][k];
+	Vec3 vertex_4 = VERTEX_MATRIX[i+1][j+1][k];
+	float weight_1 = GRID_DENSITY[i][j][k];
+	float weight_2 = GRID_DENSITY[i][j+1][k];
+	float weight_3 = GRID_DENSITY[i+1][j][k];
+	float weight_4 = GRID_DENSITY[i+1][j+1][k];
 
 	vector<Triangle*> tri_list;
 	Triangle* tri1, *tri2, *tri3;
@@ -488,55 +491,93 @@ void marching_cubes(){
 
 	//generate verticies and densities at those verticies
 	for (float x = CONTAINER.min.x; x<CONTAINER.max.x+error; x = x+step){
-		vector<float> y_list;
-		vector<Vec3> vec_list;
-		vector<bool> bool_list;
+		vector<vector<float> > yz_list;
+		vector<vector<Vec3> >vec_yz_list;
+		vector<vector<bool> > bool_yz_list;
 
 		for (float y = CONTAINER.min.y; y<CONTAINER.max.y+error; y = y+step){
-			Vec3 vertex(x,y,0);
+			vector<float> z_list;
+			vector<Vec3> vec_z_list;
+			vector<bool> bool_z_list;
 
-			float density = density_at_point(vertex);
+			for (float z = CONTAINER.min.z; z<CONTAINER.max.z+error; z = z+step){
+				Vec3 vertex(x,y,z);
+				float density = density_at_point(vertex);
 
-			y_list.push_back(density);
-			vec_list.push_back(vertex);
-			bool_list.push_back(density>DENSITY_TOL);
+				z_list.push_back(density);
+				vec_z_list.push_back(vertex);
+				bool_z_list.push_back(density>DENSITY_TOL);
+			}
+			yz_list.push_back(z_list);
+			vec_yz_list.push_back(vec_z_list);
+			bool_yz_list.push_back(bool_z_list);
 		}
 
-		GRID_DENSITY.push_back(y_list);
-		GRID_BOOL.push_back(bool_list);
-		VERTEX_MATRIX.push_back(vec_list);
+		GRID_DENSITY.push_back(yz_list);
+		GRID_BOOL.push_back(bool_yz_list);
+		VERTEX_MATRIX.push_back(vec_yz_list);
 	}
 
 	//check marching cubes cases to add new triangles to list. It would be good to use bit operations for speed.
-	const int n = GRID_DENSITY.size();//this implies uniform. Will need to change this.
-	const int m = n;
+	int m,n,p;//= GRID_DENSITY.size();//this implies uniform. Will need to change this.
+	m = n = p = GRID_BOOL.size();
 
-	int i,j; //i indicates the row, j indicates the column. 
-	i = j = 0;
+	int i,j,k; //i indicates the row, j indicates the column. 
+	i = j = k = 0;
 
 	bool squares_left = true;
 	vector<Triangle*> tri_list;
 	Vec3 vertex_1,vertex_2,vertex_3;
-	while (squares_left){ //need to change this later
-		tri_list.clear();
+	for (int i = 0; i<m-1;i++){
+		for (int j = 0; j<n-1;j++){
+			for (int k = 0; k<p-1;k++){
+				tri_list.clear();
+				tri_list = make_triangles(i,j,k);
+				TRIANGLES.insert(TRIANGLES.end(),tri_list.begin(),tri_list.end());
 
-		int cube_case = GRID_BOOL[i][j]*8+GRID_BOOL[i][j+1]*4+GRID_BOOL[i+1][j]*2+GRID_BOOL[i+1][j+1];
-		tri_list = make_triangles(cube_case,i,j);
-
-		TRIANGLES.insert(TRIANGLES.end(),tri_list.begin(),tri_list.end());
-
-		//increment i and j or prepare to break loop
-		if (j==n-2){
-			if (i==m-2){
-				squares_left = false;
-			}else{
-				j = 0;
-				i++;
-			}
-		}else{
-			j++;
+				tri_list.clear();
+				tri_list = make_triangles(i,j,k+1);
+				TRIANGLES.insert(TRIANGLES.end(),tri_list.begin(),tri_list.end());
+			}	
 		}
 	}
+	//while (squares_left){ //need to change this later
+	//	tri_list.clear();
+	//	tri_list = make_triangles(i,j,k);
+	//	TRIANGLES.insert(TRIANGLES.end(),tri_list.begin(),tri_list.end());
+
+	//	tri_list.clear();
+	//	tri_list = make_triangles(i,j,k+1);
+	//	TRIANGLES.insert(TRIANGLES.end(),tri_list.begin(),tri_list.end());
+
+	//	//increment i and j and k or prepare to break loop
+	//	if(k==p-2){
+	//		if (j==n-2){
+	//			if (i==m-2){
+	//				squares_left = false;
+	//			}else{
+	//				j = 0;
+	//				i++;
+	//			}
+	//		}else{
+	//			j++;
+	//		}
+	//	}else{
+	//		k++;
+	//	}
+
+	//	if (j==n-2){
+	//		if (i==m-2){
+
+	//			squares_left = false;
+	//		}else{
+	//			j = 0;
+	//			i++;
+	//		}
+	//	}else{
+	//		j++;
+	//	}
+	//}
 }
 
 /*****************
@@ -545,19 +586,22 @@ void marching_cubes(){
 void initScene(){
 	//create a list of random particles
 	Particle* new_part;
-	float x,y,z;
+	float x,y,z,v_x,v_y,v_z;
 	for (int i = 0; i<NUM_PARTICLES; i++){
 		x = float(rand())/(float(RAND_MAX));
 		y = float(rand())/(float(RAND_MAX));
 		z = float(rand())/(float(RAND_MAX));
 
+		v_x = 2.0f*float(rand())/(float(RAND_MAX))-1;
+		v_y = 2.0f*float(rand())/(float(RAND_MAX))-1;
+		v_z = 2.0f*float(rand())/(float(RAND_MAX))-1;
+
+
 		Vec3 pos(x,y,z);
-		Vec3 vel(.5f,1.0f,0);
+		Vec3 vel(v_x,v_y,v_z);
 		float mass = (float(rand())/(float(RAND_MAX)))*5.0f;
 		//also need to instantiate the other fields
-		new_part = new Particle(pos,vel,mass);
-		new_part->density = 1.0f;
-		new_part->pressure = (float(rand())/(float(RAND_MAX)));
+		new_part = new Particle(pos,vel,MASS);
 		PARTICLES.push_back(new_part);
 	}
 	NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER);
@@ -600,7 +644,7 @@ void myDisplay(){
 		glColor3f(0,1.0,1.0);
 		}*/
 		glColor3f(0,0,1.0);
-		glVertex3f(temp_part->position.x,temp_part->position.y,temp_part->position.z-.1);
+		glVertex3f(temp_part->position.x,temp_part->position.y,temp_part->position.z);
 	}
 	glEnd();
 
