@@ -8,183 +8,201 @@
 using namespace std;
 
 void Neighbor::add_to_box_particles(int box_num,int particle_num) {
-    box_particles[box_num].push_back(particle_num);
+	box_particles[box_num].push_back(particle_num);
 }
 
 void Neighbor::set_particle_neighbors(int particle_num, Particle *p) {
-    vector<int> list = box_particles[particle_num];
-    for (int i = 0; i < box_particles[particle_num].size(); i++) {
-        p->neighbors.push_back(list[i]);
-    }
+	vector<int> list = box_particles[particle_num];
+	for (int i = 0; i < box_particles[particle_num].size(); i++) {
+		p->neighbors.push_back(list[i]);
+	}
 }
 
 
-int Neighbor::compute_box_num(Vec3 pos, float support_rad, int min_width, int max_width) {
-    int row = -1,col =-1;
-    int width = max_width - min_width;
-    int blocks_per_row = width / support_rad;
+int Neighbor::compute_box_num(Vec3 pos, float support_rad, float min_width, float max_width) {
+	int row = -1,col =-1;
+	int width = max_width - min_width;
+	int blocks_per_row = width / support_rad;
 
-    float curr_x = min_width, curr_y = min_width;
+	float curr_x = min_width, curr_y = min_width;
 
 	float col_point = abs(pos.x - curr_x);
 	float row_point = abs(pos.y - curr_y);
 
 	////if(col_point>curr_x || row_point>curr_y || col_point<0 || row_point<0){
-	////	//point is not inside the container.
+	////	point is not inside the container.
+	////	cout<<'h'<<endl;
 	////	return 0;
 	////}
 
-	//row = floor(row_point/support_rad);
-	//col = floor(col_point/support_rad);
+	////row = floor(row_point/support_rad);
+	////col = floor(col_point/support_rad);
 
-	//int num = col + row*blocks_per_row - 1;
+	////int num = col + row*blocks_per_row;
 
-	//return num;//int(max(float(num),0.0f));
+	////return num;//int(max(float(num),0.0f));
 
 	for (int i = 0; i < blocks_per_row && curr_x < float(max_width); i++) {
 		float col_point = abs(curr_x - pos.x);
-        float row_point = abs(curr_y - pos.y);
+		float row_point = abs(curr_y - pos.y);
 
 		if (col_point <= support_rad) {
 			col = i;
 		}
-        if (row_point <= support_rad) {
+		if (row_point <= support_rad) {
 			row = i;
 		}
 
-        if (row != -1 && col != -1) { 
+		if (row != -1 && col != -1) { 
 			break;
 		}
-        curr_x += support_rad;
-        curr_y += support_rad;
+		curr_x += support_rad;
+		curr_y += support_rad;
 	}
-    
-    int num = col + row * blocks_per_row;
-    //cout<<"Num = "<<num<<" = "<<col<<" + "<<row<<" * "<<blocks_per_row<<endl;
-   // cout<<endl;
-    if (num > blocks_per_row * blocks_per_row || num < 0) {
-       //cout<<"Error, incorrect box # assigned in Neighbor: "<<num<<endl;
-        num = 0; // temporarily fix bug where y position is ~38
-       // exit(0);
-    }
-     //compute box num given row & col
-    return num;
+
+	int num = col + row * blocks_per_row;
+	//cout<<"Num = "<<num<<" = "<<col<<" + "<<row<<" * "<<blocks_per_row<<endl;
+	// cout<<endl;
+	if (num > blocks_per_row * blocks_per_row || num < 0) {
+		//cout<<"Error, incorrect box # assigned in Neighbor: "<<num<<endl;
+		num = 0; // temporarily fix bug where y position is ~38
+		// exit(0);
+	}
+	//compute box num given row & col
+	return num;
 }
 
 void Neighbor::place_particles(vector<Particle*> &particles, float support_rad, Container c) {
-    // assuming square container
-    int width = c.max.x - c.min.x;
-    int min = c.min.x;
-    int max = c.max.x;
-    box_particles.clear();
-    
-    for (int i = 0; i < (width/support_rad)*(width/support_rad); i++) {
-        box_particles.push_back(vector<int>());
-    }
-    
-    int box_per_row = width/support_rad;
-    int box_num;
-    for (int i = 0; i < particles.size(); i++) {
-        // determine box #
-        box_num = compute_box_num(particles[i]->position, support_rad, min, max);
-        // set box # in particle
-        particles[i]->box = box_num;
-        // add particle number to corresponding box
-        box_particles[box_num].push_back(i);
-    }
-    
-    // get all particles from neighboring boxes and add to particle's neighbor vector
-    for (int i = 0; i < particles.size(); i++) {
-        particles[i]->neighbors.clear(); // clear out old neighbor vector
-        int particle_num;
-        vector<int> neighbor_boxes; // contains the numbers of all the neighboring boxes
-        box_num = particles[i]->box;
-        
-        // each particle is a neighbor to particles in the same box
-        neighbor_boxes.push_back(box_num);
-        
-        if (box_num < box_per_row && box_num != 0 && box_num != box_per_row - 1) {
-            // bottom row, not on left or right edge
-            neighbor_boxes.push_back(box_num-1);
-            neighbor_boxes.push_back(box_num+1);
-            neighbor_boxes.push_back(box_num+box_per_row);
-            neighbor_boxes.push_back(box_num+box_per_row-1);
-            neighbor_boxes.push_back(box_num+box_per_row+1);
-        } else if (box_num > box_per_row * (box_per_row - 1) - 1 && box_num % box_per_row != 0 && box_num % box_per_row != box_per_row - 1) {
-            // top row, not on left or right edge
-            neighbor_boxes.push_back(box_num-1);
-            neighbor_boxes.push_back(box_num+1);
-            neighbor_boxes.push_back(box_num-box_per_row);
-            neighbor_boxes.push_back(box_num-box_per_row-1);
-            neighbor_boxes.push_back(box_num-box_per_row+1);
-        } else if (box_num % box_per_row == 0) {
-            if (box_num < box_per_row) {
-                // bottom left corner
-                neighbor_boxes.push_back(box_num+1);
-                neighbor_boxes.push_back(box_num+box_per_row);
-                neighbor_boxes.push_back(box_num+box_per_row-1);
-                neighbor_boxes.push_back(box_num+box_per_row+1);
-            } else if (box_num > box_per_row * (box_per_row - 1) - 1) {
-                // top left corner
-                neighbor_boxes.push_back(box_num-1);
-                neighbor_boxes.push_back(box_num-box_per_row);
-                neighbor_boxes.push_back(box_num-box_per_row-1);
-                neighbor_boxes.push_back(box_num-box_per_row+1);
-            } else {
-                // on left side
-                neighbor_boxes.push_back(box_num+1);
-                neighbor_boxes.push_back(box_num-box_per_row);
-                neighbor_boxes.push_back(box_num+box_per_row);
-                neighbor_boxes.push_back(box_num-box_per_row+1);
-                neighbor_boxes.push_back(box_num+box_per_row+1);
-            }
-            
-        } else if (box_num % box_per_row == box_per_row - 1) {
-            if (box_num < box_per_row) {
-                // bottom right corner
-                neighbor_boxes.push_back(box_num-1);
-                neighbor_boxes.push_back(box_num+box_per_row);
-                neighbor_boxes.push_back(box_num+box_per_row-1);
-            } else if (box_num > box_per_row * (box_per_row - 1) - 1) {
-                // top right corner
-                neighbor_boxes.push_back(box_num-1);
-                neighbor_boxes.push_back(box_num-box_per_row);
-                neighbor_boxes.push_back(box_num-box_per_row-1);
-            } else {
-                // on right side
-                neighbor_boxes.push_back(box_num-1);
-                neighbor_boxes.push_back(box_num-box_per_row);
-                neighbor_boxes.push_back(box_num+box_per_row);
-                neighbor_boxes.push_back(box_num-box_per_row-1);
-                neighbor_boxes.push_back(box_num+box_per_row-1);
-            }
-            
-        } else {
-            // all other locations, not on edges
-            neighbor_boxes.push_back(box_num-1);
-            neighbor_boxes.push_back(box_num+1);
-            neighbor_boxes.push_back(box_num-box_per_row);
-            neighbor_boxes.push_back(box_num+box_per_row);
-            neighbor_boxes.push_back(box_num-box_per_row-1);
-            neighbor_boxes.push_back(box_num-box_per_row+1);
-            neighbor_boxes.push_back(box_num+box_per_row-1);
-            neighbor_boxes.push_back(box_num+box_per_row+1);
-        }
-        
-        // need to find out which boxes neighbor the current box
-        for (int j = 0; j < neighbor_boxes.size(); j++) {
-            int num = neighbor_boxes[j];
-            vector<int> neighbor_vec = box_particles[neighbor_boxes[j]]; // particles in a neighboring box
-            for (int k = 0; k < neighbor_vec.size(); k++) {
-                particle_num = neighbor_vec[k]; // number of a neighboring particle
-                Vec3 a = particles[i]->position;
-                Vec3 b = particles[k]->position;
-                float dist = sqrt(pow((a.x - b.x),2) - pow((a.y - b.y),2));
-                if (particle_num != i && dist <= support_rad) {
-                    particles[i]->neighbors.push_back(particle_num);
-                }
-            }
-        }
-    }
-    
+	// assuming square container
+	int width = c.max.x - c.min.x;
+	int min = c.min.x;
+	int max = c.max.x;
+	box_particles.clear();
+
+	for (int i = 0; i < (width/support_rad)*(width/support_rad); i++) {
+		box_particles.push_back(vector<int>());
+	}
+
+	int box_per_row = width/support_rad;
+	int box_num;
+	for (int i = 0; i < particles.size(); i++) {
+		// determine box #
+		box_num = compute_box_num(particles[i]->position, support_rad, min, max);
+		// set box # in particle
+		particles[i]->box = box_num;
+		// add particle number to corresponding box
+		box_particles[box_num].push_back(i);
+	}
+
+	// get all particles from neighboring boxes and add to particle's neighbor vector
+	for (int i = 0; i < particles.size(); i++) {
+		particles[i]->neighbors.clear(); // clear out old neighbor vector
+		int particle_num;
+		vector<int> neighbor_boxes; // contains the numbers of all the neighboring boxes
+		box_num = particles[i]->box;
+
+		// each particle is a neighbor to particles in the same box
+		neighbor_boxes.push_back(box_num);
+
+		if (box_num < box_per_row && box_num != 0 && box_num != box_per_row - 1) {
+			// bottom row, not on left or right edge
+			neighbor_boxes.push_back(box_num-1);
+			neighbor_boxes.push_back(box_num+1);
+			neighbor_boxes.push_back(box_num+box_per_row);
+			neighbor_boxes.push_back(box_num+box_per_row-1);
+			neighbor_boxes.push_back(box_num+box_per_row+1);
+		} else if (box_num > box_per_row * (box_per_row - 1) - 1 && box_num % box_per_row != 0 && box_num % box_per_row != box_per_row - 1) {
+			// top row, not on left or right edge
+			neighbor_boxes.push_back(box_num-1);
+			neighbor_boxes.push_back(box_num+1);
+			neighbor_boxes.push_back(box_num-box_per_row);
+			neighbor_boxes.push_back(box_num-box_per_row-1);
+			neighbor_boxes.push_back(box_num-box_per_row+1);
+		} else if (box_num % box_per_row == 0) {
+			if (box_num < box_per_row) {
+				// bottom left corner
+				neighbor_boxes.push_back(box_num+1);
+				neighbor_boxes.push_back(box_num+box_per_row);
+				neighbor_boxes.push_back(box_num+box_per_row-1);
+				neighbor_boxes.push_back(box_num+box_per_row+1);
+			} else if (box_num > box_per_row * (box_per_row - 1) - 1) {
+				// top left corner
+				neighbor_boxes.push_back(box_num-1);
+				neighbor_boxes.push_back(box_num-box_per_row);
+				neighbor_boxes.push_back(box_num-box_per_row-1);
+				neighbor_boxes.push_back(box_num-box_per_row+1);
+			} else {
+				// on left side
+				neighbor_boxes.push_back(box_num+1);
+				neighbor_boxes.push_back(box_num-box_per_row);
+				neighbor_boxes.push_back(box_num+box_per_row);
+				neighbor_boxes.push_back(box_num-box_per_row+1);
+				neighbor_boxes.push_back(box_num+box_per_row+1);
+			}
+
+		} else if (box_num % box_per_row == box_per_row - 1) {
+			if (box_num < box_per_row) {
+				// bottom right corner
+				neighbor_boxes.push_back(box_num-1);
+				neighbor_boxes.push_back(box_num+box_per_row);
+				neighbor_boxes.push_back(box_num+box_per_row-1);
+			} else if (box_num > box_per_row * (box_per_row - 1) - 1) {
+				// top right corner
+				neighbor_boxes.push_back(box_num-1);
+				neighbor_boxes.push_back(box_num-box_per_row);
+				neighbor_boxes.push_back(box_num-box_per_row-1);
+			} else {
+				// on right side
+				neighbor_boxes.push_back(box_num-1);
+				neighbor_boxes.push_back(box_num-box_per_row);
+				neighbor_boxes.push_back(box_num+box_per_row);
+				neighbor_boxes.push_back(box_num-box_per_row-1);
+				neighbor_boxes.push_back(box_num+box_per_row-1);
+			}
+
+		} else {
+			// all other locations, not on edges
+			neighbor_boxes.push_back(box_num-1);
+			neighbor_boxes.push_back(box_num+1);
+			neighbor_boxes.push_back(box_num-box_per_row);
+			neighbor_boxes.push_back(box_num+box_per_row);
+			neighbor_boxes.push_back(box_num-box_per_row-1);
+			neighbor_boxes.push_back(box_num-box_per_row+1);
+			neighbor_boxes.push_back(box_num+box_per_row-1);
+			neighbor_boxes.push_back(box_num+box_per_row+1);
+		}
+
+		// need to find out which boxes neighbor the current box
+		for (int j = 0; j < neighbor_boxes.size(); j++) {
+			int num = neighbor_boxes[j];
+			vector<int> neighbor_vec = box_particles[neighbor_boxes[j]]; // particles in a neighboring box
+			for (int k = 0; k < neighbor_vec.size(); k++) {
+				particle_num = neighbor_vec[k]; // number of a neighboring particle
+				Vec3 a = particles[i]->position;
+				Vec3 b = particles[k]->position;
+				float dist = sqrt(pow((a.x - b.x),2) - pow((a.y - b.y),2));
+				if (particle_num != i && dist <= support_rad) {
+					particles[i]->neighbors.push_back(particle_num);
+				}
+			}
+		}
+	}
+
 }
+
+//int main(){
+//	Neighbor neighborhood;
+//	vector<Particle*> particles;
+//	Particle* temp_part = new Particle(Vec3(.2,.2,0),Vec3(0,0,0),1.0f);
+//
+//	particles.push_back(temp_part);
+//	Container container;
+//	Vec3 min_vec(0,0,0);
+//	Vec3 max_vec(1,1,1);
+//	container.min = min_vec;
+//	container.max = max_vec;
+//
+//	int num = neighborhood.compute_box_num(temp_part->position, .5, 0, 1);
+//	_sleep(10);
+//
+//}

@@ -11,7 +11,7 @@ bool Container::in_container(Particle *part,float t){
 	//We should check time as well.
 
 	bool in_cont = true;
-	float friction = 1.0f;//.95f;
+	float friction = .5f;
 
 	Vec3 pos = part->position;
 	Vec3 vel = part->velocity;
