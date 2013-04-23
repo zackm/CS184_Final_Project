@@ -39,7 +39,7 @@ Vec3 GRAVITY(0,-9.8f,0);
 const float MASS = .02f;//could set it to any number really.
 const float IDEAL_DENSITY = 1000.0f;
 const float STIFFNESS = 10.0f;//for pressure difference
-const float VISCOSITY = 1.5f;
+const float VISCOSITY = 3.5f;
 const float SURFACE_TENSION = .07f;
 const float TENSION_THRESHOLD = 1.0f;
 
@@ -47,8 +47,8 @@ const float CUBE_TOL = .125f;//either grid size or tolerance for adaptive cubes,
 const float DENSITY_TOL = 1.5f;//also used for marching grid, for density of the particles
 
 Neighbor NEIGHBOR; //neighbor object used for calculations
-const float H = .26;
-const float SUPPORT_RADIUS = .05;//2.0f*H;
+const float H = .05;
+const float SUPPORT_RADIUS = .045;//2.0f*H;
 
 
 bool USE_ADAPTIVE = false; //for adaptive or uniform marching cubes.
@@ -150,7 +150,9 @@ void run_time_step(){
 	vector<Vec3> viscosity_list;
 	vector<float> color_list;
 	vector<Vec3> tension_list;
-
+    
+    NEIGHBOR.place_particles(PARTICLES, SUPPORT_RADIUS, CONTAINER);
+    
 	//update using slow algorithm for now
 	Particle *base_particle, *temp_particle, *new_particle;
 	float density = 0;
@@ -160,9 +162,11 @@ void run_time_step(){
 		density = 0;
 		base_particle = PARTICLES[i];
 
+        vector<int> neighbor_vec = base_particle->neighbors;
+		int n = neighbor_vec.size();
 		for (int j = 0; j<NUM_PARTICLES; j++){ // changed to neighbors
 			//if(i!=j){
-				temp_particle = PARTICLES[i];
+				temp_particle = PARTICLES[j];
 				Vec3 r = base_particle->position-temp_particle->position;
 				float mag = dot(r,r);
 				if(mag<H*H){
@@ -184,9 +188,9 @@ void run_time_step(){
 
 		vector<int> neighbor_vec = base_particle->neighbors;
 		int n = neighbor_vec.size();
-		for (int j = 0; j<NUM_PARTICLES; j++){ // changed to neighbors
-			if(i!=j){
-				temp_particle = PARTICLES[j];
+		for (int j = 0; j<n; j++){ // changed to neighbors
+			if(i!=neighbor_vec[j]){
+				temp_particle = PARTICLES[neighbor_vec[j]];
 				Vec3 r = base_particle->position-temp_particle->position;
 				float mag = dot(r,r);
 
@@ -325,7 +329,7 @@ void initScene(){
 	//	}
 	//}
 
-	float step = .05;
+	float step = .035;
 	for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
 		for(float j = CONTAINER.min.y; j<(CONTAINER.max.y)/2.0f; j=j+step){
 			noise = float(rand())/(float(RAND_MAX))*.05f;
@@ -412,10 +416,11 @@ void myDisplay(){
 		glColor3f(0,0,1.0);
 		glVertex3f(temp_part->position.x,temp_part->position.y,temp_part->position.z);
         
+        // Draw sphere of radius H around particles
 //        glColor3f(1,0,0);
 //        glPushMatrix();
 //        glTranslated(temp_part->position.x,temp_part->position.y,temp_part->position.z);
-//        glutWireSphere(H,10,10);
+//        glutWireSphere(H/2,16,16);
 //        glPopMatrix();
 	}
 	glEnd();
@@ -486,6 +491,7 @@ void myDisplay(){
 }
 
 int main(int argc, char* argv[]){
+    
 	glutInit(&argc, argv);
 
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGB);
