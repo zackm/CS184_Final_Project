@@ -1,5 +1,6 @@
 glut-3.7.6-bin/*
 glut-3.7.6-bin/
+sourceAndExe/*
 Debug/*
 glm/*
 glm/
