@@ -24,7 +24,7 @@ using namespace std;
 * GLOBAL VARIABLES *
 *******************/
 
-Container CONTAINER(Vec3(.2,1,1),Vec3(0,0,0));//very simple cube for now. Later, make it a particle itself.
+Container CONTAINER(Vec3(.25,.25,1),Vec3(0,0,0));//very simple cube for now. Later, make it a particle itself.
 vector<Particle*> PARTICLES;//particles that we do SPH on.
 vector<Triangle*> TRIANGLES;//triangles made from marching cubes to render
 vector<vector<vector<float> > > GRID_DENSITY;//Grid for marching squares. Probably a better data structure we can use.
@@ -36,20 +36,17 @@ const float LIFETIME = 100.0f;
 float CURRENT_TIME = 0.0f;
 int NUM_PARTICLES = 0;
 Vec3 GRAVITY(0,-9.8f,0);
-const float MAX_DISPLACEMENT = 10.0f; //the maximum amount that a particle can be displaced, use when we get NaN.
 const float MASS = .02f;//could set it to any number really.
 const float IDEAL_DENSITY = 1000.0f;
 const float STIFFNESS = 3.0f;//for pressure difference
 const float VISCOSITY = 3.5f;
-const float DRAG = 0.0;//120.0f;
 const float SURFACE_TENSION = .07f;
-//const float PRESSURE = 10.0f;
 
 const float CUBE_TOL = .125f;//either grid size or tolerance for adaptive cubes, reciprocal must be an integer for now.
 const float DENSITY_TOL = 1.5f;//also used for marching grid, for density of the particles
 
 Neighbor NEIGHBOR; //neighbor object used for calculations
-const float MAX_KERNEL_RADIUS = .045;
+const float MAX_KERNEL_RADIUS = .076;
 const float SUPPORT_RADIUS = 2.0f*MAX_KERNEL_RADIUS;
 
 
@@ -166,12 +163,7 @@ float density_at_particle(Particle* part){
 	vector<int> neighbor_vec = part->neighbors;
 
 	for (int i = 0; i<NUM_PARTICLES; i++){ // changed to neighbors
-
 		temp_particle = PARTICLES[i];
-		//if (i == neighbor_vec[i]) {
-		//	continue;
-		//}
-
 		density += temp_particle->mass*default_kernel(part->position,temp_particle->position);
 	}
 	return density;
@@ -187,9 +179,7 @@ float density_at_point(Vec3 point){
 	for (int i = 0; i<PARTICLES.size(); i++){
 		//update density. There will be a problem if the point is exactly equal to sum particle (divide by zero error).
 		temp_particle = PARTICLES[i];
-		//if (i == neighbor_vec[i]) {
-		//	continue;
-		//}
+
 		density += temp_particle->mass*default_kernel(point,temp_particle->position);
 	}
 
@@ -208,15 +198,13 @@ void run_time_step(){
 	vector<Vec3> pressure_grad_list;
 	vector<Vec3> viscosity_list;
 	vector<float> color_list;
-	//vector<Vec3> normal_list;
 	vector<Vec3> tension_list;
 
 	//update using slow algorithm for now
 	Particle *base_particle, *temp_particle, *new_particle;
-	float number_density = 0, density = 0, pressure = 0;
+	float density = 0;
 
 	//Sets density at each point
-
 	for (int i = 0; i<NUM_PARTICLES; i++){
 		density = 0;
 		base_particle = PARTICLES[i];
@@ -283,7 +271,6 @@ void run_time_step(){
 		for (int j = 0; j<NUM_PARTICLES; j++){
 			temp_particle = PARTICLES[j];
 			normal += default_gradient(base_particle->position,temp_particle->position)*(temp_particle->mass / density_list[j]);
-
 		}
 
 		float length = sqrt(dot(normal,normal));
@@ -305,7 +292,7 @@ void run_time_step(){
 		Vec3 velocity = temp_particle->velocity;
 
 		//First add external forces
-		Vec3 acceleration = GRAVITY + ((velocity*(-1.0f*DRAG)) + tension_list[i]*SURFACE_TENSION
+		Vec3 acceleration = GRAVITY + (tension_list[i]*SURFACE_TENSION
 						    + (viscosity_list[i]*VISCOSITY)
 							+ pressure_grad_list[i])/density_list[i];
 
@@ -325,7 +312,7 @@ void run_time_step(){
 	PARTICLES = new_particles;
 
 	//reset neighbor structure 
-	NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER);
+	//NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER);
 }
 
 /*****************
@@ -349,17 +336,17 @@ void initScene(){
 	//	}
 	//}
 
-	//step = .04;
-	//for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
-	//	for(float j = CONTAINER.min.y; j<3.0f*(CONTAINER.max.y)/10.0f; j=j+step){
-	//		noise = float(rand())/(float(RAND_MAX))*.05f;
-	//		Vec3 pos(i,j,0);
-	//		Vec3 vel(0,0,0);
-	//		new_part = new Particle(pos,vel,MASS);
-	//		PARTICLES.push_back(new_part);
-	//	}
-	//}
-	//NUM_PARTICLES = PARTICLES.size();
+	float step = .02;
+	for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
+		for(float j = CONTAINER.min.y; j<(CONTAINER.max.y)/2.0f; j=j+step){
+			noise = float(rand())/(float(RAND_MAX))*.05f;
+			Vec3 pos(i+noise,j,0);
+			Vec3 vel(0,0,0);
+			new_part = new Particle(pos,vel,MASS);
+			PARTICLES.push_back(new_part);
+		}
+	}
+	NUM_PARTICLES = PARTICLES.size();
 
 	////random particles
 	//for (int i = 0; i<NUM_PARTICLES; i++){
@@ -408,15 +395,15 @@ void myDisplay(){
 		exit(0);
 	}
 
-	if(CURRENT_TIME<1.2){
-		//throw in a new particle.
-		float noise = float(rand())/(float(RAND_MAX))*.05f;
-		Vec3 pos(.1+noise,.9,0);
-		Vec3 vel(float(rand())/(float(RAND_MAX)),float(rand())/(float(RAND_MAX)),0);
-		Particle* new_part = new Particle(pos,vel,MASS);
-		PARTICLES.push_back(new_part);
-		NUM_PARTICLES++;
-	}
+	//if(CURRENT_TIME<.6){
+	//	//throw in a new particle.
+	//	float noise = float(rand())/(float(RAND_MAX))*.05f;
+	//	Vec3 pos(.1+noise,.9,0);
+	//	Vec3 vel(float(rand())/(float(RAND_MAX)),float(rand())/(float(RAND_MAX)),0);
+	//	Particle* new_part = new Particle(pos,vel,MASS);
+	//	PARTICLES.push_back(new_part);
+	//	NUM_PARTICLES++;
+	//}
 	
 	//draw particles
 	glPointSize(4.0f);
