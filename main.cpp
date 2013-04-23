@@ -24,7 +24,7 @@ using namespace std;
 * GLOBAL VARIABLES *
 *******************/
 
-Container CONTAINER(Vec3(1,1,1),Vec3(0,0,0));//very simple cube for now. Later, make it a particle itself.
+Container CONTAINER(Vec3(.2,1,1),Vec3(0,0,0));//very simple cube for now. Later, make it a particle itself.
 vector<Particle*> PARTICLES;//particles that we do SPH on.
 vector<Triangle*> TRIANGLES;//triangles made from marching cubes to render
 vector<vector<vector<float> > > GRID_DENSITY;//Grid for marching squares. Probably a better data structure we can use.
@@ -32,23 +32,26 @@ vector<vector<vector<bool> > > GRID_BOOL; //bools corresponding to that grid
 vector<vector<vector<Vec3> > > VERTEX_MATRIX;//list of vertices corresponding to the densities on the grid.
 
 const float TIMESTEP = .01;//time elapsed between iterations
-int NUM_PARTICLES = 350;
+const float LIFETIME = 100.0f;
+float CURRENT_TIME = 0.0f;
+int NUM_PARTICLES = 0;
 Vec3 GRAVITY(0,-9.8f,0);
 const float MAX_DISPLACEMENT = 10.0f; //the maximum amount that a particle can be displaced, use when we get NaN.
-const float MASS = .01f;//could set it to any number really.
-const float STIFFNESS = 0.0f;//10000.0f;//1000.0f;//BOLTZMANN*TEMPERATURE/MOLAR_MASS;// for water; //0 for liquids actually, assuming incompressible.
-const float VISCOSITY = 1.004f;// for water;
-const float ELECTRIC_CONST = 1e5;
-const float DRAG = 1200.0f;
-const float SURFACE_TENSION = 1e2;
-const float PRESSURE = 10.0f;
+const float MASS = .02f;//could set it to any number really.
+const float IDEAL_DENSITY = 1000.0f;
+const float STIFFNESS = 3.0f;//for pressure difference
+const float VISCOSITY = 3.5f;
+const float DRAG = 0.0;//120.0f;
+const float SURFACE_TENSION = .07f;
+//const float PRESSURE = 10.0f;
 
 const float CUBE_TOL = .125f;//either grid size or tolerance for adaptive cubes, reciprocal must be an integer for now.
 const float DENSITY_TOL = 1.5f;//also used for marching grid, for density of the particles
 
 Neighbor NEIGHBOR; //neighbor object used for calculations
-const float SUPPORT_RADIUS = .025f;//radius of support used by neighbor function to divide space into grid
-const float MAX_KERNEL_RADIUS = SUPPORT_RADIUS/2.0f;
+const float MAX_KERNEL_RADIUS = .045;
+const float SUPPORT_RADIUS = 2.0f*MAX_KERNEL_RADIUS;
+
 
 bool USE_ADAPTIVE = false; //for adaptive or uniform marching cubes.
 
@@ -117,14 +120,20 @@ Vec3 pressure_kernel_gradient(Vec3 r_i, Vec3 r_j){
 
 	float h = MAX_KERNEL_RADIUS;
 
-	Vec3 v(0,0,0);
-	if (sqrt(mag)>h){
-		return v;
-	}
-
 	float coeff = (45/(PI*pow(h,6.0f)))*pow((h-sqrt(mag)),2.0f);
+	
+	Vec3 v(0,0,0);
 
-	return diff_vec*(-coeff)/(sqrt(mag));
+	if(mag>0){
+		if(sqrt(mag)<h){
+			diff_vec*(-coeff)/(sqrt(mag));
+		}else{
+			return v;
+		}
+	}else{
+		//cout<<'h'<<endl;
+		return diff_vec*(45/(PI*pow(h,6.0f)))*(-2.0*h);
+	}
 }
 
 float viscosity_kernel_laplacian(Vec3 r_i, Vec3 r_j){
@@ -156,12 +165,12 @@ float density_at_particle(Particle* part){
 	Particle* temp_particle;
 	vector<int> neighbor_vec = part->neighbors;
 
-	for (int i = 0; i<neighbor_vec.size(); i++){ // changed to neighbors
+	for (int i = 0; i<NUM_PARTICLES; i++){ // changed to neighbors
 
-		temp_particle = PARTICLES[neighbor_vec[i]];
-		if (i == neighbor_vec[i]) {
-			continue;
-		}
+		temp_particle = PARTICLES[i];
+		//if (i == neighbor_vec[i]) {
+		//	continue;
+		//}
 
 		density += temp_particle->mass*default_kernel(part->position,temp_particle->position);
 	}
@@ -201,7 +210,6 @@ void run_time_step(){
 	vector<float> color_list;
 	//vector<Vec3> normal_list;
 	vector<Vec3> tension_list;
-	vector<Vec3> repulsion_list;
 
 	//update using slow algorithm for now
 	Particle *base_particle, *temp_particle, *new_particle;
@@ -216,7 +224,7 @@ void run_time_step(){
 		density_list.push_back(density);
 
 		//changed this to not include stiffness at all
-		pressure_list.push_back(STIFFNESS*(PRESSURE));
+		pressure_list.push_back(STIFFNESS*(density-IDEAL_DENSITY));
 	}
 
 	//Sets pressure gradient at each point using densities from last loop
@@ -227,17 +235,14 @@ void run_time_step(){
 
 		vector<int> neighbor_vec = base_particle->neighbors;
 		int n = neighbor_vec.size();
-		for (int j = 0; j<n; j++){ // changed to neighbors
-			temp_particle = PARTICLES[neighbor_vec[j]];
-			if (i == neighbor_vec[j]) {
-				continue;
-			}
+		for (int j = 0; j<NUM_PARTICLES; j++){ // changed to neighbors
+			temp_particle = PARTICLES[j];
 
 			Vec3 weight = pressure_kernel_gradient(base_particle->position,temp_particle->position);
 			pressure_gradient += weight * temp_particle->mass * ((pressure_list[i]+pressure_list[j])/(2.0f*density_list[j])); 
 
 		}
-		pressure_grad_list.push_back(pressure_gradient);
+		pressure_grad_list.push_back(pressure_gradient*(-1.0f));
 	}
 
 	//Sets viscosity at each particle
@@ -246,8 +251,8 @@ void run_time_step(){
 
 		Vec3 viscosity_laplacian(0,0,0);
 		vector<int> neighbor_vec = base_particle->neighbors;
-		for (int j = 0; j<neighbor_vec.size(); j++){ // changed to neighbors
-			temp_particle = PARTICLES[neighbor_vec[j]];
+		for (int j = 0; j<NUM_PARTICLES; j++){ // changed to neighbors
+			temp_particle = PARTICLES[j];
 
 			float weight = viscosity_kernel_laplacian(base_particle->position,temp_particle->position);
 			viscosity_laplacian += ((temp_particle->velocity - base_particle->velocity)/density_list[i])*weight * temp_particle->mass;
@@ -261,8 +266,8 @@ void run_time_step(){
 
 		float color = 0.0f;
 		vector<int> neighbor_vec = base_particle->neighbors;
-		for (int j = 0; j<neighbor_vec.size(); j++){
-			temp_particle = PARTICLES[neighbor_vec[j]];
+		for (int j = 0; j<NUM_PARTICLES; j++){
+			temp_particle = PARTICLES[j];
 			color += (temp_particle->mass / density_list[j]) * default_laplacian(base_particle->position,temp_particle->position);
 
 		}
@@ -275,8 +280,8 @@ void run_time_step(){
 
 		Vec3 normal(0,0,0);
 		vector<int> neighbor_vec = base_particle->neighbors;
-		for (int j = 0; j<neighbor_vec.size(); j++){
-			temp_particle = PARTICLES[neighbor_vec[j]];
+		for (int j = 0; j<NUM_PARTICLES; j++){
+			temp_particle = PARTICLES[j];
 			normal += default_gradient(base_particle->position,temp_particle->position)*(temp_particle->mass / density_list[j]);
 
 		}
@@ -291,24 +296,6 @@ void run_time_step(){
 		}
 	}
 
-	//set the repulsion force at each point
-	for (int i = 0; i<NUM_PARTICLES; i++){
-		base_particle = PARTICLES[i];
-
-		Vec3 repulsion(0,0,0);
-		vector<int> neighbor_vec = base_particle->neighbors;
-		for (int j = 0; j<neighbor_vec.size(); j++){
-			temp_particle = PARTICLES[neighbor_vec[j]];
-			Vec3 diff_vec = temp_particle->position - base_particle->position;
-			float length = sqrt(dot(diff_vec,diff_vec));
-			Vec3 electric_repulsion;
-			electric_repulsion = diff_vec/(max(pow(length,3.0f),.01f));
-			
-			repulsion += electric_repulsion * (default_kernel(base_particle->position,temp_particle->position))*(temp_particle->mass / density_list[j]);
-
-		}
-		repulsion_list.push_back(repulsion);
-	}
 
 	//Create new particles from old particles and from pressure gradient.
 	for (int i = 0; i<NUM_PARTICLES; i++){
@@ -318,10 +305,9 @@ void run_time_step(){
 		Vec3 velocity = temp_particle->velocity;
 
 		//First add external forces
-		Vec3 acceleration = GRAVITY - ((velocity*DRAG) + tension_list[i]*SURFACE_TENSION
+		Vec3 acceleration = GRAVITY + ((velocity*(-1.0f*DRAG)) + tension_list[i]*SURFACE_TENSION
 						    + (viscosity_list[i]*VISCOSITY)
-							+ repulsion_list[i]*ELECTRIC_CONST
-							- pressure_grad_list[i])/density_list[i];
+							+ pressure_grad_list[i])/density_list[i];
 
 		Vec3 position = temp_particle->position;
 
@@ -342,23 +328,32 @@ void run_time_step(){
 	NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER);
 }
 
-
-
 /*****************
 * OpenGL Methods *
 *****************/
 void initScene(){
 	//create a list of random particles
 	Particle* new_part;
-	float noise = .5f;
+	float noise = float(rand())/(float(RAND_MAX))*.1;
 	float x,y,z,v_x,v_y,v_z;
 
 	////Semi random grid of particles
-	//float step = .05f;
-	//for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
-	//	for(float j = CONTAINER.min.y; j<(CONTAINER.max.y/2.0f); j=j+step){
+	//float step = .025;
+	//for(float i = 2.0*CONTAINER.max.x/5.0f; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+	//	for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
 	//		noise = float(rand())/(float(RAND_MAX))*.05f;
-	//		Vec3 pos(i+noise,j+noise,0);
+	//		Vec3 pos(i+float(rand())/(float(RAND_MAX))*.1,j+float(rand())/(float(RAND_MAX))*.1,0);
+	//		Vec3 vel(0,0,0);
+	//		new_part = new Particle(pos,vel,MASS);
+	//		PARTICLES.push_back(new_part);
+	//	}
+	//}
+
+	//step = .04;
+	//for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
+	//	for(float j = CONTAINER.min.y; j<3.0f*(CONTAINER.max.y)/10.0f; j=j+step){
+	//		noise = float(rand())/(float(RAND_MAX))*.05f;
+	//		Vec3 pos(i,j,0);
 	//		Vec3 vel(0,0,0);
 	//		new_part = new Particle(pos,vel,MASS);
 	//		PARTICLES.push_back(new_part);
@@ -366,25 +361,25 @@ void initScene(){
 	//}
 	//NUM_PARTICLES = PARTICLES.size();
 
-	//random particles
-	for (int i = 0; i<NUM_PARTICLES; i++){
-		x = .2f+float(rand())/(float(RAND_MAX))*.1f;
-		y = float(rand())/(float(RAND_MAX))/5.0 + .4f;
-		z = 0.0f;//.2f + float(rand())/(float(RAND_MAX))*.1f;
+	////random particles
+	//for (int i = 0; i<NUM_PARTICLES; i++){
+	//	x = .2f+float(rand())/(float(RAND_MAX))*.1f;
+	//	y = float(rand())/(float(RAND_MAX))/5.0 + .1f;
+	//	z = 0.0f;//.2f + float(rand())/(float(RAND_MAX))*.1f;
 
-		v_x = -.5f+float(rand())/(float(RAND_MAX))*2.0f*noise;
-		v_y = -0.2+float(rand())/(float(RAND_MAX))*noise;
-		v_z = 0.0f;//-0.2+float(rand())/(float(RAND_MAX))*noise;
+	//	v_x = -.5f+float(rand())/(float(RAND_MAX))*2.0f*noise;
+	//	v_y = -0.2+float(rand())/(float(RAND_MAX))*noise;
+	//	v_z = 0.0f;//-0.2+float(rand())/(float(RAND_MAX))*noise;
 
 
-		Vec3 pos(x,y,z);
-		Vec3 vel(v_x,v_y,v_z);
-		float mass = 4.0f+(float(rand())/(float(RAND_MAX)))*5.0f;
-		//also need to instantiate the other fields
-		new_part = new Particle(pos,vel,MASS);
-		PARTICLES.push_back(new_part);
-	}
-	NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER);
+	//	Vec3 pos(x,y,z);
+	//	Vec3 vel(v_x,v_y,v_z);
+	//	float mass = 4.0f+(float(rand())/(float(RAND_MAX)))*5.0f;
+	//	//also need to instantiate the other fields
+	//	new_part = new Particle(pos,vel,MASS);
+	//	PARTICLES.push_back(new_part);
+	//}
+	////NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER);
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -406,16 +401,32 @@ void myDisplay(){
 	//gluLookAt(1.2,1.2,1.2,0,0,0,0,1,0);
 
 	run_time_step();
-
+	CURRENT_TIME += TIMESTEP;
 	//marching_cubes();
 
+	if(CURRENT_TIME>LIFETIME){
+		exit(0);
+	}
+
+	if(CURRENT_TIME<1.2){
+		//throw in a new particle.
+		float noise = float(rand())/(float(RAND_MAX))*.05f;
+		Vec3 pos(.1+noise,.9,0);
+		Vec3 vel(float(rand())/(float(RAND_MAX)),float(rand())/(float(RAND_MAX)),0);
+		Particle* new_part = new Particle(pos,vel,MASS);
+		PARTICLES.push_back(new_part);
+		NUM_PARTICLES++;
+	}
+	
 	//draw particles
+	glPointSize(4.0f);
+	glBegin(GL_POINTS);
 	Particle* temp_part;
 	for (int i = 0; i<PARTICLES.size(); i++){
 		temp_part = PARTICLES[i];
 		glClearColor(0,0,0,0);
-		glPointSize(4.0f);
-		glBegin(GL_POINTS);
+		
+		
 		// alternate particle colors depending on box in grid
 		/*if (temp_part->box % 2 == 0) {
             glColor3f(1.0,0,0);
@@ -424,8 +435,8 @@ void myDisplay(){
 		}*/
 		glColor3f(0,0,1.0);
 		glVertex3f(temp_part->position.x,temp_part->position.y,temp_part->position.z);
-		glEnd();
 	}
+	glEnd();
 
 	////draw triangles
 	//Triangle *temp_triangle;
@@ -441,50 +452,50 @@ void myDisplay(){
 	//	glEnd();
 	//}
 
-	////Draw wireframe container
-	//glPolygonMode(GL_FRONT, GL_LINE);
-	//glPolygonMode(GL_BACK, GL_LINE);
+	//Draw wireframe container
+	glPolygonMode(GL_FRONT, GL_LINE);
+	glPolygonMode(GL_BACK, GL_LINE);
 
-	//glDisable(GL_LIGHTING);
-	//glClearColor (0.0, 0.0, 0.0, 0.0);
-	//glColor3f(1.0f,1.0f,1.0f);
+	glDisable(GL_LIGHTING);
+	glClearColor (0.0, 0.0, 0.0, 0.0);
+	glColor3f(1.0f,1.0f,1.0f);
 
-	//glBegin(GL_POLYGON);
-	//glVertex3f(CONTAINER.min.x,CONTAINER.min.y,CONTAINER.max.z);
-	//glVertex3f(CONTAINER.min.x,CONTAINER.max.y,CONTAINER.max.z);
-	//glVertex3f(CONTAINER.max.x,CONTAINER.max.y,CONTAINER.max.z);
-	//glVertex3f(CONTAINER.max.x,CONTAINER.min.y,CONTAINER.max.z);
-	//glEnd();
+	glBegin(GL_POLYGON);
+	glVertex3f(CONTAINER.min.x,CONTAINER.min.y,CONTAINER.max.z);
+	glVertex3f(CONTAINER.min.x,CONTAINER.max.y,CONTAINER.max.z);
+	glVertex3f(CONTAINER.max.x,CONTAINER.max.y,CONTAINER.max.z);
+	glVertex3f(CONTAINER.max.x,CONTAINER.min.y,CONTAINER.max.z);
+	glEnd();
 
-	//glBegin(GL_POLYGON);
-	//glVertex3f(CONTAINER.min.x,CONTAINER.min.y,CONTAINER.min.z);
-	//glVertex3f(CONTAINER.min.x,CONTAINER.max.y,CONTAINER.min.z);
-	//glVertex3f(CONTAINER.max.x,CONTAINER.max.y,CONTAINER.min.z);
-	//glVertex3f(CONTAINER.max.x,CONTAINER.min.y,CONTAINER.min.z);
-	//glEnd();
+	glBegin(GL_POLYGON);
+	glVertex3f(CONTAINER.min.x,CONTAINER.min.y,CONTAINER.min.z);
+	glVertex3f(CONTAINER.min.x,CONTAINER.max.y,CONTAINER.min.z);
+	glVertex3f(CONTAINER.max.x,CONTAINER.max.y,CONTAINER.min.z);
+	glVertex3f(CONTAINER.max.x,CONTAINER.min.y,CONTAINER.min.z);
+	glEnd();
 
-	//glBegin(GL_LINES);
-	//glVertex3f(CONTAINER.min.x,CONTAINER.min.y,CONTAINER.min.z);
-	//glVertex3f(CONTAINER.min.x,CONTAINER.min.y,CONTAINER.max.z);
-	//glEnd();
+	glBegin(GL_LINES);
+	glVertex3f(CONTAINER.min.x,CONTAINER.min.y,CONTAINER.min.z);
+	glVertex3f(CONTAINER.min.x,CONTAINER.min.y,CONTAINER.max.z);
+	glEnd();
 
-	//glBegin(GL_LINES);
-	//glVertex3f(CONTAINER.min.x,CONTAINER.max.y,CONTAINER.min.z);
-	//glVertex3f(CONTAINER.min.x,CONTAINER.max.y,CONTAINER.max.z);
-	//glEnd();
+	glBegin(GL_LINES);
+	glVertex3f(CONTAINER.min.x,CONTAINER.max.y,CONTAINER.min.z);
+	glVertex3f(CONTAINER.min.x,CONTAINER.max.y,CONTAINER.max.z);
+	glEnd();
 
-	//glBegin(GL_LINES);
-	//glVertex3f(CONTAINER.max.x,CONTAINER.max.y,CONTAINER.min.z);
-	//glVertex3f(CONTAINER.max.x,CONTAINER.max.y,CONTAINER.max.z);
-	//glEnd();
+	glBegin(GL_LINES);
+	glVertex3f(CONTAINER.max.x,CONTAINER.max.y,CONTAINER.min.z);
+	glVertex3f(CONTAINER.max.x,CONTAINER.max.y,CONTAINER.max.z);
+	glEnd();
 
-	//glBegin(GL_LINES);
-	//glVertex3f(CONTAINER.max.x,CONTAINER.min.y,CONTAINER.min.z);
-	//glVertex3f(CONTAINER.max.x,CONTAINER.min.y,CONTAINER.max.z);
-	//glEnd();
+	glBegin(GL_LINES);
+	glVertex3f(CONTAINER.max.x,CONTAINER.min.y,CONTAINER.min.z);
+	glVertex3f(CONTAINER.max.x,CONTAINER.min.y,CONTAINER.max.z);
+	glEnd();
 
-	//glPolygonMode(GL_FRONT, GL_FILL); // fill mode
-	//glPolygonMode(GL_BACK, GL_FILL);
+	glPolygonMode(GL_FRONT, GL_FILL); // fill mode
+	glPolygonMode(GL_BACK, GL_FILL);
 
 	glPopMatrix();
 
