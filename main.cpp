@@ -38,10 +38,10 @@ int NUM_PARTICLES = 0;
 Vec3 GRAVITY(0,-9.8f,0);
 const float MASS = .02f;//could set it to any number really.
 const float IDEAL_DENSITY = 1000.0f;
-const float STIFFNESS = 10.0f;//for pressure difference
+const float STIFFNESS = 3.0f;//for pressure difference
 const float VISCOSITY = 3.5f;
 const float SURFACE_TENSION = .07f;
-const float TENSION_THRESHOLD = 1.0f;
+const float TENSION_THRESHOLD = 7.0f;
 
 const float CUBE_TOL = .125f;//either grid size or tolerance for adaptive cubes, reciprocal must be an integer for now.
 const float DENSITY_TOL = 1.5f;//also used for marching grid, for density of the particles
@@ -329,8 +329,8 @@ void initScene(){
 	//	}
 	//}
 
-	float step = .035;
-	for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
+	float step = .02;
+	for(float i = CONTAINER.min.x; i<(CONTAINER.max.x)/2.0f; i=i+step){
 		for(float j = CONTAINER.min.y; j<(CONTAINER.max.y)/2.0f; j=j+step){
 			noise = float(rand())/(float(RAND_MAX))*.05f;
 			Vec3 pos(i,j,0);
