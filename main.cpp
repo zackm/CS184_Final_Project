@@ -35,13 +35,13 @@ const float TIMESTEP = .01;//time elapsed between iterations
 const float LIFETIME = 100.0f;
 float CURRENT_TIME = 0.0f;
 int NUM_PARTICLES = 0;
-Vec3 GRAVITY(0,0,0);
+Vec3 GRAVITY(0,-9.8f,0);
 const float MASS = .02f;//could set it to any number really.
 const float IDEAL_DENSITY = 1000.0f;
-const float STIFFNESS = 3.0f;//for pressure difference
-const float VISCOSITY = 3.5f;
+const float STIFFNESS = 10.0f;//for pressure difference
+const float VISCOSITY = 1.5f;
 const float SURFACE_TENSION = .07f;
-const float TENSION_THRESHOLD = 7.0f;
+const float TENSION_THRESHOLD = 1.0f;
 
 const float CUBE_TOL = .125f;//either grid size or tolerance for adaptive cubes, reciprocal must be an integer for now.
 const float DENSITY_TOL = 1.5f;//also used for marching grid, for density of the particles
@@ -161,13 +161,13 @@ void run_time_step(){
 		base_particle = PARTICLES[i];
 
 		for (int j = 0; j<NUM_PARTICLES; j++){ // changed to neighbors
-			if(i!=j){
+			//if(i!=j){
 				temp_particle = PARTICLES[i];
 				Vec3 r = base_particle->position-temp_particle->position;
 				float mag = dot(r,r);
 				if(mag<H*H){
 					density += temp_particle->mass*default_kernel(base_particle->position,temp_particle->position);
-				}
+			//	}
 			}
 		}
 		density_list.push_back(density);
@@ -261,7 +261,9 @@ void run_time_step(){
 		}
 
 		float length = sqrt(dot(normal,normal));
+		//cout<<length<<endl;
 		if(length>TENSION_THRESHOLD){
+			//cout<<'n'<<endl;
 			normal = normal/sqrt(length);
 			tension_list.push_back(normal*(-1.0f*color_list[i]));
 		}else{
