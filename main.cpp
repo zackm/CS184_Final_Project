@@ -35,9 +35,9 @@ const float TIMESTEP = .01;//time elapsed between iterations
 const float LIFETIME = 100.0f;
 float CURRENT_TIME = 0.0f;
 int NUM_PARTICLES = 0;
-Vec3 GRAVITY(0,-9.8f,0);
+Vec3 GRAVITY(0,0,0);
 const float MASS = .02f;//could set it to any number really.
-const float IDEAL_DENSITY = 1.0f;
+const float IDEAL_DENSITY = 1000.0f;
 const float STIFFNESS = 3.0f;//for pressure difference
 const float VISCOSITY = 3.5f;
 const float SURFACE_TENSION = .07f;
@@ -47,7 +47,7 @@ const float CUBE_TOL = .125f;//either grid size or tolerance for adaptive cubes,
 const float DENSITY_TOL = 1.5f;//also used for marching grid, for density of the particles
 
 Neighbor NEIGHBOR; //neighbor object used for calculations
-const float H = .076;
+const float H = .26;
 const float SUPPORT_RADIUS = .05;//2.0f*H;
 
 
@@ -161,11 +161,13 @@ void run_time_step(){
 		base_particle = PARTICLES[i];
 
 		for (int j = 0; j<NUM_PARTICLES; j++){ // changed to neighbors
-			temp_particle = PARTICLES[i];
-			Vec3 r = base_particle->position-temp_particle->position;
-			float mag = dot(r,r);
-			if(mag<H*H){
-				density += temp_particle->mass*default_kernel(base_particle->position,temp_particle->position);
+			if(i!=j){
+				temp_particle = PARTICLES[i];
+				Vec3 r = base_particle->position-temp_particle->position;
+				float mag = dot(r,r);
+				if(mag<H*H){
+					density += temp_particle->mass*default_kernel(base_particle->position,temp_particle->position);
+				}
 			}
 		}
 		density_list.push_back(density);
@@ -182,14 +184,21 @@ void run_time_step(){
 
 		vector<int> neighbor_vec = base_particle->neighbors;
 		int n = neighbor_vec.size();
-		for (int j = 0; j<NUM_PARTICLES && i!=j; j++){ // changed to neighbors
-			temp_particle = PARTICLES[j];
-			Vec3 r = base_particle->position-temp_particle->position;
-			float mag = dot(r,r);
-			if(mag<H*H){
-				Vec3 weight = pressure_kernel_gradient(base_particle->position,temp_particle->position);
-				pressure_gradient += weight * temp_particle->mass * ((pressure_list[i]+pressure_list[j])/(2.0f*density_list[j])); 
+		for (int j = 0; j<NUM_PARTICLES; j++){ // changed to neighbors
+			if(i!=j){
+				temp_particle = PARTICLES[j];
+				Vec3 r = base_particle->position-temp_particle->position;
+				float mag = dot(r,r);
+
+				if(mag<H*H){
+					Vec3 weight = pressure_kernel_gradient(base_particle->position,temp_particle->position);
+					pressure_gradient += weight * temp_particle->mass * ((pressure_list[i]+pressure_list[j])/(2.0f*density_list[j])); 
+				}
 			}
+
+			//if(mag==0){
+			//	cout<<'h'<<endl;
+			//}
 		}
 		pressure_grad_list.push_back(pressure_gradient*(-1.0f));
 	}
@@ -201,12 +210,14 @@ void run_time_step(){
 		Vec3 viscosity_laplacian(0,0,0);
 		vector<int> neighbor_vec = base_particle->neighbors;
 		for (int j = 0; j<NUM_PARTICLES; j++){ // changed to neighbors
-			temp_particle = PARTICLES[j];
-			Vec3 r = base_particle->position-temp_particle->position;
-			float mag = dot(r,r);
-			if(mag<H*H){
-				float weight = viscosity_kernel_laplacian(base_particle->position,temp_particle->position);
-				viscosity_laplacian += ((temp_particle->velocity - base_particle->velocity)/density_list[i])*weight * temp_particle->mass;
+			if(i!=j){
+				temp_particle = PARTICLES[j];
+				Vec3 r = base_particle->position-temp_particle->position;
+				float mag = dot(r,r);
+				if(mag<H*H){
+					float weight = viscosity_kernel_laplacian(base_particle->position,temp_particle->position);
+					viscosity_laplacian += ((temp_particle->velocity - base_particle->velocity)/density_list[i])*weight * temp_particle->mass;
+				}
 			}
 		}
 		viscosity_list.push_back(viscosity_laplacian*VISCOSITY);
@@ -219,11 +230,13 @@ void run_time_step(){
 		float color = 0.0f;
 		vector<int> neighbor_vec = base_particle->neighbors;
 		for (int j = 0; j<NUM_PARTICLES; j++){
-			temp_particle = PARTICLES[j];
-			Vec3 r = base_particle->position-temp_particle->position;
-			float mag = dot(r,r);
-			if(mag<H*H){
-				color += (temp_particle->mass / density_list[j]) * default_laplacian(base_particle->position,temp_particle->position);
+			if(i!=j){
+				temp_particle = PARTICLES[j];
+				Vec3 r = base_particle->position-temp_particle->position;
+				float mag = dot(r,r);
+				if(mag<H*H){
+					color += (temp_particle->mass / density_list[j]) * default_laplacian(base_particle->position,temp_particle->position);
+				}
 			}
 		}
 		color_list.push_back(color);
@@ -236,12 +249,15 @@ void run_time_step(){
 		Vec3 normal(0,0,0);
 		vector<int> neighbor_vec = base_particle->neighbors;
 		for (int j = 0; j<NUM_PARTICLES; j++){
-			temp_particle = PARTICLES[j];
-			Vec3 r = base_particle->position-temp_particle->position;
-			float mag = dot(r,r);
-			if(mag<H*H){
-				normal += default_gradient(base_particle->position,temp_particle->position)*(temp_particle->mass / density_list[j]);
+			if(i!=j){
+				temp_particle = PARTICLES[j];
+				Vec3 r = base_particle->position-temp_particle->position;
+				float mag = dot(r,r);
+				if(mag<H*H){
+					normal += default_gradient(base_particle->position,temp_particle->position)*(temp_particle->mass / density_list[j]);
+				}
 			}
+
 		}
 
 		float length = sqrt(dot(normal,normal));
@@ -307,11 +323,11 @@ void initScene(){
 	//	}
 	//}
 
-	float step = .03;
+	float step = .05;
 	for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
 		for(float j = CONTAINER.min.y; j<(CONTAINER.max.y)/2.0f; j=j+step){
 			noise = float(rand())/(float(RAND_MAX))*.05f;
-			Vec3 pos(i+noise,j,0);
+			Vec3 pos(i,j,0);
 			Vec3 vel(0,0,0);
 			new_part = new Particle(pos,vel,MASS);
 			PARTICLES.push_back(new_part);
