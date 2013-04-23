@@ -24,7 +24,7 @@ using namespace std;
 * GLOBAL VARIABLES *
 *******************/
 
-Container CONTAINER(Vec3(.25,.25,1),Vec3(0,0,0));//very simple cube for now. Later, make it a particle itself.
+Container CONTAINER(Vec3(1,1,1),Vec3(0,0,0));//very simple cube for now. Later, make it a particle itself.
 vector<Particle*> PARTICLES;//particles that we do SPH on.
 vector<Triangle*> TRIANGLES;//triangles made from marching cubes to render
 vector<vector<vector<float> > > GRID_DENSITY;//Grid for marching squares. Probably a better data structure we can use.
@@ -37,17 +37,18 @@ float CURRENT_TIME = 0.0f;
 int NUM_PARTICLES = 0;
 Vec3 GRAVITY(0,-9.8f,0);
 const float MASS = .02f;//could set it to any number really.
-const float IDEAL_DENSITY = 1000.0f;
+const float IDEAL_DENSITY = 1.0f;
 const float STIFFNESS = 3.0f;//for pressure difference
 const float VISCOSITY = 3.5f;
 const float SURFACE_TENSION = .07f;
+const float TENSION_THRESHOLD = 7.0f;
 
 const float CUBE_TOL = .125f;//either grid size or tolerance for adaptive cubes, reciprocal must be an integer for now.
 const float DENSITY_TOL = 1.5f;//also used for marching grid, for density of the particles
 
 Neighbor NEIGHBOR; //neighbor object used for calculations
-const float MAX_KERNEL_RADIUS = .076;
-const float SUPPORT_RADIUS = 2.0f*MAX_KERNEL_RADIUS;
+const float H = .076;
+const float SUPPORT_RADIUS = .05;//2.0f*H;
 
 
 bool USE_ADAPTIVE = false; //for adaptive or uniform marching cubes.
@@ -66,33 +67,19 @@ float dot(Vec3 v1, Vec3 v2){
 ******************/
 //default is used for all terms except pressure and viscosity
 float default_kernel(Vec3 r_i, Vec3 r_j){
-
 	Vec3 diff_vec = r_i-r_j;
 	float mag = dot(diff_vec,diff_vec);
 
-	float h = MAX_KERNEL_RADIUS;
-
-	if (sqrt(mag)>h){
-		return 0;
-	}
-
-	return (315/(64*PI*pow(h,9.0f)))*pow((h*h - mag),3.0f);
+	return (315/(64*PI*pow(H,9.0f)))*pow((H*H - mag),3.0f);
 }
 
 Vec3 default_gradient(Vec3 r_i,Vec3 r_j){
 	Vec3 diff_vec = r_i-r_j;
 	float mag = dot(diff_vec,diff_vec);
 
-	float h = MAX_KERNEL_RADIUS;
+	float coeff = -945.0f/(32.0f*PI*pow(H,9.0f));
 
-	Vec3 v(0,0,0);
-	if (sqrt(mag)>h){
-		return v;
-	}
-
-	float coeff = -945.0f/(32.0f*PI*pow(h,9.0f));
-
-	return diff_vec * coeff * pow((h*h - mag),2.0f);
+	return diff_vec * coeff * pow((H*H - mag),2.0f);
 }
 
 float default_laplacian(Vec3 r_i,Vec3 r_j){
@@ -100,50 +87,26 @@ float default_laplacian(Vec3 r_i,Vec3 r_j){
 	Vec3 diff_vec = r_i-r_j;
 	float mag = dot(diff_vec,diff_vec);
 
-	float h = MAX_KERNEL_RADIUS;
+	float coeff = -945.0f/(32.0f*PI*pow(H,9.0f));
 
-	if (sqrt(mag)>h){
-		return 0;
-	}
-
-	float coeff = -945.0f/(32.0f*PI*pow(h,9.0f));
-
-	return coeff * (h*h - mag) * (3.0f*h*h - 7.0f*mag);
+	return coeff * (H*H - mag) * (3.0f*H*H - 7.0f*mag);
 }
 
 Vec3 pressure_kernel_gradient(Vec3 r_i, Vec3 r_j){
 	Vec3 diff_vec = r_i-r_j;
 	float mag = dot(diff_vec,diff_vec);
 
-	float h = MAX_KERNEL_RADIUS;
+	float coeff = (45/(PI*pow(H,6.0f)))*pow((H-sqrt(mag)),2.0f);
 
-	float coeff = (45/(PI*pow(h,6.0f)))*pow((h-sqrt(mag)),2.0f);
-	
 	Vec3 v(0,0,0);
-
-	if(mag>0){
-		if(sqrt(mag)<h){
-			diff_vec*(-coeff)/(sqrt(mag));
-		}else{
-			return v;
-		}
-	}else{
-		//cout<<'h'<<endl;
-		return diff_vec*(45/(PI*pow(h,6.0f)))*(-2.0*h);
-	}
+	return diff_vec*(-coeff)/(sqrt(mag));
 }
 
 float viscosity_kernel_laplacian(Vec3 r_i, Vec3 r_j){
 	Vec3 diff_vec = r_i-r_j;
 	float mag = dot(diff_vec,diff_vec);
 
-	float h = MAX_KERNEL_RADIUS;
-
-	if (sqrt(mag)>h){
-		return 0;
-	}
-
-	return (45.0f/(PI*pow(h,6)))*(h-sqrt(mag));
+	return (45.0f/(PI*pow(H,6)))*(H-sqrt(mag));
 }
 
 /********************
@@ -157,18 +120,6 @@ Vec3 kinematic_polynomial(Vec3 pos, Vec3 vel, Vec3 acc,float t){
 /*******************
 * Particle Methods *
 *******************/
-float density_at_particle(Particle* part){
-	float density = default_kernel(part->position,part->position);
-	Particle* temp_particle;
-	vector<int> neighbor_vec = part->neighbors;
-
-	for (int i = 0; i<NUM_PARTICLES; i++){ // changed to neighbors
-		temp_particle = PARTICLES[i];
-		density += temp_particle->mass*default_kernel(part->position,temp_particle->position);
-	}
-	return density;
-}
-
 float density_at_point(Vec3 point){
 	//first should generate a list of the particles we need to check, using the box for this point.
 	//int box_number = NEIGHBOR.compute_box_num(point,SUPPORT_RADIUS,CONTAINER.min.x,CONTAINER.max.x);
@@ -208,7 +159,15 @@ void run_time_step(){
 	for (int i = 0; i<NUM_PARTICLES; i++){
 		density = 0;
 		base_particle = PARTICLES[i];
-		density = density_at_particle(base_particle);
+
+		for (int j = 0; j<NUM_PARTICLES; j++){ // changed to neighbors
+			temp_particle = PARTICLES[i];
+			Vec3 r = base_particle->position-temp_particle->position;
+			float mag = dot(r,r);
+			if(mag<H*H){
+				density += temp_particle->mass*default_kernel(base_particle->position,temp_particle->position);
+			}
+		}
 		density_list.push_back(density);
 
 		//changed this to not include stiffness at all
@@ -223,12 +182,14 @@ void run_time_step(){
 
 		vector<int> neighbor_vec = base_particle->neighbors;
 		int n = neighbor_vec.size();
-		for (int j = 0; j<NUM_PARTICLES; j++){ // changed to neighbors
+		for (int j = 0; j<NUM_PARTICLES && i!=j; j++){ // changed to neighbors
 			temp_particle = PARTICLES[j];
-
-			Vec3 weight = pressure_kernel_gradient(base_particle->position,temp_particle->position);
-			pressure_gradient += weight * temp_particle->mass * ((pressure_list[i]+pressure_list[j])/(2.0f*density_list[j])); 
-
+			Vec3 r = base_particle->position-temp_particle->position;
+			float mag = dot(r,r);
+			if(mag<H*H){
+				Vec3 weight = pressure_kernel_gradient(base_particle->position,temp_particle->position);
+				pressure_gradient += weight * temp_particle->mass * ((pressure_list[i]+pressure_list[j])/(2.0f*density_list[j])); 
+			}
 		}
 		pressure_grad_list.push_back(pressure_gradient*(-1.0f));
 	}
@@ -241,14 +202,17 @@ void run_time_step(){
 		vector<int> neighbor_vec = base_particle->neighbors;
 		for (int j = 0; j<NUM_PARTICLES; j++){ // changed to neighbors
 			temp_particle = PARTICLES[j];
-
-			float weight = viscosity_kernel_laplacian(base_particle->position,temp_particle->position);
-			viscosity_laplacian += ((temp_particle->velocity - base_particle->velocity)/density_list[i])*weight * temp_particle->mass;
+			Vec3 r = base_particle->position-temp_particle->position;
+			float mag = dot(r,r);
+			if(mag<H*H){
+				float weight = viscosity_kernel_laplacian(base_particle->position,temp_particle->position);
+				viscosity_laplacian += ((temp_particle->velocity - base_particle->velocity)/density_list[i])*weight * temp_particle->mass;
+			}
 		}
 		viscosity_list.push_back(viscosity_laplacian*VISCOSITY);
 	}
 
-	//Sets color field at each point for surface tension
+	//Sets color field laplacian at each point for surface tension
 	for (int i = 0; i<NUM_PARTICLES; i++){
 		base_particle = PARTICLES[i];
 
@@ -256,8 +220,11 @@ void run_time_step(){
 		vector<int> neighbor_vec = base_particle->neighbors;
 		for (int j = 0; j<NUM_PARTICLES; j++){
 			temp_particle = PARTICLES[j];
-			color += (temp_particle->mass / density_list[j]) * default_laplacian(base_particle->position,temp_particle->position);
-
+			Vec3 r = base_particle->position-temp_particle->position;
+			float mag = dot(r,r);
+			if(mag<H*H){
+				color += (temp_particle->mass / density_list[j]) * default_laplacian(base_particle->position,temp_particle->position);
+			}
 		}
 		color_list.push_back(color);
 	}
@@ -270,11 +237,15 @@ void run_time_step(){
 		vector<int> neighbor_vec = base_particle->neighbors;
 		for (int j = 0; j<NUM_PARTICLES; j++){
 			temp_particle = PARTICLES[j];
-			normal += default_gradient(base_particle->position,temp_particle->position)*(temp_particle->mass / density_list[j]);
+			Vec3 r = base_particle->position-temp_particle->position;
+			float mag = dot(r,r);
+			if(mag<H*H){
+				normal += default_gradient(base_particle->position,temp_particle->position)*(temp_particle->mass / density_list[j]);
+			}
 		}
 
 		float length = sqrt(dot(normal,normal));
-		if(length>0.0){
+		if(length>TENSION_THRESHOLD){
 			normal = normal/sqrt(length);
 			tension_list.push_back(normal*(-1.0f*color_list[i]));
 		}else{
@@ -293,8 +264,8 @@ void run_time_step(){
 
 		//First add external forces
 		Vec3 acceleration = GRAVITY + (tension_list[i]*SURFACE_TENSION
-						    + (viscosity_list[i]*VISCOSITY)
-							+ pressure_grad_list[i])/density_list[i];
+			+ (viscosity_list[i]*VISCOSITY)
+			+ pressure_grad_list[i])/density_list[i];
 
 		Vec3 position = temp_particle->position;
 
@@ -336,7 +307,7 @@ void initScene(){
 	//	}
 	//}
 
-	float step = .02;
+	float step = .03;
 	for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
 		for(float j = CONTAINER.min.y; j<(CONTAINER.max.y)/2.0f; j=j+step){
 			noise = float(rand())/(float(RAND_MAX))*.05f;
@@ -404,7 +375,7 @@ void myDisplay(){
 	//	PARTICLES.push_back(new_part);
 	//	NUM_PARTICLES++;
 	//}
-	
+
 	//draw particles
 	glPointSize(4.0f);
 	glBegin(GL_POINTS);
@@ -412,13 +383,13 @@ void myDisplay(){
 	for (int i = 0; i<PARTICLES.size(); i++){
 		temp_part = PARTICLES[i];
 		glClearColor(0,0,0,0);
-		
-		
+
+
 		// alternate particle colors depending on box in grid
 		/*if (temp_part->box % 2 == 0) {
-            glColor3f(1.0,0,0);
+		glColor3f(1.0,0,0);
 		} else {
-            glColor3f(0,1.0,1.0);
+		glColor3f(0,1.0,1.0);
 		}*/
 		glColor3f(0,0,1.0);
 		glVertex3f(temp_part->position.x,temp_part->position.y,temp_part->position.z);
@@ -509,3 +480,18 @@ int main(int argc, char* argv[]){
 
 	return 0;
 }
+
+
+
+//float density_at_particle(Particle* part){
+//	float density = default_kernel(part->position,part->position);
+//	Particle* temp_particle;
+//	vector<int> neighbor_vec = part->neighbors;
+//
+//	for (int i = 0; i<NUM_PARTICLES; i++){ // changed to neighbors
+//		temp_particle = PARTICLES[i];
+//		density += temp_particle->mass*default_kernel(part->position,temp_particle->position);
+//	}
+//	//cout<<density<<endl;
+//	return density;
+//}
