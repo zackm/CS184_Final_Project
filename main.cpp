@@ -339,7 +339,7 @@ void initScene(){
 	//}
 	////NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER);
 
-	glEnable(GL_DEPTH_TEST);
+	//glEnable(GL_DEPTH_TEST);
 
 }
 
@@ -366,16 +366,16 @@ void myDisplay(){
 		exit(0);
 	}
 
-	//if(CURRENT_TIME<.6){
-	//	//throw in a new particle.
-	//	float noise = float(rand())/(float(RAND_MAX))*.05f;
-	//	Vec3 pos(.1+noise,.9,0);
-	//	Vec3 vel(float(rand())/(float(RAND_MAX)),float(rand())/(float(RAND_MAX)),0);
-	//	Particle* new_part = new Particle(pos,vel,MASS);
-	//	PARTICLES.push_back(new_part);
-	//	NUM_PARTICLES++;
-	//}
-
+//	if(CURRENT_TIME<3.2){
+//		//throw in a new particle.
+//		float noise = float(rand())/(float(RAND_MAX))*.05f;
+//		Vec3 pos(.1+noise,.9,0);
+//		Vec3 vel(float(rand())/(float(RAND_MAX)),float(rand())/(float(RAND_MAX)),0);
+//		Particle* new_part = new Particle(pos,vel,MASS);
+//		PARTICLES.push_back(new_part);
+//		NUM_PARTICLES++;
+//	}
+	
 	//draw particles
 	glPointSize(4.0f);
 	glBegin(GL_POINTS);
@@ -393,6 +393,12 @@ void myDisplay(){
 		}*/
 		glColor3f(0,0,1.0);
 		glVertex3f(temp_part->position.x,temp_part->position.y,temp_part->position.z);
+        
+//        glColor3f(1,0,0);
+//        glPushMatrix();
+//        glTranslated(temp_part->position.x,temp_part->position.y,temp_part->position.z);
+//        glutWireSphere(H,10,10);
+//        glPopMatrix();
 	}
 	glEnd();
 
