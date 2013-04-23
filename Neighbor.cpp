@@ -13,6 +13,7 @@ void Neighbor::add_to_box_particles(int box_num,int particle_num) {
 
 void Neighbor::set_particle_neighbors(int particle_num, Particle *p) {
 	vector<int> list = box_particles[particle_num];
+    //#pragma omp parallel for
 	for (int i = 0; i < box_particles[particle_num].size(); i++) {
 		p->neighbors.push_back(list[i]);
 	}
@@ -39,9 +40,9 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, float min_width, floa
 	////col = floor(col_point/support_rad);
 
 	//int num = col + row*box_per_row - 1;
-
-	////return num;//int(max(float(num),0.0f));
-
+	
+    ////return num;//int(max(float(num),0.0f));
+    
 	for (int i = 0; i < box_per_row && curr_x < max_width; i++) {
         col_point = abs(pos.x - curr_x);
         row_point = abs(pos.y - curr_y);
@@ -91,7 +92,7 @@ void Neighbor::place_particles(vector<Particle*> &particles, float support_rad, 
     for (int i = 0; i < box_per_row*box_per_row*box_per_row; i++) {
         box_particles.push_back(vector<int>());
     }
-
+    
     int box_num;
     for (int i = 0; i < particles.size(); i++) {
         // determine box #
