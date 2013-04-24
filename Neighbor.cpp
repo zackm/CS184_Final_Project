@@ -415,17 +415,17 @@ void Neighbor::place_particles(vector<Particle*> &particles, float support_rad, 
                 neighbor_boxes.push_back(box_num+square_face-box_per_row-1);
             } else if (box_num % box_per_row == box_per_row - 1) {
                 // bottom - not front or back, right face
-                neighbor_boxes.push_back(box_num+1);
-                neighbor_boxes.push_back(box_num-box_per_row);
-                neighbor_boxes.push_back(box_num-box_per_row+1);
+                neighbor_boxes.push_back(box_num-1);
+                neighbor_boxes.push_back(box_num+box_per_row);
+                neighbor_boxes.push_back(box_num+box_per_row-1);
                 neighbor_boxes.push_back(box_num-square_face);
-                neighbor_boxes.push_back(box_num-square_face+1);
-                neighbor_boxes.push_back(box_num-square_face-box_per_row);
-                neighbor_boxes.push_back(box_num-square_face-box_per_row+1);
+                neighbor_boxes.push_back(box_num-square_face-1);
+                neighbor_boxes.push_back(box_num-square_face+box_per_row);
+                neighbor_boxes.push_back(box_num-square_face+box_per_row-1);
                 neighbor_boxes.push_back(box_num+square_face);
-                neighbor_boxes.push_back(box_num+square_face+1);
-                neighbor_boxes.push_back(box_num+square_face-box_per_row);
-                neighbor_boxes.push_back(box_num+square_face-box_per_row+1);
+                neighbor_boxes.push_back(box_num+square_face-1);
+                neighbor_boxes.push_back(box_num+square_face+box_per_row);
+                neighbor_boxes.push_back(box_num+square_face+box_per_row-1);
             } else {
                 // right face - not on edge
                 neighbor_boxes.push_back(box_num+1);
