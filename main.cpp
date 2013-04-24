@@ -47,7 +47,7 @@ const float DENSITY_TOL = 1.5f;//also used for marching grid, for density of the
 
 Neighbor NEIGHBOR; //neighbor object used for calculations
 const float H = .05;
-const float SUPPORT_RADIUS = .05;
+const float SUPPORT_RADIUS = .1;
 
 bool USE_ADAPTIVE = false; //for adaptive or uniform marching cubes.
 
@@ -307,9 +307,32 @@ void initScene(){
 	float noise = float(rand())/(float(RAND_MAX))*.1;
 	float x,y,z,v_x,v_y,v_z;
 
-	//2D scene
+	//2D Drop Scene
+	float step = .017;
+	for(float i = 2.0*CONTAINER.max.x/5.0f; i<3.0*(CONTAINER.max.x)/5.0f; i=i+step){
+		for(float j = 4.0*CONTAINER.max.y/5.0f; j<(CONTAINER.max.y); j=j+step){
+			noise = float(rand())/(float(RAND_MAX))*.05f;
+			Vec3 pos(i,j,0);
+			Vec3 vel(0,-5,0);
+			new_part = new Particle(pos,vel,MASS);
+			PARTICLES.push_back(new_part);
+		}
+	}
+
+	step = .017;
+	for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
+		for(float j = CONTAINER.min.y; j<(CONTAINER.max.y)/5.0f; j=j+step){
+			noise = float(rand())/(float(RAND_MAX))*.05f;
+			Vec3 pos(i,j,0);
+			Vec3 vel(0,0,0);
+			new_part = new Particle(pos,vel,MASS);
+			PARTICLES.push_back(new_part);
+		}
+	}
+
+	//2D Throw Scene
 	//Semi random grid of particles
-	float step = .005;
+	/*float step = .007;
 	for(float i = 4.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
 		for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
 			noise = float(rand())/(float(RAND_MAX))*.05f;
@@ -320,7 +343,7 @@ void initScene(){
 		}
 	}
 
-	step = .005;
+	step = .007;
 	for(float i = CONTAINER.min.x; i<1.0f*(CONTAINER.max.x)/5.0f; i=i+step){
 		for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
 			noise = float(rand())/(float(RAND_MAX))*.05f;
@@ -329,9 +352,9 @@ void initScene(){
 			new_part = new Particle(pos,vel,MASS);
 			PARTICLES.push_back(new_part);
 		}
-	}
+	}*/
 
-	//////3D scene
+	//////3D Drop Scene
  //   float step = .025;
  //   for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
  //       for(float j = 2.0*CONTAINER.max.y/5.0f; j<3.0f*(CONTAINER.max.y)/5.0f; j=j+step){
