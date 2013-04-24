@@ -35,7 +35,7 @@ const float TIMESTEP = .01;//time elapsed between iterations
 const float LIFETIME = 100.0f;
 float CURRENT_TIME = 0.0f;
 int NUM_PARTICLES = 0;
-Vec3 GRAVITY(0,-9.8f,0);
+Vec3 GRAVITY(0,-9.8f,5);
 const float MASS = .02f;//could set it to any number really.
 const float IDEAL_DENSITY = 1000.0f;
 const float STIFFNESS = 3.0f;//for pressure difference
@@ -50,7 +50,6 @@ Neighbor NEIGHBOR; //neighbor object used for calculations
 const float H = .05;
 const float SUPPORT_RADIUS = .045;//2.0f*H;
 
-
 bool USE_ADAPTIVE = false; //for adaptive or uniform marching cubes.
 
 const float PI = 3.1415926;
@@ -59,7 +58,7 @@ const float PI = 3.1415926;
 simple dot product between two vectors.
 */
 float dot(Vec3 v1, Vec3 v2){
-	return v1.x*v2.x+v1.y*v2.y+v1.z+v2.z;
+	return (v1.x*v2.x)+(v1.y*v2.y)+(v1.z*v2.z);
 }
 
 /******************
@@ -317,24 +316,24 @@ void initScene(){
 	float noise = float(rand())/(float(RAND_MAX))*.1;
 	float x,y,z,v_x,v_y,v_z;
 
-	////Semi random grid of particles
-	//float step = .025;
-	//for(float i = 2.0*CONTAINER.max.x/5.0f; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
-	//	for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
-	//		noise = float(rand())/(float(RAND_MAX))*.05f;
-	//		Vec3 pos(i+float(rand())/(float(RAND_MAX))*.1,j+float(rand())/(float(RAND_MAX))*.1,0);
-	//		Vec3 vel(0,0,0);
-	//		new_part = new Particle(pos,vel,MASS);
-	//		PARTICLES.push_back(new_part);
-	//	}
-	//}
-
-	float step = .02;
-	for(float i = CONTAINER.min.x; i<(CONTAINER.max.x)/2.0f; i=i+step){
-		for(float j = CONTAINER.min.y; j<(CONTAINER.max.y)/2.0f; j=j+step){
+	//Semi random grid of particles
+	float step = .015;
+	for(float i = 4.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
+		for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
 			noise = float(rand())/(float(RAND_MAX))*.05f;
 			Vec3 pos(i,j,0);
-			Vec3 vel(0,0,0);
+			Vec3 vel(-1,-8,.2);
+			new_part = new Particle(pos,vel,MASS);
+			PARTICLES.push_back(new_part);
+		}
+	}
+
+	step = .015;
+	for(float i = CONTAINER.min.x; i<1.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+		for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
+			noise = float(rand())/(float(RAND_MAX))*.05f;
+			Vec3 pos(i,j,0);
+			Vec3 vel(5,-5,.3);
 			new_part = new Particle(pos,vel,MASS);
 			PARTICLES.push_back(new_part);
 		}
@@ -372,13 +371,13 @@ void myDisplay(){
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	//gluPerspective(90,1.0f,.1,-1000);
-	glOrtho(CONTAINER.min.x,CONTAINER.max.x,CONTAINER.min.y,CONTAINER.max.y,CONTAINER.min.z,CONTAINER.max.z);
+	gluPerspective(70,1.0f,.1,-1000);
+	//glOrtho(CONTAINER.min.x,CONTAINER.max.x,CONTAINER.min.y,CONTAINER.max.y,CONTAINER.min.z,CONTAINER.max.z);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
-	//gluLookAt(1.2,1.2,1.2,0,0,0,0,1,0);
+	gluLookAt(.5,.5,1.8,.5,.5,0,0,1,0);
 
 	run_time_step();
 	CURRENT_TIME += TIMESTEP;
@@ -510,18 +509,3 @@ int main(int argc, char* argv[]){
 
 	return 0;
 }
-
-
-
-//float density_at_particle(Particle* part){
-//	float density = default_kernel(part->position,part->position);
-//	Particle* temp_particle;
-//	vector<int> neighbor_vec = part->neighbors;
-//
-//	for (int i = 0; i<NUM_PARTICLES; i++){ // changed to neighbors
-//		temp_particle = PARTICLES[i];
-//		density += temp_particle->mass*default_kernel(part->position,temp_particle->position);
-//	}
-//	//cout<<density<<endl;
-//	return density;
-//}
