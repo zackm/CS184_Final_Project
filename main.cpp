@@ -149,7 +149,7 @@ void run_time_step(){
 	vector<Vec3> viscosity_list;
 	vector<float> color_list;
 	vector<Vec3> tension_list;
-
+    
 	NEIGHBOR.place_particles(PARTICLES, SUPPORT_RADIUS, CONTAINER);
 
 	//update using slow algorithm for now
@@ -163,16 +163,16 @@ void run_time_step(){
 
 		vector<int> neighbor_vec = base_particle->neighbors;
 		int n = neighbor_vec.size();
-		for (int j = 0; j<NUM_PARTICLES; j++){ // changed to neighbors
-			temp_particle = PARTICLES[j];
-			Vec3 r = base_particle->position-temp_particle->position;
-			float mag = dot(r,r);
-			if(mag<H*H){
-				density += temp_particle->mass*default_kernel(base_particle->position,temp_particle->position);
-			}
+		for (int j = 0; j<n; j++){ // changed to neighbors
+            temp_particle = PARTICLES[neighbor_vec[j]];
+            Vec3 r = base_particle->position-temp_particle->position;
+            float mag = dot(r,r);
+            if(mag<H*H){
+                density += temp_particle->mass*default_kernel(base_particle->position,temp_particle->position);
+            }
 		}
 		density_list.push_back(density);
-
+        
 		//changed this to not include stiffness at all
 		pressure_list.push_back(STIFFNESS*(density-IDEAL_DENSITY));
 	}
@@ -309,6 +309,7 @@ void initScene(){
 
 	//2D scene
 	//Semi random grid of particles
+<<<<<<< HEAD
 	float step = .012;
 	for(float i = 4.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
 		for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
@@ -330,21 +331,44 @@ void initScene(){
 			PARTICLES.push_back(new_part);
 		}
 	}
+=======
+//	float step = .01;
+//	for(float i = 4.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
+//		for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
+//			noise = float(rand())/(float(RAND_MAX))*.05f;
+//			Vec3 pos(i,j,0);
+//			Vec3 vel(-1,-8,0);
+//			new_part = new Particle(pos,vel,MASS);
+//			PARTICLES.push_back(new_part);
+//		}
+//	}
+//
+//	step = .01;
+//	for(float i = CONTAINER.min.x; i<1.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+//		for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
+//			noise = float(rand())/(float(RAND_MAX))*.05f;
+//			Vec3 pos(i,j,0);
+//			Vec3 vel(5,-5,0);
+//			new_part = new Particle(pos,vel,MASS);
+//			PARTICLES.push_back(new_part);
+//		}
+//	}
+>>>>>>> 097d8fc42d95c835e9135f838098229268d38676
 	
 
 	////3D scene
-	//float step = .04;
-	//for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
-	//	for(float j = 2.0*CONTAINER.max.y/5.0f; j<3.0f*(CONTAINER.max.y)/5.0f; j=j+step){
-	//		for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.y)/5.0f; k=k+step){
-	//			//noise = float(rand())/(float(RAND_MAX))*.05f;
-	//			Vec3 pos(i,j,k);
-	//			Vec3 vel(0,0,0);
-	//			new_part = new Particle(pos,vel,MASS);
-	//			PARTICLES.push_back(new_part);
-	//		}
-	//	}
-	//}
+    float step = .04;
+    for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+        for(float j = 2.0*CONTAINER.max.y/5.0f; j<3.0f*(CONTAINER.max.y)/5.0f; j=j+step){
+            for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.y)/5.0f; k=k+step){
+                //noise = float(rand())/(float(RAND_MAX))*.05f;
+                Vec3 pos(i,j,k);
+                Vec3 vel(0,0,0);
+                new_part = new Particle(pos,vel,MASS);
+                PARTICLES.push_back(new_part);
+            }
+        }
+    }
 
 
 	NUM_PARTICLES = PARTICLES.size();
@@ -464,7 +488,7 @@ void myDisplay(){
 	glPolygonMode(GL_BACK, GL_LINE);
 
 	glDisable(GL_LIGHTING);
-	glClearColor (0.0, 0.0, 0.0, 0.0);
+	glClearColor (0, 0, 0, 0);
 	glColor3f(1.0f,1.0f,1.0f);
 
 	glBegin(GL_POLYGON);

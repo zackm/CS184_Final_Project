@@ -70,9 +70,9 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, float min_width, floa
     //cout<<"Num = "<<num<<" = "<<col<<" + "<<row<<" * "<<box_per_row<<endl;
    // cout<<endl;
 
-    if (num >= box_per_row * box_per_row * box_per_row || num < 0) {
+    if (num >= box_per_row * box_per_row * box_per_row || num < 0 || row == -1 || col == -1 || depth == -1) {
         cout<<"Error, incorrect box # assigned in Neighbor: "<<num<<endl;
-        num = 0; // temporarily fix bug where particle position is NaN
+        num = 0; // set box number to 0 to prevent bad vector access
        // exit(0);
     }
      //compute box num given row & col
@@ -415,17 +415,17 @@ void Neighbor::place_particles(vector<Particle*> &particles, float support_rad, 
                 neighbor_boxes.push_back(box_num+square_face-box_per_row-1);
             } else if (box_num % box_per_row == box_per_row - 1) {
                 // bottom - not front or back, right face
-                neighbor_boxes.push_back(box_num+1);
-                neighbor_boxes.push_back(box_num-box_per_row);
-                neighbor_boxes.push_back(box_num-box_per_row+1);
+                neighbor_boxes.push_back(box_num-1);
+                neighbor_boxes.push_back(box_num+box_per_row);
+                neighbor_boxes.push_back(box_num+box_per_row-1);
                 neighbor_boxes.push_back(box_num-square_face);
-                neighbor_boxes.push_back(box_num-square_face+1);
-                neighbor_boxes.push_back(box_num-square_face-box_per_row);
-                neighbor_boxes.push_back(box_num-square_face-box_per_row+1);
+                neighbor_boxes.push_back(box_num-square_face-1);
+                neighbor_boxes.push_back(box_num-square_face+box_per_row);
+                neighbor_boxes.push_back(box_num-square_face+box_per_row-1);
                 neighbor_boxes.push_back(box_num+square_face);
-                neighbor_boxes.push_back(box_num+square_face+1);
-                neighbor_boxes.push_back(box_num+square_face-box_per_row);
-                neighbor_boxes.push_back(box_num+square_face-box_per_row+1);
+                neighbor_boxes.push_back(box_num+square_face-1);
+                neighbor_boxes.push_back(box_num+square_face+box_per_row);
+                neighbor_boxes.push_back(box_num+square_face+box_per_row-1);
             } else {
                 // right face - not on edge
                 neighbor_boxes.push_back(box_num+1);
@@ -518,14 +518,12 @@ void Neighbor::place_particles(vector<Particle*> &particles, float support_rad, 
         for (int j = 0; j < neighbor_boxes.size(); j++) {
             int num = neighbor_boxes[j];
 
-            //vector<int> neighbor_vec = box_particles[num]; // particles in a neighboring box
-            // change neighbor_vec to iterator?
             for (std::vector<int>::iterator it = box_particles[num].begin(); it != box_particles[num].end(); ++it) {
                 particle_num = *it;
                 Vec3 a = particles[i]->position;
                 Vec3 b = particles[particle_num]->position;
                 float dist = sqrt(pow((a.x - b.x),2) - pow((a.y - b.y),2));
-                if (particle_num != i && dist <= support_rad) {
+                if (dist <= support_rad) {
                     particles[i]->neighbors.push_back(particle_num);
                 }
             }
