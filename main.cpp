@@ -309,7 +309,7 @@ void initScene(){
 
 	//2D scene
 	//Semi random grid of particles
-	float step = .01;
+	float step = .012;
 	for(float i = 4.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
 		for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
 			noise = float(rand())/(float(RAND_MAX))*.05f;
@@ -320,7 +320,7 @@ void initScene(){
 		}
 	}
 
-	step = .01;
+	step = .012;
 	for(float i = CONTAINER.min.x; i<1.0f*(CONTAINER.max.x)/5.0f; i=i+step){
 		for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
 			noise = float(rand())/(float(RAND_MAX))*.05f;
