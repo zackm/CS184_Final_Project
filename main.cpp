@@ -23,7 +23,6 @@ using namespace std;
 /*******************
 * GLOBAL VARIABLES *
 *******************/
-
 Container CONTAINER(Vec3(1,1,1),Vec3(0,0,0));//very simple cube for now. Later, make it a particle itself.
 vector<Particle*> PARTICLES;//particles that we do SPH on.
 vector<Triangle*> TRIANGLES;//triangles made from marching cubes to render
@@ -35,7 +34,7 @@ const float TIMESTEP = .01;//time elapsed between iterations
 const float LIFETIME = 100.0f;
 float CURRENT_TIME = 0.0f;
 int NUM_PARTICLES = 0;
-Vec3 GRAVITY(0,-9.8f,5);
+Vec3 GRAVITY(0,-9.8f,0);
 const float MASS = .02f;//could set it to any number really.
 const float IDEAL_DENSITY = 1000.0f;
 const float STIFFNESS = 3.0f;//for pressure difference
@@ -48,11 +47,12 @@ const float DENSITY_TOL = 1.5f;//also used for marching grid, for density of the
 
 Neighbor NEIGHBOR; //neighbor object used for calculations
 const float H = .05;
-const float SUPPORT_RADIUS = .045;//2.0f*H;
+const float SUPPORT_RADIUS = .1;
 
 bool USE_ADAPTIVE = false; //for adaptive or uniform marching cubes.
 
 const float PI = 3.1415926;
+const float DRAW_RADIUS = .02f;
 
 /*
 simple dot product between two vectors.
@@ -149,9 +149,9 @@ void run_time_step(){
 	vector<Vec3> viscosity_list;
 	vector<float> color_list;
 	vector<Vec3> tension_list;
-    
-    NEIGHBOR.place_particles(PARTICLES, SUPPORT_RADIUS, CONTAINER);
-    
+
+	NEIGHBOR.place_particles(PARTICLES, SUPPORT_RADIUS, CONTAINER);
+
 	//update using slow algorithm for now
 	Particle *base_particle, *temp_particle, *new_particle;
 	float density = 0;
@@ -161,16 +161,14 @@ void run_time_step(){
 		density = 0;
 		base_particle = PARTICLES[i];
 
-        vector<int> neighbor_vec = base_particle->neighbors;
+		vector<int> neighbor_vec = base_particle->neighbors;
 		int n = neighbor_vec.size();
 		for (int j = 0; j<NUM_PARTICLES; j++){ // changed to neighbors
-			//if(i!=j){
-				temp_particle = PARTICLES[j];
-				Vec3 r = base_particle->position-temp_particle->position;
-				float mag = dot(r,r);
-				if(mag<H*H){
-					density += temp_particle->mass*default_kernel(base_particle->position,temp_particle->position);
-			//	}
+			temp_particle = PARTICLES[j];
+			Vec3 r = base_particle->position-temp_particle->position;
+			float mag = dot(r,r);
+			if(mag<H*H){
+				density += temp_particle->mass*default_kernel(base_particle->position,temp_particle->position);
 			}
 		}
 		density_list.push_back(density);
@@ -186,8 +184,7 @@ void run_time_step(){
 		Vec3 pressure_gradient(0,0,0);
 
 		vector<int> neighbor_vec = base_particle->neighbors;
-		int n = neighbor_vec.size();
-		for (int j = 0; j<n; j++){ // changed to neighbors
+		for (int j = 0; j<neighbor_vec.size(); j++){ // changed to neighbors
 			if(i!=neighbor_vec[j]){
 				temp_particle = PARTICLES[neighbor_vec[j]];
 				Vec3 r = base_particle->position-temp_particle->position;
@@ -198,10 +195,6 @@ void run_time_step(){
 					pressure_gradient += weight * temp_particle->mass * ((pressure_list[i]+pressure_list[j])/(2.0f*density_list[j])); 
 				}
 			}
-
-			//if(mag==0){
-			//	cout<<'h'<<endl;
-			//}
 		}
 		pressure_grad_list.push_back(pressure_gradient*(-1.0f));
 	}
@@ -212,9 +205,9 @@ void run_time_step(){
 
 		Vec3 viscosity_laplacian(0,0,0);
 		vector<int> neighbor_vec = base_particle->neighbors;
-		for (int j = 0; j<NUM_PARTICLES; j++){ // changed to neighbors
-			if(i!=j){
-				temp_particle = PARTICLES[j];
+		for (int j = 0; j<neighbor_vec.size(); j++){
+			if(i!=neighbor_vec[j]){
+				temp_particle = PARTICLES[neighbor_vec[j]];
 				Vec3 r = base_particle->position-temp_particle->position;
 				float mag = dot(r,r);
 				if(mag<H*H){
@@ -232,9 +225,9 @@ void run_time_step(){
 
 		float color = 0.0f;
 		vector<int> neighbor_vec = base_particle->neighbors;
-		for (int j = 0; j<NUM_PARTICLES; j++){
-			if(i!=j){
-				temp_particle = PARTICLES[j];
+		for (int j = 0; j<neighbor_vec.size(); j++){
+			if(i!=neighbor_vec[j]){
+				temp_particle = PARTICLES[neighbor_vec[j]];
 				Vec3 r = base_particle->position-temp_particle->position;
 				float mag = dot(r,r);
 				if(mag<H*H){
@@ -251,9 +244,9 @@ void run_time_step(){
 
 		Vec3 normal(0,0,0);
 		vector<int> neighbor_vec = base_particle->neighbors;
-		for (int j = 0; j<NUM_PARTICLES; j++){
-			if(i!=j){
-				temp_particle = PARTICLES[j];
+		for (int j = 0; j<neighbor_vec.size(); j++){
+			if(i!=neighbor_vec[j]){
+				temp_particle = PARTICLES[neighbor_vec[j]];
 				Vec3 r = base_particle->position-temp_particle->position;
 				float mag = dot(r,r);
 				if(mag<H*H){
@@ -264,9 +257,7 @@ void run_time_step(){
 		}
 
 		float length = sqrt(dot(normal,normal));
-		//cout<<length<<endl;
 		if(length>TENSION_THRESHOLD){
-			//cout<<'n'<<endl;
 			normal = normal/sqrt(length);
 			tension_list.push_back(normal*(-1.0f*color_list[i]));
 		}else{
@@ -316,30 +307,47 @@ void initScene(){
 	float noise = float(rand())/(float(RAND_MAX))*.1;
 	float x,y,z,v_x,v_y,v_z;
 
+	//2D scene
 	//Semi random grid of particles
-	float step = .015;
+	float step = .01;
 	for(float i = 4.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
 		for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
 			noise = float(rand())/(float(RAND_MAX))*.05f;
 			Vec3 pos(i,j,0);
-			Vec3 vel(-1,-8,.2);
+			Vec3 vel(-1,-8,0);
 			new_part = new Particle(pos,vel,MASS);
 			PARTICLES.push_back(new_part);
 		}
 	}
 
-	step = .015;
+	step = .01;
 	for(float i = CONTAINER.min.x; i<1.0f*(CONTAINER.max.x)/5.0f; i=i+step){
 		for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
 			noise = float(rand())/(float(RAND_MAX))*.05f;
 			Vec3 pos(i,j,0);
-			Vec3 vel(5,-5,.3);
+			Vec3 vel(5,-5,0);
 			new_part = new Particle(pos,vel,MASS);
 			PARTICLES.push_back(new_part);
 		}
 	}
-	NUM_PARTICLES = PARTICLES.size();
+	
 
+	////3D scene
+	//float step = .04;
+	//for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+	//	for(float j = 2.0*CONTAINER.max.y/5.0f; j<3.0f*(CONTAINER.max.y)/5.0f; j=j+step){
+	//		for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.y)/5.0f; k=k+step){
+	//			//noise = float(rand())/(float(RAND_MAX))*.05f;
+	//			Vec3 pos(i,j,k);
+	//			Vec3 vel(0,0,0);
+	//			new_part = new Particle(pos,vel,MASS);
+	//			PARTICLES.push_back(new_part);
+	//		}
+	//	}
+	//}
+
+
+	NUM_PARTICLES = PARTICLES.size();
 	////random particles
 	//for (int i = 0; i<NUM_PARTICLES; i++){
 	//	x = .2f+float(rand())/(float(RAND_MAX))*.1f;
@@ -360,8 +368,22 @@ void initScene(){
 	//}
 	////NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER);
 
-	//glEnable(GL_DEPTH_TEST);
+	//create some lights
+	GLfloat light_position[] = {1,1,1,0};
+	GLfloat mat_specular[] = {0,0,0,1.0};
+	GLfloat mat_diffuse[] = {1.0,1.0,1.0,1.0};
+	GLfloat mat_ambient[] = {.1,.1,.1,1};
+	GLfloat mat_shininess[] = {20.0};
 
+	glMaterialfv(GL_FRONT,GL_SPECULAR,mat_specular);
+	glMaterialfv(GL_FRONT,GL_SHININESS,mat_shininess);
+	glMaterialfv(GL_FRONT,GL_DIFFUSE,mat_diffuse);
+	glMaterialfv(GL_FRONT,GL_AMBIENT,mat_ambient);
+	glLightfv(GL_LIGHT0,GL_POSITION,light_position);
+
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
 }
 
 void myDisplay(){
@@ -387,19 +409,19 @@ void myDisplay(){
 		exit(0);
 	}
 
-//	if(CURRENT_TIME<3.2){
-//		//throw in a new particle.
-//		float noise = float(rand())/(float(RAND_MAX))*.05f;
-//		Vec3 pos(.1+noise,.9,0);
-//		Vec3 vel(float(rand())/(float(RAND_MAX)),float(rand())/(float(RAND_MAX)),0);
-//		Particle* new_part = new Particle(pos,vel,MASS);
-//		PARTICLES.push_back(new_part);
-//		NUM_PARTICLES++;
-//	}
-	
+	//	if(CURRENT_TIME<3.2){
+	//		//throw in a new particle.
+	//		float noise = float(rand())/(float(RAND_MAX))*.05f;
+	//		Vec3 pos(.1+noise,.9,0);
+	//		Vec3 vel(float(rand())/(float(RAND_MAX)),float(rand())/(float(RAND_MAX)),0);
+	//		Particle* new_part = new Particle(pos,vel,MASS);
+	//		PARTICLES.push_back(new_part);
+	//		NUM_PARTICLES++;
+	//	}
+
 	//draw particles
-	glPointSize(4.0f);
-	glBegin(GL_POINTS);
+	//glPointSize(4.0f);
+	glEnable(GL_LIGHTING);
 	Particle* temp_part;
 	for (int i = 0; i<PARTICLES.size(); i++){
 		temp_part = PARTICLES[i];
@@ -412,17 +434,16 @@ void myDisplay(){
 		} else {
 		glColor3f(0,1.0,1.0);
 		}*/
-		glColor3f(0,0,1.0);
-		glVertex3f(temp_part->position.x,temp_part->position.y,temp_part->position.z);
-        
-        // Draw sphere of radius H around particles
-//        glColor3f(1,0,0);
-//        glPushMatrix();
-//        glTranslated(temp_part->position.x,temp_part->position.y,temp_part->position.z);
-//        glutWireSphere(H/2,16,16);
-//        glPopMatrix();
+		//glColor3f(0,0,1.0);
+		//glVertex3f(temp_part->position.x,temp_part->position.y,temp_part->position.z);
+
+		//Draw sphere of radius H around particles
+		//glColor3f(0,0,1.0);
+		glPushMatrix();
+		glTranslated(temp_part->position.x,temp_part->position.y,temp_part->position.z);
+		glutWireSphere(DRAW_RADIUS,16,16);
+		glPopMatrix();
 	}
-	glEnd();
 
 	////draw triangles
 	//Triangle *temp_triangle;
@@ -490,7 +511,7 @@ void myDisplay(){
 }
 
 int main(int argc, char* argv[]){
-    
+
 	glutInit(&argc, argv);
 
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGB);

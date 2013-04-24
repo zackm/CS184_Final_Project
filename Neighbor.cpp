@@ -24,7 +24,7 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, float min_width, floa
     // assuming container is cube
     int row = -1,col = -1, depth = -1;
     float width = max_width - min_width;
-    int box_per_row = width / support_rad; // casting to int, assuming support radius evenly divides width
+    int box_per_row = (int)width / support_rad; // casting to int, assuming support radius evenly divides width
 
     float curr_x = min_width, curr_y = min_width, curr_z = min_width;
 
@@ -71,7 +71,7 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, float min_width, floa
    // cout<<endl;
 
     if (num >= box_per_row * box_per_row * box_per_row || num < 0) {
-        //cout<<"Error, incorrect box # assigned in Neighbor: "<<num<<endl;
+        cout<<"Error, incorrect box # assigned in Neighbor: "<<num<<endl;
         num = 0; // temporarily fix bug where particle position is NaN
        // exit(0);
     }
