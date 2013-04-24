@@ -11,3 +11,6 @@ public:
 	~Triangle(void){};
 };
 
+extern float dot(Vec3,Vec3);
+
+extern Vec3 cross(Vec3,Vec3);

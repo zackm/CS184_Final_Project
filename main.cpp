@@ -39,38 +39,38 @@ const float DRAW_RADIUS = .01f;
 
 //marching cubes table data
 int edgeTable[256]={
-0x0  , 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
-0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09, 0xf00,
-0x190, 0x99 , 0x393, 0x29a, 0x596, 0x49f, 0x795, 0x69c,
-0x99c, 0x895, 0xb9f, 0xa96, 0xd9a, 0xc93, 0xf99, 0xe90,
-0x230, 0x339, 0x33 , 0x13a, 0x636, 0x73f, 0x435, 0x53c,
-0xa3c, 0xb35, 0x83f, 0x936, 0xe3a, 0xf33, 0xc39, 0xd30,
-0x3a0, 0x2a9, 0x1a3, 0xaa , 0x7a6, 0x6af, 0x5a5, 0x4ac,
-0xbac, 0xaa5, 0x9af, 0x8a6, 0xfaa, 0xea3, 0xda9, 0xca0,
-0x460, 0x569, 0x663, 0x76a, 0x66 , 0x16f, 0x265, 0x36c,
-0xc6c, 0xd65, 0xe6f, 0xf66, 0x86a, 0x963, 0xa69, 0xb60,
-0x5f0, 0x4f9, 0x7f3, 0x6fa, 0x1f6, 0xff , 0x3f5, 0x2fc,
-0xdfc, 0xcf5, 0xfff, 0xef6, 0x9fa, 0x8f3, 0xbf9, 0xaf0,
-0x650, 0x759, 0x453, 0x55a, 0x256, 0x35f, 0x55 , 0x15c,
-0xe5c, 0xf55, 0xc5f, 0xd56, 0xa5a, 0xb53, 0x859, 0x950,
-0x7c0, 0x6c9, 0x5c3, 0x4ca, 0x3c6, 0x2cf, 0x1c5, 0xcc ,
-0xfcc, 0xec5, 0xdcf, 0xcc6, 0xbca, 0xac3, 0x9c9, 0x8c0,
-0x8c0, 0x9c9, 0xac3, 0xbca, 0xcc6, 0xdcf, 0xec5, 0xfcc,
-0xcc , 0x1c5, 0x2cf, 0x3c6, 0x4ca, 0x5c3, 0x6c9, 0x7c0,
-0x950, 0x859, 0xb53, 0xa5a, 0xd56, 0xc5f, 0xf55, 0xe5c,
-0x15c, 0x55 , 0x35f, 0x256, 0x55a, 0x453, 0x759, 0x650,
-0xaf0, 0xbf9, 0x8f3, 0x9fa, 0xef6, 0xfff, 0xcf5, 0xdfc,
-0x2fc, 0x3f5, 0xff , 0x1f6, 0x6fa, 0x7f3, 0x4f9, 0x5f0,
-0xb60, 0xa69, 0x963, 0x86a, 0xf66, 0xe6f, 0xd65, 0xc6c,
-0x36c, 0x265, 0x16f, 0x66 , 0x76a, 0x663, 0x569, 0x460,
-0xca0, 0xda9, 0xea3, 0xfaa, 0x8a6, 0x9af, 0xaa5, 0xbac,
-0x4ac, 0x5a5, 0x6af, 0x7a6, 0xaa , 0x1a3, 0x2a9, 0x3a0,
-0xd30, 0xc39, 0xf33, 0xe3a, 0x936, 0x83f, 0xb35, 0xa3c,
-0x53c, 0x435, 0x73f, 0x636, 0x13a, 0x33 , 0x339, 0x230,
-0xe90, 0xf99, 0xc93, 0xd9a, 0xa96, 0xb9f, 0x895, 0x99c,
-0x69c, 0x795, 0x49f, 0x596, 0x29a, 0x393, 0x99 , 0x190,
-0xf00, 0xe09, 0xd03, 0xc0a, 0xb06, 0xa0f, 0x905, 0x80c,
-0x70c, 0x605, 0x50f, 0x406, 0x30a, 0x203, 0x109, 0x0   };
+	0x0  , 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
+	0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09, 0xf00,
+	0x190, 0x99 , 0x393, 0x29a, 0x596, 0x49f, 0x795, 0x69c,
+	0x99c, 0x895, 0xb9f, 0xa96, 0xd9a, 0xc93, 0xf99, 0xe90,
+	0x230, 0x339, 0x33 , 0x13a, 0x636, 0x73f, 0x435, 0x53c,
+	0xa3c, 0xb35, 0x83f, 0x936, 0xe3a, 0xf33, 0xc39, 0xd30,
+	0x3a0, 0x2a9, 0x1a3, 0xaa , 0x7a6, 0x6af, 0x5a5, 0x4ac,
+	0xbac, 0xaa5, 0x9af, 0x8a6, 0xfaa, 0xea3, 0xda9, 0xca0,
+	0x460, 0x569, 0x663, 0x76a, 0x66 , 0x16f, 0x265, 0x36c,
+	0xc6c, 0xd65, 0xe6f, 0xf66, 0x86a, 0x963, 0xa69, 0xb60,
+	0x5f0, 0x4f9, 0x7f3, 0x6fa, 0x1f6, 0xff , 0x3f5, 0x2fc,
+	0xdfc, 0xcf5, 0xfff, 0xef6, 0x9fa, 0x8f3, 0xbf9, 0xaf0,
+	0x650, 0x759, 0x453, 0x55a, 0x256, 0x35f, 0x55 , 0x15c,
+	0xe5c, 0xf55, 0xc5f, 0xd56, 0xa5a, 0xb53, 0x859, 0x950,
+	0x7c0, 0x6c9, 0x5c3, 0x4ca, 0x3c6, 0x2cf, 0x1c5, 0xcc ,
+	0xfcc, 0xec5, 0xdcf, 0xcc6, 0xbca, 0xac3, 0x9c9, 0x8c0,
+	0x8c0, 0x9c9, 0xac3, 0xbca, 0xcc6, 0xdcf, 0xec5, 0xfcc,
+	0xcc , 0x1c5, 0x2cf, 0x3c6, 0x4ca, 0x5c3, 0x6c9, 0x7c0,
+	0x950, 0x859, 0xb53, 0xa5a, 0xd56, 0xc5f, 0xf55, 0xe5c,
+	0x15c, 0x55 , 0x35f, 0x256, 0x55a, 0x453, 0x759, 0x650,
+	0xaf0, 0xbf9, 0x8f3, 0x9fa, 0xef6, 0xfff, 0xcf5, 0xdfc,
+	0x2fc, 0x3f5, 0xff , 0x1f6, 0x6fa, 0x7f3, 0x4f9, 0x5f0,
+	0xb60, 0xa69, 0x963, 0x86a, 0xf66, 0xe6f, 0xd65, 0xc6c,
+	0x36c, 0x265, 0x16f, 0x66 , 0x76a, 0x663, 0x569, 0x460,
+	0xca0, 0xda9, 0xea3, 0xfaa, 0x8a6, 0x9af, 0xaa5, 0xbac,
+	0x4ac, 0x5a5, 0x6af, 0x7a6, 0xaa , 0x1a3, 0x2a9, 0x3a0,
+	0xd30, 0xc39, 0xf33, 0xe3a, 0x936, 0x83f, 0xb35, 0xa3c,
+	0x53c, 0x435, 0x73f, 0x636, 0x13a, 0x33 , 0x339, 0x230,
+	0xe90, 0xf99, 0xc93, 0xd9a, 0xa96, 0xb9f, 0x895, 0x99c,
+	0x69c, 0x795, 0x49f, 0x596, 0x29a, 0x393, 0x99 , 0x190,
+	0xf00, 0xe09, 0xd03, 0xc0a, 0xb06, 0xa0f, 0x905, 0x80c,
+	0x70c, 0x605, 0x50f, 0x406, 0x30a, 0x203, 0x109, 0x0   };
 char triTable[256][16] =
 {{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 {0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
@@ -330,8 +330,8 @@ char triTable[256][16] =
 {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}};
 
 /*
-   Linearly interpolate the position where an isosurface cuts
-   an edge between two vertices, each with their own scalar value
+Linearly interpolate the position where an isosurface cuts
+an edge between two vertices, each with their own scalar value
 */
 Vec3 VertexInterp(Vec3 *p1,Vec3* p2,float valp1,float valp2){
 	return ((*p1) + ((*p2) - (*p1))*(-valp1 / (valp2 - valp1)));
@@ -347,7 +347,7 @@ vector<Triangle*> polygonise(GRIDCELL &Grid, int &NewVertexCount, vector<Vec3> v
 
 	VertexList.resize(12);
 	NewVertexList.resize(12);
-	
+
 	//Determine the index into the edge table which
 	//tells us which vertices are inside of the surface
 	CubeIndex = 0;
@@ -367,40 +367,40 @@ vector<Triangle*> polygonise(GRIDCELL &Grid, int &NewVertexCount, vector<Vec3> v
 	//Find the vertices where the surface intersects the cube
 	if (edgeTable[CubeIndex] & 1)
 		VertexList[0] =
-			VertexInterp(Grid.p[0],Grid.p[1],Grid.val[0],Grid.val[1]);
+		VertexInterp(Grid.p[0],Grid.p[1],Grid.val[0],Grid.val[1]);
 	if (edgeTable[CubeIndex] & 2)
 		VertexList[1] =
-			VertexInterp(Grid.p[1],Grid.p[2],Grid.val[1],Grid.val[2]);
+		VertexInterp(Grid.p[1],Grid.p[2],Grid.val[1],Grid.val[2]);
 	if (edgeTable[CubeIndex] & 4)
 		VertexList[2] =
-			VertexInterp(Grid.p[2],Grid.p[3],Grid.val[2],Grid.val[3]);
+		VertexInterp(Grid.p[2],Grid.p[3],Grid.val[2],Grid.val[3]);
 	if (edgeTable[CubeIndex] & 8)
 		VertexList[3] =
-			VertexInterp(Grid.p[3],Grid.p[0],Grid.val[3],Grid.val[0]);
+		VertexInterp(Grid.p[3],Grid.p[0],Grid.val[3],Grid.val[0]);
 	if (edgeTable[CubeIndex] & 16)
 		VertexList[4] =
-			VertexInterp(Grid.p[4],Grid.p[5],Grid.val[4],Grid.val[5]);
+		VertexInterp(Grid.p[4],Grid.p[5],Grid.val[4],Grid.val[5]);
 	if (edgeTable[CubeIndex] & 32)
 		VertexList[5] =
-			VertexInterp(Grid.p[5],Grid.p[6],Grid.val[5],Grid.val[6]);
+		VertexInterp(Grid.p[5],Grid.p[6],Grid.val[5],Grid.val[6]);
 	if (edgeTable[CubeIndex] & 64)
 		VertexList[6] =
-			VertexInterp(Grid.p[6],Grid.p[7],Grid.val[6],Grid.val[7]);
+		VertexInterp(Grid.p[6],Grid.p[7],Grid.val[6],Grid.val[7]);
 	if (edgeTable[CubeIndex] & 128)
 		VertexList[7] =
-			VertexInterp(Grid.p[7],Grid.p[4],Grid.val[7],Grid.val[4]);
+		VertexInterp(Grid.p[7],Grid.p[4],Grid.val[7],Grid.val[4]);
 	if (edgeTable[CubeIndex] & 256)
 		VertexList[8] =
-			VertexInterp(Grid.p[0],Grid.p[4],Grid.val[0],Grid.val[4]);
+		VertexInterp(Grid.p[0],Grid.p[4],Grid.val[0],Grid.val[4]);
 	if (edgeTable[CubeIndex] & 512)
 		VertexList[9] =
-			VertexInterp(Grid.p[1],Grid.p[5],Grid.val[1],Grid.val[5]);
+		VertexInterp(Grid.p[1],Grid.p[5],Grid.val[1],Grid.val[5]);
 	if (edgeTable[CubeIndex] & 1024)
 		VertexList[10] =
-			VertexInterp(Grid.p[2],Grid.p[6],Grid.val[2],Grid.val[6]);
+		VertexInterp(Grid.p[2],Grid.p[6],Grid.val[2],Grid.val[6]);
 	if (edgeTable[CubeIndex] & 2048)
 		VertexList[11] =
-			VertexInterp(Grid.p[3],Grid.p[7],Grid.val[3],Grid.val[7]);
+		VertexInterp(Grid.p[3],Grid.p[7],Grid.val[3],Grid.val[7]);
 
 	//int NewVertexCount=0;
 	for (int i=0;i<12;i++)
@@ -425,7 +425,7 @@ vector<Triangle*> polygonise(GRIDCELL &Grid, int &NewVertexCount, vector<Vec3> v
 	TriangleCount = 0;
 	for (int i=0;triTable[CubeIndex][i]!=-1;i+=3) {
 		Triangle* new_tri = new Triangle(NewVertexList[LocalRemap[triTable[CubeIndex][i+0]]],NewVertexList[LocalRemap[triTable[CubeIndex][i+1]]],
-										NewVertexList[LocalRemap[triTable[CubeIndex][i+2]]]);
+			NewVertexList[LocalRemap[triTable[CubeIndex][i+2]]]);
 		//triangles[TriangleCount].I[0] = LocalRemap[triTable[CubeIndex][i+0]];
 		//triangles[TriangleCount].I[1] = LocalRemap[triTable[CubeIndex][i+1]];
 		//triangles[TriangleCount].I[2] = LocalRemap[triTable[CubeIndex][i+2]];
@@ -435,13 +435,6 @@ vector<Triangle*> polygonise(GRIDCELL &Grid, int &NewVertexCount, vector<Vec3> v
 	}
 
 	return new_triangles;
-}
-
-/*
-simple dot product between two vectors.
-*/
-float dot(Vec3 v1, Vec3 v2){
-	return (v1.x*v2.x)+(v1.y*v2.y)+(v1.z*v2.z);
 }
 
 /******************
@@ -779,29 +772,29 @@ void initScene(){
 	//	}
 	//}
 
-	//2D Throw Scene
-	//Semi random grid of particles
-	/*float step = .007;
-	for(float i = 4.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
-	for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
-	noise = float(rand())/(float(RAND_MAX))*.05f;
-	Vec3 pos(i,j,0);
-	Vec3 vel(-1,-8,0);
-	new_part = new Particle(pos,vel,MASS);
-	PARTICLES.push_back(new_part);
-	}
-	}
+	////2D Throw Scene
+	////Semi random grid of particles
+	//float step = .007;
+	//for(float i = 4.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
+	//	for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
+	//		noise = float(rand())/(float(RAND_MAX))*.05f;
+	//		Vec3 pos(i,j,0);
+	//		Vec3 vel(-1,-8,0);
+	//		new_part = new Particle(pos,vel,MASS);
+	//		PARTICLES.push_back(new_part);
+	//	}
+	//}
 
-	step = .007;
-	for(float i = CONTAINER.min.x; i<1.0f*(CONTAINER.max.x)/5.0f; i=i+step){
-	for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
-	noise = float(rand())/(float(RAND_MAX))*.05f;
-	Vec3 pos(i,j,0);
-	Vec3 vel(5,-5,0);
-	new_part = new Particle(pos,vel,MASS);
-	PARTICLES.push_back(new_part);
-	}
-	}*/
+	//step = .007;
+	//for(float i = CONTAINER.min.x; i<1.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+	//	for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
+	//		noise = float(rand())/(float(RAND_MAX))*.05f;
+	//		Vec3 pos(i,j,0);
+	//		Vec3 vel(5,-5,0);
+	//		new_part = new Particle(pos,vel,MASS);
+	//		PARTICLES.push_back(new_part);
+	//	}
+	//}
 
 	////3D Drop Scene
 	float step = .05;
@@ -856,7 +849,7 @@ void initScene(){
 	//create some lights
 	GLfloat light_position[] = {1,1,1,0};
 	GLfloat mat_specular[] = {0,0,0,1.0};
-	GLfloat mat_diffuse[] = {1.0,1.0,1.0,1.0};
+	GLfloat mat_diffuse[] = {0.0,0.0,1.0,1.0};
 	GLfloat mat_ambient[] = {.1,.1,.1,1};
 	GLfloat mat_shininess[] = {20.0};
 
@@ -903,23 +896,23 @@ void myDisplay(){
 			temp_triangle = TRIANGLES[i];
 
 			glClearColor(0,0,0,0);
-			glColor3f(1.0f,1.0f,1.0f);
+			//glColor3f(1.0f,1.0f,1.0f);
 
-			//wireframe for now
-			glPolygonMode(GL_FRONT, GL_LINE);
-			glPolygonMode(GL_BACK, GL_LINE);
+			////wireframe for now
+			//glPolygonMode(GL_FRONT, GL_LINE);
+			//glPolygonMode(GL_BACK, GL_LINE);
 
 			glBegin(GL_TRIANGLES);
 			glVertex3f(temp_triangle->a.x,temp_triangle->a.y,temp_triangle->a.z);
-			glNormal3f(1,0,0);
+			glNormal3f(temp_triangle->normal.x,temp_triangle->normal.y,temp_triangle->normal.z);
 			glVertex3f(temp_triangle->b.x,temp_triangle->b.y,temp_triangle->b.z);
-			glNormal3f(0,1,0);
+			glNormal3f(temp_triangle->normal.x,temp_triangle->normal.y,temp_triangle->normal.z);
 			glVertex3f(temp_triangle->c.x,temp_triangle->c.y,temp_triangle->c.z);
-			glNormal3f(0,0,1);
+			glNormal3f(temp_triangle->normal.x,temp_triangle->normal.y,temp_triangle->normal.z);
 			glEnd();
 
-			glPolygonMode(GL_FRONT, GL_FILL); // fill mode
-			glPolygonMode(GL_BACK, GL_FILL);
+			//glPolygonMode(GL_FRONT, GL_FILL); // fill mode
+			//glPolygonMode(GL_BACK, GL_FILL);
 		}
 	}else{
 		//draw particles
