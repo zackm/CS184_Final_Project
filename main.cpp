@@ -330,7 +330,6 @@ void initScene(){
 			PARTICLES.push_back(new_part);
 		}
 	}
-	
 
 	//////3D scene
  //   float step = .025;
