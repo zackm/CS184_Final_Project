@@ -30,7 +30,7 @@ vector<vector<vector<float> > > GRID_DENSITY;//Grid for marching squares. Probab
 vector<vector<vector<bool> > > GRID_BOOL; //bools corresponding to that grid
 vector<vector<vector<Vec3> > > VERTEX_MATRIX;//list of vertices corresponding to the densities on the grid.
 
-const float TIMESTEP = .01;//time elapsed between iterations
+const float TIMESTEP = .0025;//time elapsed between iterations
 const float LIFETIME = 100.0f;
 float CURRENT_TIME = 0.0f;
 int NUM_PARTICLES = 0;
@@ -42,8 +42,8 @@ const float VISCOSITY = 3.5f;
 const float SURFACE_TENSION = .07f;
 const float TENSION_THRESHOLD = 7.0f;
 
-const float CUBE_TOL = .125f;//either grid size or tolerance for adaptive cubes, reciprocal must be an integer for now.
-const float DENSITY_TOL = 1.5f;//also used for marching grid, for density of the particles
+const float CUBE_TOL = .05f;//either grid size or tolerance for adaptive cubes, reciprocal must be an integer for now.
+const float DENSITY_TOL = 500.0f;//also used for marching grid, for density of the particles
 
 Neighbor NEIGHBOR; //neighbor object used for calculations
 const float H = .05;
@@ -53,6 +53,8 @@ bool USE_ADAPTIVE = false; //for adaptive or uniform marching cubes.
 
 const float PI = 3.1415926;
 const float DRAW_RADIUS = .01f;
+
+void marching_cubes();
 
 /*
 simple dot product between two vectors.
@@ -121,16 +123,19 @@ Vec3 kinematic_polynomial(Vec3 pos, Vec3 vel, Vec3 acc,float t){
 *******************/
 float density_at_point(Vec3 point){
 	//first should generate a list of the particles we need to check, using the box for this point.
-	//int box_number = NEIGHBOR.compute_box_num(point,SUPPORT_RADIUS,CONTAINER.min.x,CONTAINER.max.x);
+	int box_number = NEIGHBOR.compute_box_num(point,SUPPORT_RADIUS,CONTAINER.min.x,CONTAINER.max.x);
 
 	Particle* temp_particle;
-	//vector<int> neighbor_vec = NEIGHBOR.box_particles[box_number];
-	float density = default_kernel(point,point);
-	for (int i = 0; i<PARTICLES.size(); i++){
+	vector<int> neighbor_vec = NEIGHBOR.box_particles[box_number];
+	float density = 0;//default_kernel(point,point);
+	for (int i = 0; i<neighbor_vec.size(); i++){
 		//update density. There will be a problem if the point is exactly equal to sum particle (divide by zero error).
-		temp_particle = PARTICLES[i];
-
-		density += temp_particle->mass*default_kernel(point,temp_particle->position);
+		temp_particle = PARTICLES[neighbor_vec[i]];
+		Vec3 diff_vec = point-temp_particle->position;
+		float mag = dot(diff_vec,diff_vec);
+		if(mag<H*H){
+			density += temp_particle->mass*default_kernel(point,temp_particle->position);
+		}
 	}
 
 	return density;
@@ -295,7 +300,7 @@ void run_time_step(){
 	PARTICLES = new_particles;
 
 	//reset neighbor structure 
-	//NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER);
+	NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER);
 }
 
 /*****************
@@ -429,71 +434,61 @@ void myDisplay(){
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(50,1.0f,.0001,1000);
-	//glOrtho(CONTAINER.min.x,CONTAINER.max.x,CONTAINER.min.y,CONTAINER.max.y,CONTAINER.min.z,CONTAINER.max.z);
+	//gluPerspective(50,1.0f,.0001,1000);
+	glOrtho(CONTAINER.min.x,CONTAINER.max.x,CONTAINER.min.y,CONTAINER.max.y,CONTAINER.min.z,CONTAINER.max.z);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
-	gluLookAt(.25f,.25f,1.25f,.25f,.25f,0.0f,0,1,0);
+	//gluLookAt(.25f,.25f,1.25f,.25f,.25f,0.0f,0,1,0);
 
 	run_time_step();
 	CURRENT_TIME += TIMESTEP;
-	//marching_cubes();
+	marching_cubes();
 
 	if(CURRENT_TIME>LIFETIME){
 		exit(0);
 	}
 
-	//	if(CURRENT_TIME<3.2){
-	//		//throw in a new particle.
-	//		float noise = float(rand())/(float(RAND_MAX))*.05f;
-	//		Vec3 pos(.1+noise,.9,0);
-	//		Vec3 vel(float(rand())/(float(RAND_MAX)),float(rand())/(float(RAND_MAX)),0);
-	//		Particle* new_part = new Particle(pos,vel,MASS);
-	//		PARTICLES.push_back(new_part);
-	//		NUM_PARTICLES++;
-	//	}
-
 	//draw particles
 	//glPointSize(4.0f);
-	glEnable(GL_LIGHTING);
-	Particle* temp_part;
-	for (int i = 0; i<PARTICLES.size(); i++){
-		temp_part = PARTICLES[i];
-		glClearColor(0,0,0,0);
+	//glEnable(GL_LIGHTING);
+	//Particle* temp_part;
+	//for (int i = 0; i<PARTICLES.size(); i++){
+	//	temp_part = PARTICLES[i];
+	//	glClearColor(0,0,0,0);
 
 
-		// alternate particle colors depending on box in grid
-		/*if (temp_part->box % 2 == 0) {
-		glColor3f(1.0,0,0);
-		} else {
-		glColor3f(0,1.0,1.0);
-		}*/
-		//glColor3f(0,0,1.0);
-		//glVertex3f(temp_part->position.x,temp_part->position.y,temp_part->position.z);
+	//	// alternate particle colors depending on box in grid
+	//	/*if (temp_part->box % 2 == 0) {
+	//	glColor3f(1.0,0,0);
+	//	} else {
+	//	glColor3f(0,1.0,1.0);
+	//	}*/
+	//	//glColor3f(0,0,1.0);
+	//	//glVertex3f(temp_part->position.x,temp_part->position.y,temp_part->position.z);
 
-		//Draw sphere of radius H around particles
-		//glColor3f(0,0,1.0);
-		glPushMatrix();
-		glTranslated(temp_part->position.x,temp_part->position.y,temp_part->position.z);
-		glutSolidSphere(DRAW_RADIUS,16,16);
-		glPopMatrix();
-	}
+	//	//Draw sphere of radius H around particles
+	//	//glColor3f(0,0,1.0);
+	//	glPushMatrix();
+	//	glTranslated(temp_part->position.x,temp_part->position.y,temp_part->position.z);
+	//	glutSolidSphere(DRAW_RADIUS,16,16);
+	//	glPopMatrix();
+	//}
 
 	////draw triangles
-	//Triangle *temp_triangle;
-	//for (int i = 0; i<TRIANGLES.size(); i++){
-	//	temp_triangle = TRIANGLES[i];
+	Triangle *temp_triangle;
+	for (int i = 0; i<TRIANGLES.size(); i++){
+		temp_triangle = TRIANGLES[i];
 
-	//	glClearColor(0,0,0,0);
-	//	glColor3f(0,0,1.0f);
-	//	glBegin(GL_TRIANGLES);
-	//	glVertex3f(temp_triangle->a.x,temp_triangle->a.y,temp_triangle->a.z);
-	//	glVertex3f(temp_triangle->b.x,temp_triangle->b.y,temp_triangle->b.z);
-	//	glVertex3f(temp_triangle->c.x,temp_triangle->c.y,temp_triangle->c.z);
-	//	glEnd();
-	//}
+		glClearColor(0,0,0,0);
+		glColor3f(0,0,1.0f);
+		glBegin(GL_TRIANGLES);
+		glVertex3f(temp_triangle->a.x,temp_triangle->a.y,temp_triangle->a.z);
+		glVertex3f(temp_triangle->b.x,temp_triangle->b.y,temp_triangle->b.z);
+		glVertex3f(temp_triangle->c.x,temp_triangle->c.y,temp_triangle->c.z);
+		glEnd();
+	}
 
 	//Draw wireframe container
 	glPolygonMode(GL_FRONT, GL_LINE);
@@ -544,6 +539,290 @@ void myDisplay(){
 
 	glFlush();
 	glutSwapBuffers();
+}
+
+/************************
+* Marching Cube Methods *
+************************/
+/*
+Returns a list of pointers to the different triangles that need to be made for the marching cube case 
+corresponding to the input int. Should call some global list of all possible triangles (up to transformation)
+to make a particular triangle.
+*/
+vector<Triangle*> make_triangles(int i, int j, int k){
+	//cube define by the corner (i,j), (i,j+1), (i+1,j), and (i+1,j+1).
+
+	int cube_case = GRID_BOOL[i][j][k]*8+GRID_BOOL[i][j+1][k]*4+GRID_BOOL[i+1][j][k]*2+GRID_BOOL[i+1][j+1][k];
+
+	Vec3 vertex_1 = VERTEX_MATRIX[i][j][k];
+	Vec3 vertex_2 = VERTEX_MATRIX[i][j+1][k];
+	Vec3 vertex_3 = VERTEX_MATRIX[i+1][j][k];
+	Vec3 vertex_4 = VERTEX_MATRIX[i+1][j+1][k];
+	float weight_1 = GRID_DENSITY[i][j][k];
+	float weight_2 = GRID_DENSITY[i][j+1][k];
+	float weight_3 = GRID_DENSITY[i+1][j][k];
+	float weight_4 = GRID_DENSITY[i+1][j+1][k];
+
+	vector<Triangle*> tri_list;
+	Triangle* tri1, *tri2, *tri3;
+	Vec3 midpoint_1, midpoint_2;
+
+	if(cube_case==0){
+		//no triangles, no corners activated
+	}else if(cube_case==1){
+		//only corner 11 is turned on.
+		tri1 = new Triangle(vertex_4,vertex_2,vertex_3,weight_4,weight_2,weight_3,DENSITY_TOL);
+		tri_list.push_back(tri1);
+	}else if(cube_case==2){
+		//only corner 10 is turned on
+		tri1 = new Triangle(vertex_3,vertex_4,vertex_1,weight_3,weight_4,weight_1,DENSITY_TOL);
+		tri_list.push_back(tri1);
+	}else if(cube_case==3){
+		//10 and 11
+		midpoint_1 = vertex_3+(vertex_1-vertex_3)*((DENSITY_TOL-weight_3)/(weight_1-weight_3));
+		tri1 = new Triangle(vertex_3,vertex_4,midpoint_1);
+
+		midpoint_2 = vertex_4+(vertex_2-vertex_4)*((DENSITY_TOL-weight_4)/(weight_2-weight_4));
+		tri2 = new Triangle(vertex_4,midpoint_1,midpoint_2);
+
+		tri_list.push_back(tri1);
+		tri_list.push_back(tri2);
+	}else if(cube_case==4){
+		//only corner 01 is turned on
+		tri1 = new Triangle(vertex_2,vertex_1,vertex_4,weight_2,weight_1,weight_4,DENSITY_TOL);
+		tri_list.push_back(tri1);
+	}else if(cube_case==5){
+		//01 and 11 turned on
+		midpoint_1 = vertex_2+(vertex_1-vertex_2)*((DENSITY_TOL-weight_2)/(weight_1-weight_2));
+		tri1 = new Triangle(vertex_4,vertex_2,midpoint_1);
+
+		midpoint_2 = vertex_4+(vertex_3-vertex_4)*((DENSITY_TOL-weight_4)/(weight_3-weight_4));
+		tri2 = new Triangle(vertex_4,midpoint_1,midpoint_2);
+
+		tri_list.push_back(tri1);
+		tri_list.push_back(tri2);
+	}else if(cube_case==6){
+		//only 10 and 01 turned on
+		midpoint_1 = vertex_2+(vertex_1-vertex_2)*((DENSITY_TOL-weight_2)/(weight_1-weight_2));
+		midpoint_2 = vertex_2+(vertex_4-vertex_2)*((DENSITY_TOL-weight_2)/(weight_4-weight_2));
+		tri1 = new Triangle(vertex_2,midpoint_1,midpoint_2);
+
+		midpoint_1 = vertex_3+(vertex_4-vertex_3)*((DENSITY_TOL-weight_3)/(weight_4-weight_3));
+		midpoint_2 = vertex_3+(vertex_1-vertex_3)*((DENSITY_TOL-weight_3)/(weight_1-weight_3));
+		tri2 = new Triangle(vertex_3,midpoint_1,midpoint_2);
+
+		tri_list.push_back(tri1);
+		tri_list.push_back(tri2);
+	}else if(cube_case==7){
+		//only 10, 01, and 11 turned on
+		midpoint_1 = vertex_2+(vertex_1-vertex_2)*((DENSITY_TOL-weight_2)/(weight_1-weight_2));
+		tri1 = new Triangle(vertex_4,vertex_2,midpoint_1);
+
+		midpoint_2 = vertex_3+(vertex_1-vertex_3)*((DENSITY_TOL-weight_3)/(weight_1-weight_3));
+		tri2 = new Triangle(vertex_4,midpoint_1,midpoint_2);
+
+		tri3 = new Triangle(vertex_4,midpoint_2,vertex_3);
+
+		tri_list.push_back(tri1);
+		tri_list.push_back(tri2);
+		tri_list.push_back(tri3);
+	}else if(cube_case==8){
+		//only corner 00 is turned on
+		tri1 = new Triangle(vertex_1,vertex_3,vertex_2,weight_1,weight_3,weight_2,DENSITY_TOL);
+		tri_list.push_back(tri1);
+	}else if(cube_case==9){
+		//only 00 and 11 turned on
+		midpoint_1 = vertex_1+(vertex_3-vertex_1)*((DENSITY_TOL-weight_1)/(weight_3-weight_1));
+		midpoint_2 = vertex_1+(vertex_2-vertex_1)*((DENSITY_TOL-weight_1)/(weight_2-weight_1));
+		tri1 = new Triangle(vertex_1,midpoint_1,midpoint_2);
+
+		midpoint_1 = vertex_4+(vertex_2-vertex_4)*((DENSITY_TOL-weight_4)/(weight_2-weight_4));
+		midpoint_2 = vertex_4+(vertex_3-vertex_4)*((DENSITY_TOL-weight_4)/(weight_3-weight_4));
+		tri2 = new Triangle(vertex_4,midpoint_1,midpoint_2);
+
+		tri_list.push_back(tri1);
+		tri_list.push_back(tri2);
+	}else if(cube_case==10){
+		//only 00 and 10 turned on
+		midpoint_1 = vertex_3+(vertex_4-vertex_3)*((DENSITY_TOL-weight_3)/(weight_4-weight_3));
+		tri1 = new Triangle(vertex_1,vertex_3,midpoint_1);
+
+		midpoint_2 = vertex_1+(vertex_2-vertex_1)*((DENSITY_TOL-weight_1)/(weight_2-weight_1));
+		tri2 = new Triangle(vertex_1,midpoint_1,midpoint_2);
+
+		tri_list.push_back(tri1);
+		tri_list.push_back(tri2);
+	}else if(cube_case==11){
+		//00, 10, 11
+		midpoint_1 = vertex_4+(vertex_2-vertex_4)*((DENSITY_TOL-weight_4)/(weight_2-weight_4));
+		tri1 = new Triangle(vertex_3,vertex_4,midpoint_1);
+
+		midpoint_2 = vertex_1+(vertex_2-vertex_1)*((DENSITY_TOL-weight_1)/(weight_2-weight_1));
+		tri2 = new Triangle(vertex_3,midpoint_1,midpoint_2);
+
+		tri3 = new Triangle(vertex_3,midpoint_2,vertex_1);
+
+		tri_list.push_back(tri1);
+		tri_list.push_back(tri2);
+		tri_list.push_back(tri3);
+	}else if(cube_case==12){
+		//00 and 01 turned on
+		midpoint_1 = vertex_2+(vertex_4-vertex_2)*((DENSITY_TOL-weight_2)/(weight_4-weight_2));
+		tri1 = new Triangle(vertex_1,vertex_2,midpoint_1);
+
+		midpoint_2 = vertex_1+(vertex_3-vertex_1)*((DENSITY_TOL-weight_1)/(weight_3-weight_1));
+		tri2 = new Triangle(vertex_1,midpoint_1,midpoint_2);
+
+		tri_list.push_back(tri1);
+		tri_list.push_back(tri2);
+	}else if(cube_case==13){
+		//00, 01, 11
+		midpoint_1 = vertex_4+(vertex_3-vertex_4)*((DENSITY_TOL-weight_4)/(weight_3-weight_4));
+		tri1 = new Triangle(vertex_2,midpoint_1,vertex_4);
+
+		midpoint_2 = vertex_1+(vertex_3-vertex_1)*((DENSITY_TOL-weight_1)/(weight_3-weight_1));
+		tri2 = new Triangle(vertex_2,midpoint_2,midpoint_1);
+
+		tri3 = new Triangle(vertex_2,vertex_1,midpoint_2);
+
+		tri_list.push_back(tri1);
+		tri_list.push_back(tri2);
+		tri_list.push_back(tri3);
+	}else if(cube_case==14){
+		//00, 01, 10
+		midpoint_1 = vertex_2+(vertex_4-vertex_2)*((DENSITY_TOL-weight_2)/(weight_4-weight_2));
+		tri1 = new Triangle(vertex_1,midpoint_1,vertex_2);
+
+		midpoint_2 = vertex_3+(vertex_4-vertex_3)*((DENSITY_TOL-weight_3)/(weight_4-weight_3));
+		tri2 = new Triangle(vertex_1,midpoint_2,midpoint_1);
+
+		tri3 = new Triangle(vertex_1,vertex_3,midpoint_2);
+
+		tri_list.push_back(tri1);
+		tri_list.push_back(tri2);
+		tri_list.push_back(tri3);
+	}else if(cube_case==15){
+		tri1 = new Triangle(vertex_1,vertex_3,vertex_2);
+		tri2 = new Triangle(vertex_2,vertex_3,vertex_4);
+		tri_list.push_back(tri1);
+		tri_list.push_back(tri2);
+	}
+	return tri_list;
+}
+
+/*
+Run marching cubes algorithm to generate triangles to render. Uses the particles in PARTICLES to
+calculate densities at corners of cubes (or squares in 2D). There are 16 cases for squares in
+the marching cubes algorithm, 256 for cubes (really 15 up to rotations and reflections).
+*/
+void marching_cubes(){
+	/*we need to break up screen into squares. We should store the squares in an efficient data
+	structure so we reuse values previously calculated through iterations.
+	*/
+
+	/*look here for cases http://users.polytech.unice.fr/~lingrand/MarchingCubes/algo.html
+	For now just making the 16 triangle types as is and enqueuing in list. Would be better to
+	make them dynamically.
+
+	Also, only doing uniform marching squares, not doing adaptive squares.
+	*/
+
+	VERTEX_MATRIX.clear();
+	GRID_DENSITY.clear();
+	GRID_BOOL.clear();
+	TRIANGLES.clear();
+
+	float error = .0001;
+	float step = CUBE_TOL;
+
+	//generate verticies and densities at those verticies
+	for (float x = CONTAINER.min.x; x<CONTAINER.max.x+error; x = x+step){
+		vector<vector<float> > yz_list;
+		vector<vector<Vec3> >vec_yz_list;
+		vector<vector<bool> > bool_yz_list;
+
+		for (float y = CONTAINER.min.y; y<CONTAINER.max.y+error; y = y+step){
+			vector<float> z_list;
+			vector<Vec3> vec_z_list;
+			vector<bool> bool_z_list;
+
+			for (float z = CONTAINER.min.z; z<CONTAINER.max.z+error; z = z+step){
+				Vec3 vertex(x,y,z);
+				float density = density_at_point(vertex);
+
+				z_list.push_back(density);
+				vec_z_list.push_back(vertex);
+				bool_z_list.push_back(density>DENSITY_TOL);
+			}
+			yz_list.push_back(z_list);
+			vec_yz_list.push_back(vec_z_list);
+			bool_yz_list.push_back(bool_z_list);
+		}
+
+		GRID_DENSITY.push_back(yz_list);
+		GRID_BOOL.push_back(bool_yz_list);
+		VERTEX_MATRIX.push_back(vec_yz_list);
+	}
+
+	//check marching cubes cases to add new triangles to list. It would be good to use bit operations for speed.
+	int m,n,p;//= GRID_DENSITY.size();//this implies uniform. Will need to change this.
+	m = n = p = GRID_BOOL.size();
+
+	int i,j,k; //i indicates the row, j indicates the column. 
+	i = j = k = 0;
+
+	vector<Triangle*> tri_list;
+	Vec3 vertex_1,vertex_2,vertex_3;
+	for (int i = 0; i<m-1;i++){
+		for (int j = 0; j<n-1;j++){
+			for (int k = 0; k<p-1;k++){
+				tri_list.clear();
+				tri_list = make_triangles(i,j,k);
+				TRIANGLES.insert(TRIANGLES.end(),tri_list.begin(),tri_list.end());
+
+				tri_list.clear();
+				tri_list = make_triangles(i,j,k+1);
+				TRIANGLES.insert(TRIANGLES.end(),tri_list.begin(),tri_list.end());
+			}	
+		}
+	}
+	//while (squares_left){ //need to change this later
+	//	tri_list.clear();
+	//	tri_list = make_triangles(i,j,k);
+	//	TRIANGLES.insert(TRIANGLES.end(),tri_list.begin(),tri_list.end());
+
+	//	tri_list.clear();
+	//	tri_list = make_triangles(i,j,k+1);
+	//	TRIANGLES.insert(TRIANGLES.end(),tri_list.begin(),tri_list.end());
+
+	//	//increment i and j and k or prepare to break loop
+	//	if(k==p-2){
+	//		if (j==n-2){
+	//			if (i==m-2){
+	//				squares_left = false;
+	//			}else{
+	//				j = 0;
+	//				i++;
+	//			}
+	//		}else{
+	//			j++;
+	//		}
+	//	}else{
+	//		k++;
+	//	}
+
+	//	if (j==n-2){
+	//		if (i==m-2){
+
+	//			squares_left = false;
+	//		}else{
+	//			j = 0;
+	//			i++;
+	//		}
+	//	}else{
+	//		j++;
+	//	}
+	//}
 }
 
 int main(int argc, char* argv[]){
