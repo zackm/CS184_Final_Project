@@ -71,7 +71,7 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, float min_width, floa
    // cout<<endl;
 
     if (num >= box_per_row * box_per_row * box_per_row || num < 0 || row == -1 || col == -1 || depth == -1) {
-        cout<<"Error, incorrect box # assigned in Neighbor: "<<num<<endl;
+        //cout<<"Error, incorrect box # assigned in Neighbor: "<<num<<endl;
         num = 0; // set box number to 0 to prevent bad vector access
        // exit(0);
     }

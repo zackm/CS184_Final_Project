@@ -23,7 +23,7 @@ using namespace std;
 /*******************
 * GLOBAL VARIABLES *
 *******************/
-Container CONTAINER(Vec3(1,1,1),Vec3(0,0,0));//very simple cube for now. Later, make it a particle itself.
+Container CONTAINER(Vec3(.5,.5,.5),Vec3(0,0,0));//very simple cube for now. Later, make it a particle itself.
 vector<Particle*> PARTICLES;//particles that we do SPH on.
 vector<Triangle*> TRIANGLES;//triangles made from marching cubes to render
 vector<vector<vector<float> > > GRID_DENSITY;//Grid for marching squares. Probably a better data structure we can use.
@@ -34,7 +34,7 @@ const float TIMESTEP = .01;//time elapsed between iterations
 const float LIFETIME = 100.0f;
 float CURRENT_TIME = 0.0f;
 int NUM_PARTICLES = 0;
-Vec3 GRAVITY(0,-9.8f,0);
+Vec3 GRAVITY(0,-9.8,0);
 const float MASS = .02f;//could set it to any number really.
 const float IDEAL_DENSITY = 1000.0f;
 const float STIFFNESS = 3.0f;//for pressure difference
@@ -47,12 +47,12 @@ const float DENSITY_TOL = 1.5f;//also used for marching grid, for density of the
 
 Neighbor NEIGHBOR; //neighbor object used for calculations
 const float H = .05;
-const float SUPPORT_RADIUS = .1;
+const float SUPPORT_RADIUS = .05;
 
 bool USE_ADAPTIVE = false; //for adaptive or uniform marching cubes.
 
 const float PI = 3.1415926;
-const float DRAW_RADIUS = .02f;
+const float DRAW_RADIUS = .01f;
 
 /*
 simple dot product between two vectors.
@@ -309,8 +309,7 @@ void initScene(){
 
 	//2D scene
 	//Semi random grid of particles
-<<<<<<< HEAD
-	float step = .012;
+	float step = .005;
 	for(float i = 4.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
 		for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
 			noise = float(rand())/(float(RAND_MAX))*.05f;
@@ -321,7 +320,7 @@ void initScene(){
 		}
 	}
 
-	step = .012;
+	step = .005;
 	for(float i = CONTAINER.min.x; i<1.0f*(CONTAINER.max.x)/5.0f; i=i+step){
 		for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
 			noise = float(rand())/(float(RAND_MAX))*.05f;
@@ -331,47 +330,38 @@ void initScene(){
 			PARTICLES.push_back(new_part);
 		}
 	}
-=======
-//	float step = .01;
-//	for(float i = 4.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
-//		for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
-//			noise = float(rand())/(float(RAND_MAX))*.05f;
-//			Vec3 pos(i,j,0);
-//			Vec3 vel(-1,-8,0);
-//			new_part = new Particle(pos,vel,MASS);
-//			PARTICLES.push_back(new_part);
-//		}
-//	}
-//
-//	step = .01;
-//	for(float i = CONTAINER.min.x; i<1.0f*(CONTAINER.max.x)/5.0f; i=i+step){
-//		for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
-//			noise = float(rand())/(float(RAND_MAX))*.05f;
-//			Vec3 pos(i,j,0);
-//			Vec3 vel(5,-5,0);
-//			new_part = new Particle(pos,vel,MASS);
-//			PARTICLES.push_back(new_part);
-//		}
-//	}
->>>>>>> 097d8fc42d95c835e9135f838098229268d38676
 	
 
-	////3D scene
-    float step = .04;
-    for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
-        for(float j = 2.0*CONTAINER.max.y/5.0f; j<3.0f*(CONTAINER.max.y)/5.0f; j=j+step){
-            for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.y)/5.0f; k=k+step){
-                //noise = float(rand())/(float(RAND_MAX))*.05f;
-                Vec3 pos(i,j,k);
-                Vec3 vel(0,0,0);
-                new_part = new Particle(pos,vel,MASS);
-                PARTICLES.push_back(new_part);
-            }
-        }
-    }
+	//////3D scene
+ //   float step = .025;
+ //   for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+ //       for(float j = 2.0*CONTAINER.max.y/5.0f; j<3.0f*(CONTAINER.max.y)/5.0f; j=j+step){
+ //           for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.y)/5.0f; k=k+step){
+ //               //noise = float(rand())/(float(RAND_MAX))*.05f;
+ //               Vec3 pos(i,j,k);
+ //               Vec3 vel(0,-3,0);
+ //               new_part = new Particle(pos,vel,MASS);
+ //               PARTICLES.push_back(new_part);
+ //           }
+ //       }
+ //   }
+
+ //   step = .025;
+ //   for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
+ //       for(float j = CONTAINER.min.y; j<1.0f*(CONTAINER.max.y)/5.0f; j=j+step){
+ //           for(float k = CONTAINER.min.z; k<(CONTAINER.max.z); k=k+step){
+ //               //noise = float(rand())/(float(RAND_MAX))*.05f;
+ //               Vec3 pos(i,j,k);
+ //               Vec3 vel(0,0,0);
+ //               new_part = new Particle(pos,vel,MASS);
+ //               PARTICLES.push_back(new_part);
+ //           }
+ //       }
+ //   }
 
 
 	NUM_PARTICLES = PARTICLES.size();
+	cout<<NUM_PARTICLES<<endl;
 	////random particles
 	//for (int i = 0; i<NUM_PARTICLES; i++){
 	//	x = .2f+float(rand())/(float(RAND_MAX))*.1f;
@@ -390,7 +380,7 @@ void initScene(){
 	//	new_part = new Particle(pos,vel,MASS);
 	//	PARTICLES.push_back(new_part);
 	//}
-	////NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER);
+	NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER);
 
 	//create some lights
 	GLfloat light_position[] = {1,1,1,0};
@@ -423,7 +413,7 @@ void myDisplay(){
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
-	gluLookAt(.5,.5,1.8,.5,.5,0,0,1,0);
+	gluLookAt(.15,.15,.65,.15,.15,0,0,1,0);
 
 	run_time_step();
 	CURRENT_TIME += TIMESTEP;
