@@ -30,7 +30,7 @@ vector<vector<vector<float> > > GRID_DENSITY;//Grid for marching squares. Probab
 vector<vector<vector<bool> > > GRID_BOOL; //bools corresponding to that grid
 vector<vector<vector<Vec3> > > VERTEX_MATRIX;//list of vertices corresponding to the densities on the grid.
 
-const float TIMESTEP = .0025;//time elapsed between iterations
+const float TIMESTEP = .005;//time elapsed between iterations
 const float LIFETIME = 100.0f;
 float CURRENT_TIME = 0.0f;
 int NUM_PARTICLES = 0;
@@ -42,13 +42,14 @@ const float VISCOSITY = 3.5f;
 const float SURFACE_TENSION = .07f;
 const float TENSION_THRESHOLD = 7.0f;
 
-const float CUBE_TOL = .05f;//either grid size or tolerance for adaptive cubes, reciprocal must be an integer for now.
-const float DENSITY_TOL = 500.0f;//also used for marching grid, for density of the particles
+const float CUBE_TOL = .02f;//either grid size or tolerance for adaptive cubes, reciprocal must be an integer for now.
+const float DENSITY_TOL = 1000.0f;//also used for marching grid, for density of the particles
 
 Neighbor NEIGHBOR; //neighbor object used for calculations
 const float H = .05;
 const float SUPPORT_RADIUS = .1;
 
+bool RENDERING_ISOSURFACE = false;
 bool USE_ADAPTIVE = false; //for adaptive or uniform marching cubes.
 
 const float PI = 3.1415926;
@@ -154,7 +155,7 @@ void run_time_step(){
 	vector<Vec3> viscosity_list;
 	vector<float> color_list;
 	vector<Vec3> tension_list;
-    
+
 	NEIGHBOR.place_particles(PARTICLES, SUPPORT_RADIUS, CONTAINER);
 
 	//update using slow algorithm for now
@@ -169,15 +170,15 @@ void run_time_step(){
 		vector<int> neighbor_vec = base_particle->neighbors;
 		int n = neighbor_vec.size();
 		for (int j = 0; j<n; j++){ // changed to neighbors
-            temp_particle = PARTICLES[neighbor_vec[j]];
-            Vec3 r = base_particle->position-temp_particle->position;
-            float mag = dot(r,r);
-            if(mag<H*H){
-                density += temp_particle->mass*default_kernel(base_particle->position,temp_particle->position);
-            }
+			temp_particle = PARTICLES[neighbor_vec[j]];
+			Vec3 r = base_particle->position-temp_particle->position;
+			float mag = dot(r,r);
+			if(mag<H*H){
+				density += temp_particle->mass*default_kernel(base_particle->position,temp_particle->position);
+			}
 		}
 		density_list.push_back(density);
-        
+
 		//changed this to not include stiffness at all
 		pressure_list.push_back(STIFFNESS*(density-IDEAL_DENSITY));
 	}
@@ -339,52 +340,52 @@ void initScene(){
 	//Semi random grid of particles
 	/*float step = .007;
 	for(float i = 4.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
-		for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
-			noise = float(rand())/(float(RAND_MAX))*.05f;
-			Vec3 pos(i,j,0);
-			Vec3 vel(-1,-8,0);
-			new_part = new Particle(pos,vel,MASS);
-			PARTICLES.push_back(new_part);
-		}
+	for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
+	noise = float(rand())/(float(RAND_MAX))*.05f;
+	Vec3 pos(i,j,0);
+	Vec3 vel(-1,-8,0);
+	new_part = new Particle(pos,vel,MASS);
+	PARTICLES.push_back(new_part);
+	}
 	}
 
 	step = .007;
 	for(float i = CONTAINER.min.x; i<1.0f*(CONTAINER.max.x)/5.0f; i=i+step){
-		for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
-			noise = float(rand())/(float(RAND_MAX))*.05f;
-			Vec3 pos(i,j,0);
-			Vec3 vel(5,-5,0);
-			new_part = new Particle(pos,vel,MASS);
-			PARTICLES.push_back(new_part);
-		}
+	for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
+	noise = float(rand())/(float(RAND_MAX))*.05f;
+	Vec3 pos(i,j,0);
+	Vec3 vel(5,-5,0);
+	new_part = new Particle(pos,vel,MASS);
+	PARTICLES.push_back(new_part);
+	}
 	}*/
 
 	//////3D Drop Scene
- //   float step = .025;
- //   for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
- //       for(float j = 2.0*CONTAINER.max.y/5.0f; j<3.0f*(CONTAINER.max.y)/5.0f; j=j+step){
- //           for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.y)/5.0f; k=k+step){
- //               //noise = float(rand())/(float(RAND_MAX))*.05f;
- //               Vec3 pos(i,j,k);
- //               Vec3 vel(0,-3,0);
- //               new_part = new Particle(pos,vel,MASS);
- //               PARTICLES.push_back(new_part);
- //           }
- //       }
- //   }
+	//float step = .02;
+	//for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+	//	for(float j = 2.0*CONTAINER.max.y/5.0f; j<3.0f*(CONTAINER.max.y)/5.0f; j=j+step){
+	//		for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.y)/5.0f; k=k+step){
+	//			//noise = float(rand())/(float(RAND_MAX))*.05f;
+	//			Vec3 pos(i,j,k);
+	//			Vec3 vel(0,-3,0);
+	//			new_part = new Particle(pos,vel,MASS);
+	//			PARTICLES.push_back(new_part);
+	//		}
+	//	}
+	//}
 
- //   step = .025;
- //   for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
- //       for(float j = CONTAINER.min.y; j<1.0f*(CONTAINER.max.y)/5.0f; j=j+step){
- //           for(float k = CONTAINER.min.z; k<(CONTAINER.max.z); k=k+step){
- //               //noise = float(rand())/(float(RAND_MAX))*.05f;
- //               Vec3 pos(i,j,k);
- //               Vec3 vel(0,0,0);
- //               new_part = new Particle(pos,vel,MASS);
- //               PARTICLES.push_back(new_part);
- //           }
- //       }
- //   }
+	//step = .02;
+	//for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
+	//	for(float j = CONTAINER.min.y; j<1.0f*(CONTAINER.max.y)/5.0f; j=j+step){
+	//		for(float k = CONTAINER.min.z; k<(CONTAINER.max.z); k=k+step){
+	//			//noise = float(rand())/(float(RAND_MAX))*.05f;
+	//			Vec3 pos(i,j,k);
+	//			Vec3 vel(0,0,0);
+	//			new_part = new Particle(pos,vel,MASS);
+	//			PARTICLES.push_back(new_part);
+	//		}
+	//	}
+	//}
 
 
 	NUM_PARTICLES = PARTICLES.size();
@@ -434,17 +435,16 @@ void myDisplay(){
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	//gluPerspective(50,1.0f,.0001,1000);
-	glOrtho(CONTAINER.min.x,CONTAINER.max.x,CONTAINER.min.y,CONTAINER.max.y,CONTAINER.min.z,CONTAINER.max.z);
+	gluPerspective(50,1.0f,.0001,1000);
+	//glOrtho(CONTAINER.min.x,CONTAINER.max.x,CONTAINER.min.y,CONTAINER.max.y,CONTAINER.min.z,CONTAINER.max.z);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
-	//gluLookAt(.25f,.25f,1.25f,.25f,.25f,0.0f,0,1,0);
+	gluLookAt(.25f,.25f,1.25f,.25f,.25f,0.0f,0,1,0);
 
 	run_time_step();
 	CURRENT_TIME += TIMESTEP;
-	marching_cubes();
 
 	if(CURRENT_TIME>LIFETIME){
 		exit(0);
@@ -453,41 +453,46 @@ void myDisplay(){
 	//draw particles
 	//glPointSize(4.0f);
 	//glEnable(GL_LIGHTING);
-	//Particle* temp_part;
-	//for (int i = 0; i<PARTICLES.size(); i++){
-	//	temp_part = PARTICLES[i];
-	//	glClearColor(0,0,0,0);
+	if(RENDERING_ISOSURFACE){
+		////draw triangles
+		marching_cubes();
+		Triangle *temp_triangle;
+		for (int i = 0; i<TRIANGLES.size(); i++){
+			temp_triangle = TRIANGLES[i];
+
+			glClearColor(0,0,0,0);
+			glColor3f(0,0,1.0f);
+			glBegin(GL_TRIANGLES);
+			glVertex3f(temp_triangle->a.x,temp_triangle->a.y,temp_triangle->a.z);
+			glVertex3f(temp_triangle->b.x,temp_triangle->b.y,temp_triangle->b.z);
+			glVertex3f(temp_triangle->c.x,temp_triangle->c.y,temp_triangle->c.z);
+			glEnd();
+		}
+	}else{
+		//draw particles
+		glEnable(GL_LIGHTING);
+		Particle* temp_part;
+		for (int i = 0; i<PARTICLES.size(); i++){
+			temp_part = PARTICLES[i];
+			glClearColor(0,0,0,0);
 
 
-	//	// alternate particle colors depending on box in grid
-	//	/*if (temp_part->box % 2 == 0) {
-	//	glColor3f(1.0,0,0);
-	//	} else {
-	//	glColor3f(0,1.0,1.0);
-	//	}*/
-	//	//glColor3f(0,0,1.0);
-	//	//glVertex3f(temp_part->position.x,temp_part->position.y,temp_part->position.z);
+			// alternate particle colors depending on box in grid
+			/*if (temp_part->box % 2 == 0) {
+			glColor3f(1.0,0,0);
+			} else {
+			glColor3f(0,1.0,1.0);
+			}*/
+			//glColor3f(0,0,1.0);
+			//glVertex3f(temp_part->position.x,temp_part->position.y,temp_part->position.z);
 
-	//	//Draw sphere of radius H around particles
-	//	//glColor3f(0,0,1.0);
-	//	glPushMatrix();
-	//	glTranslated(temp_part->position.x,temp_part->position.y,temp_part->position.z);
-	//	glutSolidSphere(DRAW_RADIUS,16,16);
-	//	glPopMatrix();
-	//}
-
-	////draw triangles
-	Triangle *temp_triangle;
-	for (int i = 0; i<TRIANGLES.size(); i++){
-		temp_triangle = TRIANGLES[i];
-
-		glClearColor(0,0,0,0);
-		glColor3f(0,0,1.0f);
-		glBegin(GL_TRIANGLES);
-		glVertex3f(temp_triangle->a.x,temp_triangle->a.y,temp_triangle->a.z);
-		glVertex3f(temp_triangle->b.x,temp_triangle->b.y,temp_triangle->b.z);
-		glVertex3f(temp_triangle->c.x,temp_triangle->c.y,temp_triangle->c.z);
-		glEnd();
+			//Draw sphere of radius H around particles
+			//glColor3f(0,0,1.0);
+			glPushMatrix();
+			glTranslated(temp_part->position.x,temp_part->position.y,temp_part->position.z);
+			glutSolidSphere(DRAW_RADIUS,16,16);
+			glPopMatrix();
+		}
 	}
 
 	//Draw wireframe container
