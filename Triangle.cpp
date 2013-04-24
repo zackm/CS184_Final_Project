@@ -4,6 +4,10 @@ Triangle::Triangle(Vec3 alpha, Vec3 beta, Vec3 gamma){
 	a = alpha;
 	b = beta;
 	c = gamma;
+
+	Vec3 diff_vec1 = b-a;
+	Vec3 diff_vec2 = c-a;
+	normal = Vec3(0,1,0);
 }
 
 Triangle::Triangle(Vec3 vec1, Vec3 vec2, Vec3 vec3, float w1, float w2, float w3, float tol){

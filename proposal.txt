@@ -14,7 +14,7 @@ We discussed our idea with Jiamin.
 Milestones Completed:
 - 2D simulation
 - particles are drawn as a colored isosurface in 2D using marching squares. (although does not look great)
-- implement neighbors algorithm for speedup. (might be good to write out explicit run times for using neighbors algorithm and not using).
+- implement neighbors algorithm for speedup. (might be good to write out explicit run times for using neighbors algorithm and not using it).
 - move simulation of particles into 3D
 
 Milestones to complete of high priority:
@@ -23,7 +23,8 @@ Milestones to complete of high priority:
 - speedup using parallel processing of particles.
 - output isosurface triangles to an obj format, or to the ray tracer assignment format.
 - use raytracer to render image.
-- generate reflections and caustics.
+- generate reflections and caustics (would involve adding things like Snell's law and stuff to ray tracer).
+- could also output to obj and render with approximate gaussian curvature in the bez surface renderer we made
 
 Milestone to complete of low priority:
 - texture mapping on the container.
