@@ -429,13 +429,13 @@ void myDisplay(){
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(70,1.0f,.1,-1000);
+	gluPerspective(50,1.0f,.0001,1000);
 	//glOrtho(CONTAINER.min.x,CONTAINER.max.x,CONTAINER.min.y,CONTAINER.max.y,CONTAINER.min.z,CONTAINER.max.z);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
-	gluLookAt(.15,.15,.65,.15,.15,0,0,1,0);
+	gluLookAt(.25f,.25f,1.25f,.25f,.25f,0.0f,0,1,0);
 
 	run_time_step();
 	CURRENT_TIME += TIMESTEP;
@@ -477,7 +477,7 @@ void myDisplay(){
 		//glColor3f(0,0,1.0);
 		glPushMatrix();
 		glTranslated(temp_part->position.x,temp_part->position.y,temp_part->position.z);
-		glutWireSphere(DRAW_RADIUS,16,16);
+		glutSolidSphere(DRAW_RADIUS,16,16);
 		glPopMatrix();
 	}
 
