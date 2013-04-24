@@ -9,15 +9,25 @@ We will work closely on the entire project, but we will split up some main porti
 Tyler: particle interaction
 Zack: neighbor algorithm & caustics/raytracing
 
-Milestones (we will complete as many as time permits):
-- 2D simulation where particles are drawn as a colored isosurface
-- move simulation into 3D
-- implement neighbor algorithm
-- raytraced reflections and caustics
-- texture mapping on the container
-- various shaped containers
-- interaction with solid objects
-- user interaction: toggle particle/isosurface, change viscosity, change number of particles
-- port to WebGL
-
 We discussed our idea with Jiamin.
+
+Milestones Completed:
+- 2D simulation
+- particles are drawn as a colored isosurface in 2D using marching squares. (although does not look great)
+- implement neighbors algorithm for speedup. (might be good to write out explicit run times for using neighbors algorithm and not using).
+- move simulation of particles into 3D
+
+Milestones to complete of high priority:
+- use a better method (perhaps verlet) for differential equation.
+- particles drawn as isosurface in 3D. (will likely use a library for marching cubes).
+- speedup using parallel processing of particles.
+- output isosurface triangles to an obj format, or to the ray tracer assignment format.
+- use raytracer to render image.
+- generate reflections and caustics.
+
+Milestone to complete of low priority:
+- texture mapping on the container.
+- various shaped containers.
+- interaction with solid objects.
+- user interaction: toggle particle/isosurface, change viscosity, change number of particles.
+- port to WebGL.
