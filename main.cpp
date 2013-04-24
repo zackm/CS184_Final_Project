@@ -309,54 +309,54 @@ void initScene(){
 
 	//2D scene
 	//Semi random grid of particles
-	float step = .005;
-	for(float i = 4.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
-		for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
-			noise = float(rand())/(float(RAND_MAX))*.05f;
-			Vec3 pos(i,j,0);
-			Vec3 vel(-1,-8,0);
-			new_part = new Particle(pos,vel,MASS);
-			PARTICLES.push_back(new_part);
-		}
-	}
-
-	step = .005;
-	for(float i = CONTAINER.min.x; i<1.0f*(CONTAINER.max.x)/5.0f; i=i+step){
-		for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
-			noise = float(rand())/(float(RAND_MAX))*.05f;
-			Vec3 pos(i,j,0);
-			Vec3 vel(5,-5,0);
-			new_part = new Particle(pos,vel,MASS);
-			PARTICLES.push_back(new_part);
-		}
-	}
+//	float step = .005;
+//	for(float i = 4.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
+//		for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
+//			noise = float(rand())/(float(RAND_MAX))*.05f;
+//			Vec3 pos(i,j,0);
+//			Vec3 vel(-1,-8,0);
+//			new_part = new Particle(pos,vel,MASS);
+//			PARTICLES.push_back(new_part);
+//		}
+//	}
+//
+//	step = .005;
+//	for(float i = CONTAINER.min.x; i<1.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+//		for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
+//			noise = float(rand())/(float(RAND_MAX))*.05f;
+//			Vec3 pos(i,j,0);
+//			Vec3 vel(5,-5,0);
+//			new_part = new Particle(pos,vel,MASS);
+//			PARTICLES.push_back(new_part);
+//		}
+//	}
 
 	//////3D scene
- //   float step = .025;
- //   for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
- //       for(float j = 2.0*CONTAINER.max.y/5.0f; j<3.0f*(CONTAINER.max.y)/5.0f; j=j+step){
- //           for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.y)/5.0f; k=k+step){
- //               //noise = float(rand())/(float(RAND_MAX))*.05f;
- //               Vec3 pos(i,j,k);
- //               Vec3 vel(0,-3,0);
- //               new_part = new Particle(pos,vel,MASS);
- //               PARTICLES.push_back(new_part);
- //           }
- //       }
- //   }
+   float step = .025;
+   for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+       for(float j = 2.0*CONTAINER.max.y/5.0f; j<3.0f*(CONTAINER.max.y)/5.0f; j=j+step){
+           for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.y)/5.0f; k=k+step){
+               //noise = float(rand())/(float(RAND_MAX))*.05f;
+               Vec3 pos(i,j,k);
+               Vec3 vel(0,-3,0);
+               new_part = new Particle(pos,vel,MASS);
+               PARTICLES.push_back(new_part);
+           }
+       }
+   }
 
- //   step = .025;
- //   for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
- //       for(float j = CONTAINER.min.y; j<1.0f*(CONTAINER.max.y)/5.0f; j=j+step){
- //           for(float k = CONTAINER.min.z; k<(CONTAINER.max.z); k=k+step){
- //               //noise = float(rand())/(float(RAND_MAX))*.05f;
- //               Vec3 pos(i,j,k);
- //               Vec3 vel(0,0,0);
- //               new_part = new Particle(pos,vel,MASS);
- //               PARTICLES.push_back(new_part);
- //           }
- //       }
- //   }
+   step = .025;
+   for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
+       for(float j = CONTAINER.min.y; j<1.0f*(CONTAINER.max.y)/5.0f; j=j+step){
+           for(float k = CONTAINER.min.z; k<(CONTAINER.max.z); k=k+step){
+               //noise = float(rand())/(float(RAND_MAX))*.05f;
+               Vec3 pos(i,j,k);
+               Vec3 vel(0,0,0);
+               new_part = new Particle(pos,vel,MASS);
+               PARTICLES.push_back(new_part);
+           }
+       }
+   }
 
 
 	NUM_PARTICLES = PARTICLES.size();
@@ -406,13 +406,13 @@ void myDisplay(){
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(70,1.0f,.1,-1000);
+	gluPerspective(50,1.0f,.0001,1000);
 	//glOrtho(CONTAINER.min.x,CONTAINER.max.x,CONTAINER.min.y,CONTAINER.max.y,CONTAINER.min.z,CONTAINER.max.z);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
-	gluLookAt(.15,.15,.65,.15,.15,0,0,1,0);
+	gluLookAt(.25f,.25f,1.25f,.25f,.25f,0.0f,0,1,0);
 
 	run_time_step();
 	CURRENT_TIME += TIMESTEP;
@@ -454,7 +454,7 @@ void myDisplay(){
 		//glColor3f(0,0,1.0);
 		glPushMatrix();
 		glTranslated(temp_part->position.x,temp_part->position.y,temp_part->position.z);
-		glutWireSphere(DRAW_RADIUS,16,16);
+		glutSolidSphere(DRAW_RADIUS,16,16);
 		glPopMatrix();
 	}
 
