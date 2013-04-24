@@ -163,16 +163,16 @@ void run_time_step(){
 
 		vector<int> neighbor_vec = base_particle->neighbors;
 		int n = neighbor_vec.size();
-		for (int j = 0; j<NUM_PARTICLES; j++){ // changed to neighbors
-			temp_particle = PARTICLES[j];
-			Vec3 r = base_particle->position-temp_particle->position;
-			float mag = dot(r,r);
-			if(mag<H*H){
-				density += temp_particle->mass*default_kernel(base_particle->position,temp_particle->position);
-			}
+		for (int j = 0; j<n; j++){ // changed to neighbors
+            temp_particle = PARTICLES[neighbor_vec[j]];
+            Vec3 r = base_particle->position-temp_particle->position;
+            float mag = dot(r,r);
+            if(mag<H*H){
+                density += temp_particle->mass*default_kernel(base_particle->position,temp_particle->position);
+            }
 		}
 		density_list.push_back(density);
-
+        
 		//changed this to not include stiffness at all
 		pressure_list.push_back(STIFFNESS*(density-IDEAL_DENSITY));
 	}
@@ -425,7 +425,7 @@ void myDisplay(){
 	Particle* temp_part;
 	for (int i = 0; i<PARTICLES.size(); i++){
 		temp_part = PARTICLES[i];
-		glClearColor(0,0,0,0);
+		glClearColor(1,1,1,1);
 
 
 		// alternate particle colors depending on box in grid
@@ -464,7 +464,7 @@ void myDisplay(){
 	glPolygonMode(GL_BACK, GL_LINE);
 
 	glDisable(GL_LIGHTING);
-	glClearColor (0.0, 0.0, 0.0, 0.0);
+	glClearColor (1.0, 1.0, 1.0, 1.0);
 	glColor3f(1.0f,1.0f,1.0f);
 
 	glBegin(GL_POLYGON);
