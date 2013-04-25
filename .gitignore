@@ -4,6 +4,8 @@ sourceAndExe/*
 Debug/*
 glm/*
 glm/
+images/
+Dist/
 oldfiles/*
 Makefile
 AS3

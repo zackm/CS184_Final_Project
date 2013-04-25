@@ -1,5 +1,9 @@
 #include "main.h"
 
+#include "FreeImage.h"
+
+#include <sstream>
+
 using namespace std;
 
 /*******************
@@ -24,7 +28,7 @@ const float VISCOSITY = 3.5f;
 const float SURFACE_TENSION = .07f;
 const float TENSION_THRESHOLD = 7.0f;
 
-const float CUBE_TOL = .05f;//either grid size or tolerance for adaptive cubes, reciprocal must be an integer for now.
+const float CUBE_TOL = .025f;//either grid size or tolerance for adaptive cubes, reciprocal must be an integer for now.
 const float DENSITY_TOL = 100.0f;//also used for marching grid, for density of the particles
 
 Neighbor NEIGHBOR; //neighbor object used for calculations
@@ -36,6 +40,9 @@ bool USE_ADAPTIVE = false; //for adaptive or uniform marching cubes.
 
 const float PI = 3.1415926;
 const float DRAW_RADIUS = .01f;
+
+bool OUTPUT_IMAGE = false;
+int IMAGE_COUNTER = 0;
 
 //marching cubes table data
 int edgeTable[256]={
@@ -797,7 +804,7 @@ void initScene(){
 	//}
 
 	////3D Drop Scene
-	float step = .05;
+	float step = .025;
 	for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
 		for(float j = 2.0*CONTAINER.max.y/5.0f; j<3.0f*(CONTAINER.max.y)/5.0f; j=j+step){
 			for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.y)/5.0f; k=k+step){
@@ -810,13 +817,13 @@ void initScene(){
 		}
 	}
 
-	step = .05;
+	step = .025;
 	for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
 		for(float j = CONTAINER.min.y; j<1.0f*(CONTAINER.max.y)/5.0f; j=j+step){
 			for(float k = CONTAINER.min.z; k<(CONTAINER.max.z); k=k+step){
 				//noise = float(rand())/(float(RAND_MAX))*.05f;
 				Vec3 pos(i,j,k);
-				Vec3 vel(0,0,0);
+				Vec3 vel(0.3,1,0);
 				new_part = new Particle(pos,vel,MASS);
 				PARTICLES.push_back(new_part);
 			}
@@ -978,12 +985,48 @@ void myDisplay(){
 
 	glPopMatrix();
 
+    if (OUTPUT_IMAGE) {
+        // Output image to file
+        FreeImage_Initialise();
+        
+        // Make the BYTE array, factor of 3 because it's RBG.
+        int width = 400, height = 400;
+        BYTE* pixels = new BYTE[ 3 * width * height];
+        
+        glReadPixels(0, 0, width, height, GL_BGR, GL_UNSIGNED_BYTE, pixels);
+        
+        // Convert to FreeImage format & save to file
+        FIBITMAP* image = FreeImage_ConvertFromRawBits(pixels, width, height, 3 * width, 24, 0xFF0000, 0x00FF00, 0x0000FF, false);
+        
+        // I HATE C++ STRINGS
+        std::stringstream ss;
+        ss << IMAGE_COUNTER;
+        std::string s(ss.str());
+        string name = std::string("images/")+s+".png";
+        FreeImage_Save(FIF_PNG, image, name.c_str(), 0);
+        
+        // Free resources
+        FreeImage_Unload(image);
+        delete [] pixels;
+        
+        IMAGE_COUNTER++;
+        if (IMAGE_COUNTER == 900) {
+            exit(0);
+        }
+    }
+    
 	glFlush();
 	glutSwapBuffers();
 }
 
 int main(int argc, char* argv[]){
 
+    // Arg parsing
+    if (argc >= 2) {
+        cout<<"Generating images for animation."<<endl;
+        OUTPUT_IMAGE = true;
+    }
+    
 	glutInit(&argc, argv);
 
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGB);
