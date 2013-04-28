@@ -58,12 +58,11 @@ void Scene::render(Camera c, Film kodak) {
 	Ray ray;
 	glm::vec3 color, pix_pos;
 
-	float chunk = width / 100; // for progress indicator
-	float counter = width / 100; // for progress indicator
+	float chunk = width / 10; // for progress indicator
+	float counter = width / 10; // for progress indicator
 	for (int i = 0; i < width; i++) {
 		// for progress indicator
 		if (i/1.0f > counter) {
-			system("clear");
 			cout << float(float(i) / width) * 100 << "% " << endl;
 			counter += chunk;
 		}
@@ -82,7 +81,6 @@ void Scene::render(Camera c, Film kodak) {
 			kodak.commit(width-i, height-j, color);
 		}
 	}
-	system("clear");
 	cout << "DONE" << endl;
 	kodak.writeImage();
 }

@@ -116,8 +116,8 @@ void set_camera_and_perspective(Camera c, glm::vec3 max, glm::vec3 min) {
 }
 
 int main(int argc, char *argv[]) {
-	int WIDTH = 500;
-	int HEIGHT = 500;
+	int WIDTH = 200;
+	int HEIGHT = 200;
 
 	Scene s;
 	Camera c;

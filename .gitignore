@@ -13,6 +13,7 @@ Raytracer/as2
 as3
 .DS_Store
 glut32.dll
+output.png
 
 # Compiled Object files
 *.o
