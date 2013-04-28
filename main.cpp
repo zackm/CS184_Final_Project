@@ -17,7 +17,7 @@ vector<vector<vector<float> > > GRID_DENSITY;//Grid for marching squares. Probab
 vector<vector<vector<bool> > > GRID_BOOL; //bools corresponding to that grid
 vector<vector<vector<Vec3> > > VERTEX_MATRIX;//list of vertices corresponding to the densities on the grid.
 
-const float TIMESTEP = .01;//time elapsed between iterations
+const float TIMESTEP = .001;//time elapsed between iterations
 const float LIFETIME = 100.0f;
 float CURRENT_TIME = 0.0f;
 int NUM_PARTICLES = 0;
@@ -36,7 +36,7 @@ Neighbor NEIGHBOR; //neighbor object used for calculations
 const float H = .05;
 const float SUPPORT_RADIUS = .1;
 
-bool RENDERING_ISOSURFACE = true;
+bool RENDERING_ISOSURFACE = false;
 bool USE_ADAPTIVE = false; //for adaptive or uniform marching cubes.
 
 const float PI = 3.1415926;
@@ -44,6 +44,8 @@ const float DRAW_RADIUS = .01f;
 
 bool OUTPUT_IMAGE = false;
 int IMAGE_COUNTER = 0;
+
+Vec3 normal_at_point(Vec3);
 
 //marching cubes table data
 int edgeTable[256]={
@@ -490,8 +492,17 @@ vector<Triangle*> polygonise(GRIDCELL &Grid, int &NewVertexCount, vector<Vec3> v
 	//cout<<LocalRemap[triTable[CubeIndex][0]]<<endl;
 	TriangleCount = 0;
 	for (int i=0;triTable[CubeIndex][i]!=-1;i+=3) {
-		Triangle* new_tri = new Triangle(NewVertexList[LocalRemap[triTable[CubeIndex][i+0]]],NewVertexList[LocalRemap[triTable[CubeIndex][i+1]]],
-			NewVertexList[LocalRemap[triTable[CubeIndex][i+2]]]);
+		Vec3 a,b,c,a_norm,b_norm,c_norm;
+		a = NewVertexList[LocalRemap[triTable[CubeIndex][i+0]]];
+		b = NewVertexList[LocalRemap[triTable[CubeIndex][i+1]]];
+		c = NewVertexList[LocalRemap[triTable[CubeIndex][i+2]]];
+		//a_norm = normal_at_point(a);
+		//b_norm = normal_at_point(b);
+		//c_norm = normal_at_point(c);
+		//Vec3 midpoint = ((b-a) + (c-a))*.5f;
+		//Vec3 mid_normal = normal_at_point(midpoint);
+
+		Triangle* new_tri = new Triangle(a,b,c);//,mid_normal,mid_normal,mid_normal);//,a_norm,b_norm,c_norm);
 		//triangles[TriangleCount].I[0] = LocalRemap[triTable[CubeIndex][i+0]];
 		//triangles[TriangleCount].I[1] = LocalRemap[triTable[CubeIndex][i+1]];
 		//triangles[TriangleCount].I[2] = LocalRemap[triTable[CubeIndex][i+2]];
@@ -550,14 +561,6 @@ float viscosity_kernel_laplacian(Vec3 r_i, Vec3 r_j){
 	return (45.0f/(PI*pow(H,6)))*(H-sqrt(mag));
 }
 
-/********************
-* Physics Functions *
-********************/
-Vec3 kinematic_polynomial(Vec3 pos, Vec3 vel, Vec3 acc,float t){
-	//this method for running the time step may not be numerically stable enough.
-	return (acc*t*t*.5f)+(vel*t)+pos;
-}
-
 /*******************
 * Particle Methods *
 *******************/
@@ -581,6 +584,27 @@ float density_at_point(Vec3 point){
 	return density;
 }
 
+Vec3 normal_at_point(Vec3 point){
+	//set the normal at each point
+	Particle* temp_particle;
+	Vec3 normal(0,0,0);
+	for (int j = 0; j<PARTICLES.size(); j++){
+		temp_particle = PARTICLES[j];
+		Vec3 r = point-temp_particle->position;
+		float mag = dot(r,r);
+		if(mag<H*H){
+			normal += default_gradient(point,temp_particle->position)*(temp_particle->mass / temp_particle->density);
+		}
+
+	}
+
+	float length = sqrt(dot(normal,normal));
+	if(length>0){
+		normal = normal/sqrt(length);
+	}
+	return normal*(-1.0f);
+}
+
 /*
 Create a new list of particles from the old list. Then, throw the old list.
 To do this, calculate all quanities in Navier-Stokes, then use timestep to
@@ -588,7 +612,6 @@ update particle location from old location and velocity.
 */
 void run_time_step(){
 	vector<Particle*> new_particles;
-	vector<float> density_list;
 	vector<float> pressure_list;
 	vector<Vec3> pressure_grad_list;
 	vector<Vec3> viscosity_list;
@@ -616,7 +639,7 @@ void run_time_step(){
 				density += temp_particle->mass*default_kernel(base_particle->position,temp_particle->position);
 			}
 		}
-		density_list.push_back(density);
+		base_particle->density = density;
 
 		//changed this to not include stiffness at all
 		pressure_list.push_back(STIFFNESS*(density-IDEAL_DENSITY));
@@ -637,7 +660,7 @@ void run_time_step(){
 
 				if(mag<H*H){
 					Vec3 weight = pressure_kernel_gradient(base_particle->position,temp_particle->position);
-					pressure_gradient += weight * temp_particle->mass * ((pressure_list[i]+pressure_list[j])/(2.0f*density_list[j])); 
+					pressure_gradient += weight * temp_particle->mass * ((pressure_list[i]+pressure_list[j])/(2.0f*temp_particle->density)); 
 				}
 			}
 		}
@@ -657,7 +680,7 @@ void run_time_step(){
 				float mag = dot(r,r);
 				if(mag<H*H){
 					float weight = viscosity_kernel_laplacian(base_particle->position,temp_particle->position);
-					viscosity_laplacian += ((temp_particle->velocity - base_particle->velocity)/density_list[i])*weight * temp_particle->mass;
+					viscosity_laplacian += ((temp_particle->velocity - base_particle->velocity)/base_particle->density)*weight * temp_particle->mass;
 				}
 			}
 		}
@@ -676,7 +699,7 @@ void run_time_step(){
 				Vec3 r = base_particle->position-temp_particle->position;
 				float mag = dot(r,r);
 				if(mag<H*H){
-					color += (temp_particle->mass / density_list[j]) * default_laplacian(base_particle->position,temp_particle->position);
+					color += (temp_particle->mass / temp_particle->density) * default_laplacian(base_particle->position,temp_particle->position);
 				}
 			}
 		}
@@ -695,7 +718,7 @@ void run_time_step(){
 				Vec3 r = base_particle->position-temp_particle->position;
 				float mag = dot(r,r);
 				if(mag<H*H){
-					normal += default_gradient(base_particle->position,temp_particle->position)*(temp_particle->mass / density_list[j]);
+					normal += default_gradient(base_particle->position,temp_particle->position)*(temp_particle->mass / temp_particle->density);
 				}
 			}
 
@@ -717,20 +740,27 @@ void run_time_step(){
 		temp_particle = PARTICLES[i];
 
 		//using Navier Stokes, calculate the change in velocity.
-		Vec3 velocity = temp_particle->velocity;
 
 		//First add external forces
 		Vec3 acceleration = GRAVITY + (tension_list[i]*SURFACE_TENSION
 			+ (viscosity_list[i]*VISCOSITY)
-			+ pressure_grad_list[i])/density_list[i];
+			+ pressure_grad_list[i])/temp_particle->density;
 
 		Vec3 position = temp_particle->position;
-
-		Vec3 new_position = kinematic_polynomial(position,velocity,acceleration,TIMESTEP);
-		Vec3 new_velocity = temp_particle->velocity + acceleration*TIMESTEP;
+		Vec3 velocity = temp_particle->velocity;
+		Vec3 new_velocity,new_position;
+		//if(CURRENT_TIME==0){
+			new_velocity = velocity+acceleration*TIMESTEP;
+			new_position = position + (velocity + acceleration*TIMESTEP)*TIMESTEP;
+		//}else{
+			//new_velocity = (position-temp_particle->prev_position)/TIMESTEP;
+			//new_position = position*2.0f - temp_particle->prev_position + acceleration*TIMESTEP*TIMESTEP;
+		//}
+		
 		float mass = temp_particle->mass;
 
-		temp_particle = new Particle(new_position,new_velocity,mass);
+		temp_particle = new Particle(new_position,new_velocity,mass,temp_particle->density);
+		temp_particle->prev_position = position;
 
 		CONTAINER.in_container(temp_particle,TIMESTEP); //applies reflections if outside of boundary.
 
@@ -867,34 +897,49 @@ void initScene(){
 //    }
 
 	////3D Drop Scene
-	float step = .025;
-	for(float i = 0; i<2.0f*(CONTAINER.max.x)/5.0f; i=i+step){
-		for(float j = 0; j<2.0*(CONTAINER.max.y)/5.0f; j=j+step){
-			for(float k = 0; k<5.0f*(CONTAINER.max.y)/5.0f; k=k+step){
+	//float step = .02;
+	//for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+	//	for(float j = 2.0*CONTAINER.max.y/5.0f; j<3.0f*(CONTAINER.max.y)/5.0f; j=j+step){
+	//		for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.y)/5.0f; k=k+step){
+	//			noise = float(rand())/(float(RAND_MAX))*.05f;
+	//			Vec3 pos(i,j,k);
+	//			Vec3 vel(0,-3,0);
+	//			new_part = new Particle(pos,vel,MASS,1000.0f);
+	//			PARTICLES.push_back(new_part);
+	//		}
+	//	}
+	//}
+
+	//step = .02;
+	//for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
+	//	for(float j = CONTAINER.min.y; j<1.0f*(CONTAINER.max.y)/5.0f; j=j+step){
+	//		for(float k = CONTAINER.min.z; k<(CONTAINER.max.z); k=k+step){
+	//			noise = float(rand())/(float(RAND_MAX))*.05f;
+	//			Vec3 pos(i,j,k);
+	//			Vec3 vel(0.3,1,0);
+	//			new_part = new Particle(pos,vel,MASS,1000.0f);
+	//			PARTICLES.push_back(new_part);
+	//		}
+	//	}
+	//}
+
+	////3D Uniform Scene
+	float step = .05;
+	for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
+		for(float j = CONTAINER.min.y; j<(CONTAINER.max.y); j=j+step){
+			for(float k = 1.0*CONTAINER.min.z; k<(CONTAINER.max.z); k=k+step){
 				//noise = float(rand())/(float(RAND_MAX))*.05f;
 				Vec3 pos(i,j,k);
-				Vec3 vel(0,0,0);
-				new_part = new Particle(pos,vel,MASS);
+				Vec3 vel(-5,-3,0);
+				new_part = new Particle(pos,vel,MASS,1000.0f);
 				PARTICLES.push_back(new_part);
 			}
 		}
 	}
 
-//	step = .025;
-//	for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
-//		for(float j = CONTAINER.min.y; j<1.0f*(CONTAINER.max.y)/5.0f; j=j+step){
-//			for(float k = CONTAINER.min.z; k<(CONTAINER.max.z); k=k+step){
-//				//noise = float(rand())/(float(RAND_MAX))*.05f;
-//				Vec3 pos(i,j,k);
-//				Vec3 vel(0.3,1,0);
-//				new_part = new Particle(pos,vel,MASS);
-//				PARTICLES.push_back(new_part);
-//			}
-//		}
-//	}
+	NUM_PARTICLES = PARTICLES.size();
+	cout<<NUM_PARTICLES<<endl;
 
-
-	
 	////random particles
 //    for (int i = 0; i<NUM_PARTICLES; i++){
 //        x = .2f+float(rand())/(float(RAND_MAX))*.1f;
@@ -973,14 +1018,13 @@ void myDisplay(){
 			////wireframe for now
 			//glPolygonMode(GL_FRONT, GL_LINE);
 			//glPolygonMode(GL_BACK, GL_LINE);
-
 			glBegin(GL_TRIANGLES);
 			glVertex3f(temp_triangle->a.x,temp_triangle->a.y,temp_triangle->a.z);
-			glNormal3f(temp_triangle->normal.x,temp_triangle->normal.y,temp_triangle->normal.z);
+			glNormal3f(temp_triangle->a_normal.x,temp_triangle->a_normal.y,temp_triangle->a_normal.z);
 			glVertex3f(temp_triangle->b.x,temp_triangle->b.y,temp_triangle->b.z);
-			glNormal3f(temp_triangle->normal.x,temp_triangle->normal.y,temp_triangle->normal.z);
+			glNormal3f(temp_triangle->b_normal.x,temp_triangle->b_normal.y,temp_triangle->b_normal.z);
 			glVertex3f(temp_triangle->c.x,temp_triangle->c.y,temp_triangle->c.z);
-			glNormal3f(temp_triangle->normal.x,temp_triangle->normal.y,temp_triangle->normal.z);
+			glNormal3f(temp_triangle->c_normal.x,temp_triangle->c_normal.y,temp_triangle->c_normal.z);
 			glEnd();
 
 			//glPolygonMode(GL_FRONT, GL_FILL); // fill mode
@@ -1100,12 +1144,12 @@ void myDisplay(){
 
 int main(int argc, char* argv[]){
 
-    // Arg parsing
-    if (argc >= 2) {
-        cout<<"Generating images for animation."<<endl;
-        OUTPUT_IMAGE = true;
-    }
-    
+	// Arg parsing
+	if (argc >= 2) {
+		cout<<"Generating images for animation."<<endl;
+		OUTPUT_IMAGE = true;
+	}
+
 	glutInit(&argc, argv);
 
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGB);
