@@ -17,7 +17,7 @@ vector<vector<vector<float> > > GRID_DENSITY;//Grid for marching squares. Probab
 vector<vector<vector<bool> > > GRID_BOOL; //bools corresponding to that grid
 vector<vector<vector<Vec3> > > VERTEX_MATRIX;//list of vertices corresponding to the densities on the grid.
 
-const float TIMESTEP = .001;//time elapsed between iterations
+const float TIMESTEP = .01;//time elapsed between iterations
 const float LIFETIME = 100.0f;
 float CURRENT_TIME = 0.0f;
 int NUM_PARTICLES = 0;
@@ -36,7 +36,7 @@ Neighbor NEIGHBOR; //neighbor object used for calculations
 const float H = .05;
 const float SUPPORT_RADIUS = .1;
 
-bool RENDERING_ISOSURFACE = false;
+bool RENDERING_ISOSURFACE = true;
 bool USE_ADAPTIVE = false; //for adaptive or uniform marching cubes.
 
 const float PI = 3.1415926;
@@ -356,9 +356,11 @@ void output_obj() {
         Vec3 v1(t->a.x,t->a.y,t->a.z);
         Vec3 v2(t->b.x,t->b.y,t->b.z);
         Vec3 v3(t->c.x,t->c.y,t->c.z);
-        Vec3 vn_temp(t->normal.x,t->normal.y,t->normal.z);
+        Vec3 vn_1(t->a_normal.x,t->a_normal.y,t->a_normal.z);
+        Vec3 vn_2(t->b_normal.x,t->b_normal.y,t->b_normal.z);
+        Vec3 vn_3(t->c_normal.x,t->c_normal.y,t->c_normal.z);
         v.push_back(v1); v.push_back(v2); v.push_back(v3);
-        vn.push_back(vn_temp); vn.push_back(vn_temp); vn.push_back(vn_temp);
+        vn.push_back(vn_1); vn.push_back(vn_2); vn.push_back(vn_3);
     }
     // write all vertices, v x y z
     for (int i = 0; i < v.size(); i++) {
@@ -373,12 +375,13 @@ void output_obj() {
     
     // face with vertex norms f v//n v//n v//n
     // write all triangles
-    for (int i = 1; i <= TRIANGLES.size(); i+=3) {
+    for (int i = 1; i <= TRIANGLES.size()*3; i+=3) {
         output_file<<"f "<<i<<"//"<<i<<" "<<i+1<<"//"<<i+1<<" "<<i+2<<"//"<<i+2<<endl;
 //        output_file<<"f "<<i<<" "<<i+1<<" "<<i+2<<endl;
     }
     
     output_file.close();
+    system("Raytracer/as2 fluid.obj");
 }
 
 /* 
@@ -496,13 +499,13 @@ vector<Triangle*> polygonise(GRIDCELL &Grid, int &NewVertexCount, vector<Vec3> v
 		a = NewVertexList[LocalRemap[triTable[CubeIndex][i+0]]];
 		b = NewVertexList[LocalRemap[triTable[CubeIndex][i+1]]];
 		c = NewVertexList[LocalRemap[triTable[CubeIndex][i+2]]];
-		//a_norm = normal_at_point(a);
-		//b_norm = normal_at_point(b);
-		//c_norm = normal_at_point(c);
-		//Vec3 midpoint = ((b-a) + (c-a))*.5f;
-		//Vec3 mid_normal = normal_at_point(midpoint);
+//        a_norm = normal_at_point(a);
+//        b_norm = normal_at_point(b);
+//        c_norm = normal_at_point(c);
+//        Vec3 midpoint = ((b-a) + (c-a))*.5f;
+//        Vec3 mid_normal = normal_at_point(midpoint);
 
-		Triangle* new_tri = new Triangle(a,b,c);//,mid_normal,mid_normal,mid_normal);//,a_norm,b_norm,c_norm);
+		Triangle* new_tri = new Triangle(a,b,c);//,a_norm,b_norm,c_norm);
 		//triangles[TriangleCount].I[0] = LocalRemap[triTable[CubeIndex][i+0]];
 		//triangles[TriangleCount].I[1] = LocalRemap[triTable[CubeIndex][i+1]];
 		//triangles[TriangleCount].I[2] = LocalRemap[triTable[CubeIndex][i+2]];
@@ -897,18 +900,18 @@ void initScene(){
 //    }
 
 	////3D Drop Scene
-	//float step = .02;
-	//for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
-	//	for(float j = 2.0*CONTAINER.max.y/5.0f; j<3.0f*(CONTAINER.max.y)/5.0f; j=j+step){
-	//		for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.y)/5.0f; k=k+step){
-	//			noise = float(rand())/(float(RAND_MAX))*.05f;
-	//			Vec3 pos(i,j,k);
-	//			Vec3 vel(0,-3,0);
-	//			new_part = new Particle(pos,vel,MASS,1000.0f);
-	//			PARTICLES.push_back(new_part);
-	//		}
-	//	}
-	//}
+    float step = .015;
+    for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+        for(float j = 2.0*CONTAINER.max.y/5.0f; j<3.0f*(CONTAINER.max.y)/5.0f; j=j+step){
+            for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.y)/5.0f; k=k+step){
+                noise = float(rand())/(float(RAND_MAX))*.05f;
+                Vec3 pos(i,j,k);
+                Vec3 vel(0,-3,0);
+                new_part = new Particle(pos,vel,MASS,1000.0f);
+                PARTICLES.push_back(new_part);
+            }
+        }
+    }
 
 	//step = .02;
 	//for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
@@ -924,18 +927,18 @@ void initScene(){
 	//}
 
 	////3D Uniform Scene
-	float step = .05;
-	for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
-		for(float j = CONTAINER.min.y; j<(CONTAINER.max.y); j=j+step){
-			for(float k = 1.0*CONTAINER.min.z; k<(CONTAINER.max.z); k=k+step){
-				//noise = float(rand())/(float(RAND_MAX))*.05f;
-				Vec3 pos(i,j,k);
-				Vec3 vel(-5,-3,0);
-				new_part = new Particle(pos,vel,MASS,1000.0f);
-				PARTICLES.push_back(new_part);
-			}
-		}
-	}
+//	float step = .05;
+//	for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
+//		for(float j = CONTAINER.min.y; j<(CONTAINER.max.y); j=j+step){
+//			for(float k = 1.0*CONTAINER.min.z; k<(CONTAINER.max.z); k=k+step){
+//				//noise = float(rand())/(float(RAND_MAX))*.05f;
+//				Vec3 pos(i,j,k);
+//				Vec3 vel(-5,-3,0);
+//				new_part = new Particle(pos,vel,MASS,1000.0f);
+//				PARTICLES.push_back(new_part);
+//			}
+//		}
+//	}
 
 	NUM_PARTICLES = PARTICLES.size();
 	cout<<NUM_PARTICLES<<endl;

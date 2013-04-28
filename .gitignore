@@ -9,6 +9,7 @@ Dist/
 oldfiles/*
 Makefile
 AS3
+Raytracer/as2
 as3
 .DS_Store
 glut32.dll
