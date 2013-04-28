@@ -16,7 +16,7 @@ vector<vector<vector<float> > > GRID_DENSITY;//Grid for marching squares. Probab
 vector<vector<vector<bool> > > GRID_BOOL; //bools corresponding to that grid
 vector<vector<vector<Vec3> > > VERTEX_MATRIX;//list of vertices corresponding to the densities on the grid.
 
-const float TIMESTEP = .01;//time elapsed between iterations
+const float TIMESTEP = .001;//time elapsed between iterations
 const float LIFETIME = 100.0f;
 float CURRENT_TIME = 0.0f;
 int NUM_PARTICLES = 0;
@@ -35,7 +35,7 @@ Neighbor NEIGHBOR; //neighbor object used for calculations
 const float H = .05;
 const float SUPPORT_RADIUS = .1;
 
-bool RENDERING_ISOSURFACE = true;
+bool RENDERING_ISOSURFACE = false;
 bool USE_ADAPTIVE = false; //for adaptive or uniform marching cubes.
 
 const float PI = 3.1415926;
@@ -502,14 +502,6 @@ float viscosity_kernel_laplacian(Vec3 r_i, Vec3 r_j){
 	return (45.0f/(PI*pow(H,6)))*(H-sqrt(mag));
 }
 
-/********************
-* Physics Functions *
-********************/
-Vec3 kinematic_polynomial(Vec3 pos, Vec3 vel, Vec3 acc,float t){
-	//this method for running the time step may not be numerically stable enough.
-	return (acc*t*t*.5f)+(vel*t)+pos;
-}
-
 /*******************
 * Particle Methods *
 *******************/
@@ -689,7 +681,6 @@ void run_time_step(){
 		temp_particle = PARTICLES[i];
 
 		//using Navier Stokes, calculate the change in velocity.
-		Vec3 velocity = temp_particle->velocity;
 
 		//First add external forces
 		Vec3 acceleration = GRAVITY + (tension_list[i]*SURFACE_TENSION
@@ -697,12 +688,20 @@ void run_time_step(){
 			+ pressure_grad_list[i])/temp_particle->density;
 
 		Vec3 position = temp_particle->position;
-
-		Vec3 new_position = kinematic_polynomial(position,velocity,acceleration,TIMESTEP);
-		Vec3 new_velocity = temp_particle->velocity + acceleration*TIMESTEP;
+		Vec3 velocity = temp_particle->velocity;
+		Vec3 new_velocity,new_position;
+		//if(CURRENT_TIME==0){
+			new_velocity = velocity+acceleration*TIMESTEP;
+			new_position = position + (velocity + acceleration*TIMESTEP)*TIMESTEP;
+		//}else{
+			//new_velocity = (position-temp_particle->prev_position)/TIMESTEP;
+			//new_position = position*2.0f - temp_particle->prev_position + acceleration*TIMESTEP*TIMESTEP;
+		//}
+		
 		float mass = temp_particle->mass;
 
 		temp_particle = new Particle(new_position,new_velocity,mass,temp_particle->density);
+		temp_particle->prev_position = position;
 
 		CONTAINER.in_container(temp_particle,TIMESTEP); //applies reflections if outside of boundary.
 
@@ -835,32 +834,45 @@ void initScene(){
 	//}
 
 	////3D Drop Scene
+	//float step = .02;
+	//for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+	//	for(float j = 2.0*CONTAINER.max.y/5.0f; j<3.0f*(CONTAINER.max.y)/5.0f; j=j+step){
+	//		for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.y)/5.0f; k=k+step){
+	//			noise = float(rand())/(float(RAND_MAX))*.05f;
+	//			Vec3 pos(i,j,k);
+	//			Vec3 vel(0,-3,0);
+	//			new_part = new Particle(pos,vel,MASS,1000.0f);
+	//			PARTICLES.push_back(new_part);
+	//		}
+	//	}
+	//}
+
+	//step = .02;
+	//for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
+	//	for(float j = CONTAINER.min.y; j<1.0f*(CONTAINER.max.y)/5.0f; j=j+step){
+	//		for(float k = CONTAINER.min.z; k<(CONTAINER.max.z); k=k+step){
+	//			noise = float(rand())/(float(RAND_MAX))*.05f;
+	//			Vec3 pos(i,j,k);
+	//			Vec3 vel(0.3,1,0);
+	//			new_part = new Particle(pos,vel,MASS,1000.0f);
+	//			PARTICLES.push_back(new_part);
+	//		}
+	//	}
+	//}
+
+	////3D Uniform Scene
 	float step = .05;
-	for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
-		for(float j = 2.0*CONTAINER.max.y/5.0f; j<3.0f*(CONTAINER.max.y)/5.0f; j=j+step){
-			for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.y)/5.0f; k=k+step){
-				//noise = float(rand())/(float(RAND_MAX))*.05f;
-				Vec3 pos(i,j,k);
-				Vec3 vel(0,-3,0);
-				new_part = new Particle(pos,vel,MASS,1000.0f);
-				PARTICLES.push_back(new_part);
-			}
-		}
-	}
-
-	step = .05;
 	for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
-		for(float j = CONTAINER.min.y; j<1.0f*(CONTAINER.max.y)/5.0f; j=j+step){
-			for(float k = CONTAINER.min.z; k<(CONTAINER.max.z); k=k+step){
+		for(float j = CONTAINER.min.y; j<(CONTAINER.max.y); j=j+step){
+			for(float k = 1.0*CONTAINER.min.z; k<(CONTAINER.max.z); k=k+step){
 				//noise = float(rand())/(float(RAND_MAX))*.05f;
 				Vec3 pos(i,j,k);
-				Vec3 vel(0.3,1,0);
+				Vec3 vel(-5,-3,0);
 				new_part = new Particle(pos,vel,MASS,1000.0f);
 				PARTICLES.push_back(new_part);
 			}
 		}
 	}
-
 
 	NUM_PARTICLES = PARTICLES.size();
 	cout<<NUM_PARTICLES<<endl;

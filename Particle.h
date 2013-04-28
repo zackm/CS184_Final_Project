@@ -7,6 +7,7 @@
 class Particle{
 public:
 	Vec3 position, velocity; //in units meters and meters/sec
+	Vec3 prev_position;
 	float mass,density; //in units kg
     int box; // index of containing box (for neighbor function)
     std::vector<int> neighbors; // vector of neighboring particle numbers (for neighbor function)
