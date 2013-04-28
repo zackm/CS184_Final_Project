@@ -8,7 +8,19 @@ Triangle::Triangle(Vec3 alpha, Vec3 beta, Vec3 gamma){
 	Vec3 first = c-a;
 	Vec3 second = b-a;
 
-	normal = cross(first,second);
+	Vec3 normal = cross(first,second);
+
+	a_normal = b_normal = c_normal = normal;
+}
+
+Triangle::Triangle(Vec3 alpha, Vec3 beta, Vec3 gamma,Vec3 alpha_norm,Vec3 beta_norm,Vec3 gamma_norm){
+	a = alpha;
+	b = beta;
+	c = gamma;
+
+	a_normal = alpha_norm;
+	b_normal = beta_norm;
+	c_normal = gamma_norm;
 }
 
 Triangle::Triangle(Vec3 vec1, Vec3 vec2, Vec3 vec3, float w1, float w2, float w3, float tol){

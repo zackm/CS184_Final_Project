@@ -44,6 +44,8 @@ const float DRAW_RADIUS = .01f;
 bool OUTPUT_IMAGE = false;
 int IMAGE_COUNTER = 0;
 
+Vec3 normal_at_point(Vec3);
+
 //marching cubes table data
 int edgeTable[256]={
 	0x0  , 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
@@ -431,8 +433,17 @@ vector<Triangle*> polygonise(GRIDCELL &Grid, int &NewVertexCount, vector<Vec3> v
 	//cout<<LocalRemap[triTable[CubeIndex][0]]<<endl;
 	TriangleCount = 0;
 	for (int i=0;triTable[CubeIndex][i]!=-1;i+=3) {
-		Triangle* new_tri = new Triangle(NewVertexList[LocalRemap[triTable[CubeIndex][i+0]]],NewVertexList[LocalRemap[triTable[CubeIndex][i+1]]],
-			NewVertexList[LocalRemap[triTable[CubeIndex][i+2]]]);
+		Vec3 a,b,c,a_norm,b_norm,c_norm;
+		a = NewVertexList[LocalRemap[triTable[CubeIndex][i+0]]];
+		b = NewVertexList[LocalRemap[triTable[CubeIndex][i+1]]];
+		c = NewVertexList[LocalRemap[triTable[CubeIndex][i+2]]];
+		//a_norm = normal_at_point(a);
+		//b_norm = normal_at_point(b);
+		//c_norm = normal_at_point(c);
+		//Vec3 midpoint = ((b-a) + (c-a))*.5f;
+		//Vec3 mid_normal = normal_at_point(midpoint);
+
+		Triangle* new_tri = new Triangle(a,b,c);//,mid_normal,mid_normal,mid_normal);//,a_norm,b_norm,c_norm);
 		//triangles[TriangleCount].I[0] = LocalRemap[triTable[CubeIndex][i+0]];
 		//triangles[TriangleCount].I[1] = LocalRemap[triTable[CubeIndex][i+1]];
 		//triangles[TriangleCount].I[2] = LocalRemap[triTable[CubeIndex][i+2]];
@@ -522,6 +533,27 @@ float density_at_point(Vec3 point){
 	return density;
 }
 
+Vec3 normal_at_point(Vec3 point){
+	//set the normal at each point
+	Particle* temp_particle;
+	Vec3 normal(0,0,0);
+	for (int j = 0; j<PARTICLES.size(); j++){
+		temp_particle = PARTICLES[j];
+		Vec3 r = point-temp_particle->position;
+		float mag = dot(r,r);
+		if(mag<H*H){
+			normal += default_gradient(point,temp_particle->position)*(temp_particle->mass / temp_particle->density);
+		}
+
+	}
+
+	float length = sqrt(dot(normal,normal));
+	if(length>0){
+		normal = normal/sqrt(length);
+	}
+	return normal*(-1.0f);
+}
+
 /*
 Create a new list of particles from the old list. Then, throw the old list.
 To do this, calculate all quanities in Navier-Stokes, then use timestep to
@@ -529,7 +561,6 @@ update particle location from old location and velocity.
 */
 void run_time_step(){
 	vector<Particle*> new_particles;
-	vector<float> density_list;
 	vector<float> pressure_list;
 	vector<Vec3> pressure_grad_list;
 	vector<Vec3> viscosity_list;
@@ -557,7 +588,7 @@ void run_time_step(){
 				density += temp_particle->mass*default_kernel(base_particle->position,temp_particle->position);
 			}
 		}
-		density_list.push_back(density);
+		base_particle->density = density;
 
 		//changed this to not include stiffness at all
 		pressure_list.push_back(STIFFNESS*(density-IDEAL_DENSITY));
@@ -578,7 +609,7 @@ void run_time_step(){
 
 				if(mag<H*H){
 					Vec3 weight = pressure_kernel_gradient(base_particle->position,temp_particle->position);
-					pressure_gradient += weight * temp_particle->mass * ((pressure_list[i]+pressure_list[j])/(2.0f*density_list[j])); 
+					pressure_gradient += weight * temp_particle->mass * ((pressure_list[i]+pressure_list[j])/(2.0f*temp_particle->density)); 
 				}
 			}
 		}
@@ -598,7 +629,7 @@ void run_time_step(){
 				float mag = dot(r,r);
 				if(mag<H*H){
 					float weight = viscosity_kernel_laplacian(base_particle->position,temp_particle->position);
-					viscosity_laplacian += ((temp_particle->velocity - base_particle->velocity)/density_list[i])*weight * temp_particle->mass;
+					viscosity_laplacian += ((temp_particle->velocity - base_particle->velocity)/base_particle->density)*weight * temp_particle->mass;
 				}
 			}
 		}
@@ -617,7 +648,7 @@ void run_time_step(){
 				Vec3 r = base_particle->position-temp_particle->position;
 				float mag = dot(r,r);
 				if(mag<H*H){
-					color += (temp_particle->mass / density_list[j]) * default_laplacian(base_particle->position,temp_particle->position);
+					color += (temp_particle->mass / temp_particle->density) * default_laplacian(base_particle->position,temp_particle->position);
 				}
 			}
 		}
@@ -636,7 +667,7 @@ void run_time_step(){
 				Vec3 r = base_particle->position-temp_particle->position;
 				float mag = dot(r,r);
 				if(mag<H*H){
-					normal += default_gradient(base_particle->position,temp_particle->position)*(temp_particle->mass / density_list[j]);
+					normal += default_gradient(base_particle->position,temp_particle->position)*(temp_particle->mass / temp_particle->density);
 				}
 			}
 
@@ -663,7 +694,7 @@ void run_time_step(){
 		//First add external forces
 		Vec3 acceleration = GRAVITY + (tension_list[i]*SURFACE_TENSION
 			+ (viscosity_list[i]*VISCOSITY)
-			+ pressure_grad_list[i])/density_list[i];
+			+ pressure_grad_list[i])/temp_particle->density;
 
 		Vec3 position = temp_particle->position;
 
@@ -671,7 +702,7 @@ void run_time_step(){
 		Vec3 new_velocity = temp_particle->velocity + acceleration*TIMESTEP;
 		float mass = temp_particle->mass;
 
-		temp_particle = new Particle(new_position,new_velocity,mass);
+		temp_particle = new Particle(new_position,new_velocity,mass,temp_particle->density);
 
 		CONTAINER.in_container(temp_particle,TIMESTEP); //applies reflections if outside of boundary.
 
@@ -804,27 +835,27 @@ void initScene(){
 	//}
 
 	////3D Drop Scene
-	float step = .025;
+	float step = .05;
 	for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
 		for(float j = 2.0*CONTAINER.max.y/5.0f; j<3.0f*(CONTAINER.max.y)/5.0f; j=j+step){
 			for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.y)/5.0f; k=k+step){
 				//noise = float(rand())/(float(RAND_MAX))*.05f;
 				Vec3 pos(i,j,k);
 				Vec3 vel(0,-3,0);
-				new_part = new Particle(pos,vel,MASS);
+				new_part = new Particle(pos,vel,MASS,1000.0f);
 				PARTICLES.push_back(new_part);
 			}
 		}
 	}
 
-	step = .025;
+	step = .05;
 	for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
 		for(float j = CONTAINER.min.y; j<1.0f*(CONTAINER.max.y)/5.0f; j=j+step){
 			for(float k = CONTAINER.min.z; k<(CONTAINER.max.z); k=k+step){
 				//noise = float(rand())/(float(RAND_MAX))*.05f;
 				Vec3 pos(i,j,k);
 				Vec3 vel(0.3,1,0);
-				new_part = new Particle(pos,vel,MASS);
+				new_part = new Particle(pos,vel,MASS,1000.0f);
 				PARTICLES.push_back(new_part);
 			}
 		}
@@ -908,14 +939,13 @@ void myDisplay(){
 			////wireframe for now
 			//glPolygonMode(GL_FRONT, GL_LINE);
 			//glPolygonMode(GL_BACK, GL_LINE);
-
 			glBegin(GL_TRIANGLES);
 			glVertex3f(temp_triangle->a.x,temp_triangle->a.y,temp_triangle->a.z);
-			glNormal3f(temp_triangle->normal.x,temp_triangle->normal.y,temp_triangle->normal.z);
+			glNormal3f(temp_triangle->a_normal.x,temp_triangle->a_normal.y,temp_triangle->a_normal.z);
 			glVertex3f(temp_triangle->b.x,temp_triangle->b.y,temp_triangle->b.z);
-			glNormal3f(temp_triangle->normal.x,temp_triangle->normal.y,temp_triangle->normal.z);
+			glNormal3f(temp_triangle->b_normal.x,temp_triangle->b_normal.y,temp_triangle->b_normal.z);
 			glVertex3f(temp_triangle->c.x,temp_triangle->c.y,temp_triangle->c.z);
-			glNormal3f(temp_triangle->normal.x,temp_triangle->normal.y,temp_triangle->normal.z);
+			glNormal3f(temp_triangle->c_normal.x,temp_triangle->c_normal.y,temp_triangle->c_normal.z);
 			glEnd();
 
 			//glPolygonMode(GL_FRONT, GL_FILL); // fill mode
@@ -985,48 +1015,48 @@ void myDisplay(){
 
 	glPopMatrix();
 
-    if (OUTPUT_IMAGE) {
-        // Output image to file
-        FreeImage_Initialise();
-        
-        // Make the BYTE array, factor of 3 because it's RBG.
-        int width = 400, height = 400;
-        BYTE* pixels = new BYTE[ 3 * width * height];
-        
-        glReadPixels(0, 0, width, height, GL_BGR, GL_UNSIGNED_BYTE, pixels);
-        
-        // Convert to FreeImage format & save to file
-        FIBITMAP* image = FreeImage_ConvertFromRawBits(pixels, width, height, 3 * width, 24, 0xFF0000, 0x00FF00, 0x0000FF, false);
-        
-        // I HATE C++ STRINGS
-        std::stringstream ss;
-        ss << IMAGE_COUNTER;
-        std::string s(ss.str());
-        string name = std::string("images/")+s+".png";
-        FreeImage_Save(FIF_PNG, image, name.c_str(), 0);
-        
-        // Free resources
-        FreeImage_Unload(image);
-        delete [] pixels;
-        
-        IMAGE_COUNTER++;
-        if (IMAGE_COUNTER == 900) {
-            exit(0);
-        }
-    }
-    
+	if (OUTPUT_IMAGE) {
+		// Output image to file
+		FreeImage_Initialise();
+
+		// Make the BYTE array, factor of 3 because it's RBG.
+		int width = 400, height = 400;
+		BYTE* pixels = new BYTE[ 3 * width * height];
+
+		glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+
+		// Convert to FreeImage format & save to file
+		FIBITMAP* image = FreeImage_ConvertFromRawBits(pixels, width, height, 3 * width, 24, 0xFF0000, 0x00FF00, 0x0000FF, false);
+
+		// I HATE C++ STRINGS
+		std::stringstream ss;
+		ss << IMAGE_COUNTER;
+		std::string s(ss.str());
+		string name = std::string("images/")+s+".png";
+		FreeImage_Save(FIF_PNG, image, name.c_str(), 0);
+
+		// Free resources
+		FreeImage_Unload(image);
+		delete [] pixels;
+
+		IMAGE_COUNTER++;
+		if (IMAGE_COUNTER == 900) {
+			exit(0);
+		}
+	}
+
 	glFlush();
 	glutSwapBuffers();
 }
 
 int main(int argc, char* argv[]){
 
-    // Arg parsing
-    if (argc >= 2) {
-        cout<<"Generating images for animation."<<endl;
-        OUTPUT_IMAGE = true;
-    }
-    
+	// Arg parsing
+	if (argc >= 2) {
+		cout<<"Generating images for animation."<<endl;
+		OUTPUT_IMAGE = true;
+	}
+
 	glutInit(&argc, argv);
 
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGB);
