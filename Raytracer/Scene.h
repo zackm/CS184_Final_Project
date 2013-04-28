@@ -36,8 +36,10 @@ public:
 	void add_shape(Shape*);
 	void add_light(Light*);
 
-	void generateReflectionRay(LocalGeo&,Ray*);
-	void trace(Ray &, glm::vec3 *);
+	Ray generateReflectionRay(LocalGeo&,Ray*);
+	Ray generateRefractionRay(LocalGeo&,Ray*,float,float);
+	float reflectance(LocalGeo&,Ray&,float,float);
+	glm::vec3 trace(Ray &,int);
 	bool intersect_checker(Ray&);
 
 	glm::vec3 shading(LocalGeo, BRDF, Ray, glm::vec3,glm::vec3);

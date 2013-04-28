@@ -118,12 +118,12 @@ void set_camera_and_perspective(Camera c, glm::vec3 max, glm::vec3 min) {
 }
 
 int Raytracer::ray_trace_start() {
-	int WIDTH = 200;
-	int HEIGHT = 200;
+	int WIDTH = 400;
+	int HEIGHT = 400;
 
 	Scene s;
 	Camera c;
-	int maxdepth = 5;
+	int maxdepth = 2;
 	std::string output_name;
 	vector<glm::vec3> vertices;
 	vector<glm::vec3> vertexnorm_v;
@@ -299,6 +299,8 @@ int Raytracer::ray_trace_start() {
 					glm::vec3 vert_3 = tri_trans.world_point(vertices[v3]);
 
 					RTriangle *t = new RTriangle(vert_1,vert_2,vert_3,ka,kd,ks,kr,ke,sp);
+					t->index_of_refraction = 1.33f;
+					t->transparency = true;//true;//not really working for triangles
 					s.add_shape(t);
 				}
 
@@ -658,9 +660,12 @@ int Raytracer::ray_trace_start() {
 					kd.x = .3; kd.y = .3; kd.z = .9;
 					ks.x = .3; kd.y = .3; kd.z = .5;
 					kr.x = .2; kr.y = .2; kr.z = .2;
+					float ior = 1.33;//if it is water
 					sp = 30;
 					RTriangle *t = new RTriangle(vert_1,vert_2,vert_3,ka,kd,ks,kr,ke,sp,norm_1,norm_2,norm_3);
 					// Add triangle to scene.
+					t->index_of_refraction = 1.33f;
+					t->transparency = true;//true;//not really working for triangles
 					s.add_shape(t);
 
 					// temp test

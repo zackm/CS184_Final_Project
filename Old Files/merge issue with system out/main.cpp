@@ -381,9 +381,9 @@ void output_obj() {
     }
     
     output_file.close();
-    Raytracer r;
-    r.ray_trace_start();
-    //system("Raytracer/as2 fluid.obj");
+	system("Echo %CD%");
+    system("/Raytracer/as2/as2.exe fluid.obj");
+	cin.get();
 }
 
 /* 
