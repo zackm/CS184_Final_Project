@@ -41,10 +41,12 @@ Zack Mayeda cs184-bg
 #include <vector>
 
 #pragma once
-#include "Triangle.h"
+#include "RTriangle.h"
 
 #pragma once
 #include "Transformation.h"
+
+#include "Raytracer.h"
 
 using namespace std;
 
@@ -74,7 +76,7 @@ glm::mat4 create_rotate(float x, float y, float z, float angle) {
 Helper method for obj file parsing. Finds the number of slashes in
 a face reference. This is due to multiple standards for .obj file format.
 */
-int slash_count(string s) {
+int slash_counter(string s) {
 	int count = 0;
 	int pos = 0;
 	while (s.find("/", pos) != std::string::npos) {
@@ -115,7 +117,7 @@ void set_camera_and_perspective(Camera c, glm::vec3 max, glm::vec3 min) {
 	// exit(0);
 }
 
-int main(int argc, char *argv[]) {
+int Raytracer::ray_trace_start() {
 	int WIDTH = 200;
 	int HEIGHT = 200;
 
@@ -155,14 +157,16 @@ int main(int argc, char *argv[]) {
 	// fill first position for proper numbering, since obj parsing starts at  instead of 0.
 	vert_list.push_back(glm::vec3(0,0,0));
 	norm_list.push_back(glm::vec3(0,0,0));
-	vector<Triangle*> filler_tri;
+	vector<RTriangle*> filler_tri;
 
 	// Filename Business
-	if (argc < 2) {
-		cout << "No filname given. Terminating" << endl;
-		exit(1);
-	}
-	std::string filename = argv[1];
+//	if (argc < 2) {
+//		cout << "No filname given. Terminating" << endl;
+//		exit(1);
+//	}
+
+	//std::string filename = argv[1];
+    std::string filename = "fluid.obj";
 	cout << "Filename " << filename << " found." << endl;
 	if (filename.find(".obj") != std::string::npos) {
 		cout<<"OBJ Input File Detected."<<endl;
@@ -294,7 +298,7 @@ int main(int argc, char *argv[]) {
 					glm::vec3 vert_2 = tri_trans.world_point(vertices[v2]);
 					glm::vec3 vert_3 = tri_trans.world_point(vertices[v3]);
 
-					Triangle *t = new Triangle(vert_1,vert_2,vert_3,ka,kd,ks,kr,ke,sp);
+					RTriangle *t = new RTriangle(vert_1,vert_2,vert_3,ka,kd,ks,kr,ke,sp);
 					s.add_shape(t);
 				}
 
@@ -322,7 +326,7 @@ int main(int argc, char *argv[]) {
 					glm::vec3 norm_2 = tri_trans.world_normal(vertexnorm_n[v2]);
 					glm::vec3 norm_3 = tri_trans.world_normal(vertexnorm_n[v3]);
 
-					Triangle *t = new Triangle(vert_1,vert_2,vert_3,ka,kd,ks,kr,ke,sp,
+					RTriangle *t = new RTriangle(vert_1,vert_2,vert_3,ka,kd,ks,kr,ke,sp,
 						norm_1,norm_2,norm_3);
 					s.add_shape(t);
 				}
@@ -568,7 +572,7 @@ int main(int argc, char *argv[]) {
 					// face with vertex textures v/t
 					// face with vertex norms v//n
 					// face with text and norms v/t/n
-					int count = slash_count(splitline[1]);
+					int count = slash_counter(splitline[1]);
 					if (count == 1) {
 						// case: f v/t
 						OBJ_NORM = false;
@@ -655,7 +659,7 @@ int main(int argc, char *argv[]) {
 					ks.x = .3; kd.y = .3; kd.z = .5;
 					kr.x = .2; kr.y = .2; kr.z = .2;
 					sp = 30;
-					Triangle *t = new Triangle(vert_1,vert_2,vert_3,ka,kd,ks,kr,ke,sp,norm_1,norm_2,norm_3);
+					RTriangle *t = new RTriangle(vert_1,vert_2,vert_3,ka,kd,ks,kr,ke,sp,norm_1,norm_2,norm_3);
 					// Add triangle to scene.
 					s.add_shape(t);
 

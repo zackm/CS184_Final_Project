@@ -1,4 +1,4 @@
-#include "Triangle.h"
+#include "RTriangle.h"
 
 #include "glm/glm.hpp"
 
@@ -12,7 +12,7 @@
 
 using namespace std;
 
-Triangle::Triangle(glm::vec3 arg_a,glm::vec3 arg_b,glm::vec3 arg_c,glm::vec3 ka,glm::vec3 d,glm::vec3 s,
+RTriangle::RTriangle(glm::vec3 arg_a,glm::vec3 arg_b,glm::vec3 arg_c,glm::vec3 ka,glm::vec3 d,glm::vec3 s,
 				   glm::vec3 r,glm::vec3 e,float sp){
 					   a = arg_a;
 					   b = arg_b;
@@ -26,7 +26,7 @@ Triangle::Triangle(glm::vec3 arg_a,glm::vec3 arg_b,glm::vec3 arg_c,glm::vec3 ka,
 					   trinormal = false;
 }
 
-Triangle::Triangle(glm::vec3 arg_a,glm::vec3 arg_b,glm::vec3 arg_c,glm::vec3 ka,glm::vec3 d,glm::vec3 s,
+RTriangle::RTriangle(glm::vec3 arg_a,glm::vec3 arg_b,glm::vec3 arg_c,glm::vec3 ka,glm::vec3 d,glm::vec3 s,
 				   glm::vec3 r,glm::vec3 e,float sp,glm::vec3 a_norm_arg, glm::vec3 b_norm_arg, glm::vec3 c_norm_arg){
 					  
 					   trinormal = true;
@@ -44,11 +44,11 @@ Triangle::Triangle(glm::vec3 arg_a,glm::vec3 arg_b,glm::vec3 arg_c,glm::vec3 ka,
 					   c_norm = c_norm_arg;
 }
 
-BRDF Triangle::get_brdf() {
+BRDF RTriangle::get_brdf() {
 	return brdf;
 }
 
-bool Triangle::intersect(Ray& ray, float* thit, LocalGeo* local){
+bool RTriangle::intersect(Ray& ray, float* thit, LocalGeo* local){
 	glm::vec3 vec1 = b-a;
 	glm::vec3 vec2 = c-a;
 	glm::vec3 vec3 = -ray.direction;
@@ -99,7 +99,7 @@ bool Triangle::intersect(Ray& ray, float* thit, LocalGeo* local){
 	}
 }
 
-bool Triangle::intersect(Ray& ray){
+bool RTriangle::intersect(Ray& ray){
 	float thit = 0;
 	glm::vec3 vec1 = b-a;
 	glm::vec3 vec2 = c-a;

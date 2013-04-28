@@ -11,7 +11,7 @@
 
 #include "Sphere.h"
 
-#include "Triangle.h"
+#include "RTriangle.h"
 
 #include "Shape.h"
 
