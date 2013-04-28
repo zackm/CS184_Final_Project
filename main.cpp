@@ -3,6 +3,7 @@
 #include "FreeImage.h"
 
 #include <sstream>
+#include <fstream>
 
 using namespace std;
 
@@ -336,6 +337,64 @@ char triTable[256][16] =
 {0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}};
 
+/* 
+ Output triangle mesh to OBJ file.
+ */
+void output_obj() {
+    // open file
+    ofstream output_file;
+    output_file.open ("fluid.obj");
+    output_file << "# OBJ File created by Tyler Brabham and Zack Mayeda\n";
+    output_file << "# UC Berkeley CS184 Spring 2013 Final Project\n\n";
+    
+    vector<Vec3> v,vn;
+    
+    for (int i = 0; i < TRIANGLES.size(); i++) {
+        Triangle *t = TRIANGLES[i];
+        Vec3 v1(t->a.x,t->a.y,t->a.z);
+        Vec3 v2(t->b.x,t->b.y,t->b.z);
+        Vec3 v3(t->c.x,t->c.y,t->c.z);
+        Vec3 vn_temp(t->normal.x,t->normal.y,t->normal.z);
+        v.push_back(v1); v.push_back(v2); v.push_back(v3);
+        vn.push_back(vn_temp); vn.push_back(vn_temp); vn.push_back(vn_temp);
+    }
+    // write all vertices, v x y z
+    for (int i = 0; i < v.size(); i++) {
+        Vec3 v_temp = v[i];
+        output_file<<"v "<< v_temp.x<<" "<<v_temp.y<< " "<<v_temp.z<<endl;
+    }
+    // write all vertex normals, vn x y z
+    for (int i = 0; i < vn.size(); i++) {
+        Vec3 vn_temp = vn[i];
+        output_file<<"vn "<< vn_temp.x<<" "<<vn_temp.y<< " "<<vn_temp.z<<endl;
+    }
+    
+    // face with vertex norms f v//n v//n v//n
+    // write all triangles
+    for (int i = 1; i <= TRIANGLES.size(); i+=3) {
+        output_file<<"f "<<i<<"//"<<i<<" "<<i+1<<"//"<<i+1<<" "<<i+2<<"//"<<i+2<<endl;
+//        output_file<<"f "<<i<<" "<<i+1<<" "<<i+2<<endl;
+    }
+    
+    output_file.close();
+}
+
+/* 
+ Keyboard interactions.
+ */
+void keyPressed(unsigned char key, int x, int y) {
+    switch(key) {
+        case ' ':
+            exit(0);
+            break;
+        case 'r':
+            output_obj();
+            // possible call raytracer here
+            exit(0);
+            break;
+    }
+}
+
 /*
 Linearly interpolate the position where an isosurface cuts
 an edge between two vertices, each with their own scalar value
@@ -509,9 +568,9 @@ float density_at_point(Vec3 point){
 	Particle* temp_particle;
 	vector<int> neighbor_vec = NEIGHBOR.box_particles[box_number];
 	float density = 0;//default_kernel(point,point);
-	for (int i = 0; i<PARTICLES.size(); i++){
+	for (int i = 0; i<neighbor_vec.size(); i++){
 		//update density. There will be a problem if the point is exactly equal to sum particle (divide by zero error).
-		temp_particle = PARTICLES[i];
+		temp_particle = PARTICLES[neighbor_vec[i]];
 		Vec3 diff_vec = point-temp_particle->position;
 		float mag = dot(diff_vec,diff_vec);
 		if(mag<H*H){
@@ -780,77 +839,83 @@ void initScene(){
 	//}
 
 	////2D Throw Scene
-	////Semi random grid of particles
-	//float step = .007;
-	//for(float i = 4.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
-	//	for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
-	//		noise = float(rand())/(float(RAND_MAX))*.05f;
-	//		Vec3 pos(i,j,0);
-	//		Vec3 vel(-1,-8,0);
-	//		new_part = new Particle(pos,vel,MASS);
-	//		PARTICLES.push_back(new_part);
-	//	}
-	//}
-
-	//step = .007;
-	//for(float i = CONTAINER.min.x; i<1.0f*(CONTAINER.max.x)/5.0f; i=i+step){
-	//	for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
-	//		noise = float(rand())/(float(RAND_MAX))*.05f;
-	//		Vec3 pos(i,j,0);
-	//		Vec3 vel(5,-5,0);
-	//		new_part = new Particle(pos,vel,MASS);
-	//		PARTICLES.push_back(new_part);
-	//	}
-	//}
+    //Semi random grid of particles
+//    float step = .025;
+//    for(float i = 4.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
+//        for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
+//            for(float k = 2.0*CONTAINER.max.z/4.0f; k<(3.0f*CONTAINER.max.z/4.0f); k=k+step) {
+//                noise = float(rand())/(float(RAND_MAX))*.05f;
+//                Vec3 pos(i,j,k);
+//                Vec3 vel(-1,-8,0);
+//                new_part = new Particle(pos,vel,MASS);
+//                PARTICLES.push_back(new_part);
+//            }
+//        }
+//    }
+//
+//    step = .025;
+//    for(float i = CONTAINER.min.x; i<1.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+//        for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
+//            for(float k = 2.0*CONTAINER.max.z/4.0f; k<(3.0f*CONTAINER.max.z/4.0f); k=k+step) {
+//                noise = float(rand())/(float(RAND_MAX))*.05f;
+//                Vec3 pos(i,j,k);
+//                Vec3 vel(5,-5,0);
+//                new_part = new Particle(pos,vel,MASS);
+//                PARTICLES.push_back(new_part);
+//            }
+//        }
+//    }
 
 	////3D Drop Scene
 	float step = .025;
-	for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
-		for(float j = 2.0*CONTAINER.max.y/5.0f; j<3.0f*(CONTAINER.max.y)/5.0f; j=j+step){
-			for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.y)/5.0f; k=k+step){
+	for(float i = 0; i<2.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+		for(float j = 0; j<2.0*(CONTAINER.max.y)/5.0f; j=j+step){
+			for(float k = 0; k<5.0f*(CONTAINER.max.y)/5.0f; k=k+step){
 				//noise = float(rand())/(float(RAND_MAX))*.05f;
 				Vec3 pos(i,j,k);
-				Vec3 vel(0,-3,0);
+				Vec3 vel(0,0,0);
 				new_part = new Particle(pos,vel,MASS);
 				PARTICLES.push_back(new_part);
 			}
 		}
 	}
 
-	step = .025;
-	for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
-		for(float j = CONTAINER.min.y; j<1.0f*(CONTAINER.max.y)/5.0f; j=j+step){
-			for(float k = CONTAINER.min.z; k<(CONTAINER.max.z); k=k+step){
-				//noise = float(rand())/(float(RAND_MAX))*.05f;
-				Vec3 pos(i,j,k);
-				Vec3 vel(0.3,1,0);
-				new_part = new Particle(pos,vel,MASS);
-				PARTICLES.push_back(new_part);
-			}
-		}
-	}
+//	step = .025;
+//	for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
+//		for(float j = CONTAINER.min.y; j<1.0f*(CONTAINER.max.y)/5.0f; j=j+step){
+//			for(float k = CONTAINER.min.z; k<(CONTAINER.max.z); k=k+step){
+//				//noise = float(rand())/(float(RAND_MAX))*.05f;
+//				Vec3 pos(i,j,k);
+//				Vec3 vel(0.3,1,0);
+//				new_part = new Particle(pos,vel,MASS);
+//				PARTICLES.push_back(new_part);
+//			}
+//		}
+//	}
 
 
-	NUM_PARTICLES = PARTICLES.size();
-	cout<<NUM_PARTICLES<<endl;
+	
 	////random particles
-	//for (int i = 0; i<NUM_PARTICLES; i++){
-	//	x = .2f+float(rand())/(float(RAND_MAX))*.1f;
-	//	y = float(rand())/(float(RAND_MAX))/5.0 + .1f;
-	//	z = 0.0f;//.2f + float(rand())/(float(RAND_MAX))*.1f;
-
-	//	v_x = -.5f+float(rand())/(float(RAND_MAX))*2.0f*noise;
-	//	v_y = -0.2+float(rand())/(float(RAND_MAX))*noise;
-	//	v_z = 0.0f;//-0.2+float(rand())/(float(RAND_MAX))*noise;
-
-
-	//	Vec3 pos(x,y,z);
-	//	Vec3 vel(v_x,v_y,v_z);
-	//	float mass = 4.0f+(float(rand())/(float(RAND_MAX)))*5.0f;
-	//	//also need to instantiate the other fields
-	//	new_part = new Particle(pos,vel,MASS);
-	//	PARTICLES.push_back(new_part);
-	//}
+//    for (int i = 0; i<NUM_PARTICLES; i++){
+//        x = .2f+float(rand())/(float(RAND_MAX))*.1f;
+//        y = float(rand())/(float(RAND_MAX))/5.0 + .1f;
+//        z = 0.0f;//.2f + float(rand())/(float(RAND_MAX))*.1f;
+//
+//        v_x = -.5f+float(rand())/(float(RAND_MAX))*2.0f*noise;
+//        v_y = -0.2+float(rand())/(float(RAND_MAX))*noise;
+//        v_z = 0.0f;//-0.2+float(rand())/(float(RAND_MAX))*noise;
+//
+//
+//        Vec3 pos(x,y,z);
+//        Vec3 vel(v_x,v_y,v_z);
+//        float mass = 4.0f+(float(rand())/(float(RAND_MAX)))*5.0f;
+//        //also need to instantiate the other fields
+//        new_part = new Particle(pos,vel,MASS);
+//        PARTICLES.push_back(new_part);
+//    }
+    NUM_PARTICLES = PARTICLES.size();
+	cout<<NUM_PARTICLES<<endl;
+    
 	NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER);
 
 	//create some lights
@@ -938,6 +1003,20 @@ void myDisplay(){
 		}
 	}
 
+    //Draw white floor
+    glClearColor(0,0,0,0);
+    glColor3f(1.0f,1.0f,1.0f);
+    glBegin(GL_POLYGON);
+    glVertex3f(0,-.01,0);
+    glNormal3f(0,1,0);
+    glVertex3f(0,-.01,.5f);
+    glNormal3f(0,1,0);
+    glVertex3f(.5f,-.01,.5f);
+    glNormal3f(0,1,0);
+    glVertex3f(0.5f,-.01,0);
+    glNormal3f(0,1,0);
+    glEnd();
+    
 	//Draw wireframe container
 	glPolygonMode(GL_FRONT, GL_LINE);
 	glPolygonMode(GL_BACK, GL_LINE);
@@ -1010,7 +1089,7 @@ void myDisplay(){
         delete [] pixels;
         
         IMAGE_COUNTER++;
-        if (IMAGE_COUNTER == 900) {
+        if (IMAGE_COUNTER == 400) {
             exit(0);
         }
     }
@@ -1040,6 +1119,7 @@ int main(int argc, char* argv[]){
 
 	glutDisplayFunc(myDisplay);
 	glutIdleFunc(myDisplay);
+    glutKeyboardFunc(keyPressed);
 
 	glutMainLoop();
 
