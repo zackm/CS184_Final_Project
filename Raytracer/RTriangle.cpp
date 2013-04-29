@@ -24,6 +24,7 @@ RTriangle::RTriangle(glm::vec3 arg_a,glm::vec3 arg_b,glm::vec3 arg_c,glm::vec3 k
 					   brdf.ke = e;
 					   brdf.shiny = sp;
 					   trinormal = false;
+					   transparency = false;
 }
 
 RTriangle::RTriangle(glm::vec3 arg_a,glm::vec3 arg_b,glm::vec3 arg_c,glm::vec3 ka,glm::vec3 d,glm::vec3 s,
@@ -93,7 +94,7 @@ bool RTriangle::intersect(Ray& ray, float* thit, LocalGeo* local,bool* inside_sh
 		LocalGeo temp_local(point, normal);
 
 		*local = temp_local;
-		(*inside_shape) = !(*inside_shape);
+		//(*inside_shape) = !(*inside_shape);
 		return true;
 	}else{
 		return false;

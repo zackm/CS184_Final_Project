@@ -123,7 +123,7 @@ int Raytracer::ray_trace_start() {
 
 	Scene s;
 	Camera c;
-	int maxdepth = 2;
+	int maxdepth = 5;
 	std::string output_name;
 	vector<glm::vec3> vertices;
 	vector<glm::vec3> vertexnorm_v;
@@ -298,10 +298,10 @@ int Raytracer::ray_trace_start() {
 					glm::vec3 vert_2 = tri_trans.world_point(vertices[v2]);
 					glm::vec3 vert_3 = tri_trans.world_point(vertices[v3]);
 
-					RTriangle *t = new RTriangle(vert_1,vert_2,vert_3,ka,kd,ks,kr,ke,sp);
-					t->index_of_refraction = 1.33f;
-					t->transparency = true;//true;//not really working for triangles
-					s.add_shape(t);
+					//RTriangle *t = new RTriangle(vert_1,vert_2,vert_3,ka,kd,ks,kr,ke,sp);
+					//t->index_of_refraction = 1.33f;
+					//t->transparency = true;//true;//not really working for triangles
+					//s.add_shape(t);
 				}
 
 				//trinormal v1 v2 v3
@@ -661,10 +661,14 @@ int Raytracer::ray_trace_start() {
 					ks.x = .3; kd.y = .3; kd.z = .5;
 					kr.x = .2; kr.y = .2; kr.z = .2;
 					float ior = 1.33;//if it is water
+					ka.x = 0; ka.y = 0; ka.z = 0;
+					kd.x = 0; kd.y = 0; kd.z = 0;
+					ks.x = 0; kd.y = 0; kd.z = 0;
+					kr.x = 0; kr.y = 0; kr.z = 0;
 					sp = 30;
 					RTriangle *t = new RTriangle(vert_1,vert_2,vert_3,ka,kd,ks,kr,ke,sp,norm_1,norm_2,norm_3);
-					// Add triangle to scene.
-					t->index_of_refraction = 1.33f;
+					//Add triangle to scene.
+					t->index_of_refraction = ior;
 					t->transparency = true;//true;//not really working for triangles
 					s.add_shape(t);
 
@@ -697,7 +701,7 @@ int Raytracer::ray_trace_start() {
 
 		// working camera basics, later set auto function
 		float from_x = .25;
-		float from_y = .05;
+		float from_y = .25;
 		float from_z = .65;
 		float to_x = 0.25;
 		float to_y = 0.25;
@@ -709,6 +713,75 @@ int Raytracer::ray_trace_start() {
 
 		Camera cam(glm::vec3(from_x,from_y,from_z),glm::vec3(to_x,to_y,to_z),glm::vec3(up_x,up_y,up_z),fov);
 		c = cam;
+
+
+		//make checker board background
+		RTriangle* t;
+		glm::vec3 corner1(0,.5,0);
+		glm::vec3 corner2(0,.25,0);
+		glm::vec3 corner3(0,0,0);
+		glm::vec3 corner4(.25,0,0);
+		glm::vec3 corner5(.5,0,0);
+		glm::vec3 corner6(.5,.25,0);
+		glm::vec3 corner7(.5,.5,0);
+		glm::vec3 corner8(.25,.5,0);
+		glm::vec3 corner9(.25,.25,0);
+		glm::vec3 ka(0,0,0); glm::vec3 d(0,0,0); glm::vec3 spec(0,0,0);
+		glm::vec3 r(0,0,0);
+		float sp = 0;
+
+		glm::vec3 e(0,0,1);
+		t = new RTriangle(corner1,corner2,corner9,ka,d,spec,r,e,sp);
+		t->transparency = false;
+		s.add_shape(t);
+		e = glm::vec3(1,0,0);
+		t = new RTriangle(corner2,corner3,corner9,ka,d,spec,r,e,sp);
+		t->transparency = false;
+		s.add_shape(t);
+		e = glm::vec3(0,0,1);
+		t->transparency = false;
+		t = new RTriangle(corner3,corner4,corner9,ka,d,spec,r,e,sp);
+		s.add_shape(t);
+		e = glm::vec3(1,0,0);
+		t->transparency = false;
+		t = new RTriangle(corner4,corner5,corner9,ka,d,spec,r,e,sp);
+		s.add_shape(t);
+		e = glm::vec3(0,0,1);
+		t->transparency = false;
+		t = new RTriangle(corner5,corner6,corner9,ka,d,spec,r,e,sp);
+		s.add_shape(t);
+		e = glm::vec3(1,0,0);
+		t->transparency = false;
+		t = new RTriangle(corner6,corner7,corner9,ka,d,spec,r,e,sp);
+		s.add_shape(t);
+		e = glm::vec3(0,0,1);
+		t->transparency = false;
+		t = new RTriangle(corner7,corner8,corner9,ka,d,spec,r,e,sp);
+		s.add_shape(t);
+		e = glm::vec3(1,0,0);
+		t->transparency = false;
+		t = new RTriangle(corner8,corner1,corner9,ka,d,spec,r,e,sp);
+		s.add_shape(t);
+		t->transparency = false;
+
+		//r = glm::vec3(1,1,1);
+		//e = glm::vec3(0,0,0);
+		//t = new RTriangle(glm::vec3(0,0,.1),glm::vec3(.5,0,.1),glm::vec3(.25,.4,.1),ka,d,spec,r,e,sp);
+		//t->transparency = true;
+		//t->index_of_refraction = 1.33;
+		//s.add_shape(t);
+
+		//t = new RTriangle(glm::vec3(0,0,.3),glm::vec3(.5,0,.3),glm::vec3(.25,.45,.3),ka,d,spec,r,e,sp);
+		//t->transparency = true;
+		//t->index_of_refraction = 1.33;
+		//s.add_shape(t);
+
+
+		//Transformation tri_trans(mat_stack);
+		//Sphere* sph = new Sphere(glm::vec3(.25,.35,.2),.15,ka,d,spec,r,e,sp,tri_trans);
+		//sph->index_of_refraction = 1.33;
+		//sph->transparency = true;
+		//s.add_shape(sph);
 	}
 
 	int BitsPerPixel = 24;

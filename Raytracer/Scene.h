@@ -39,7 +39,7 @@ public:
 	Ray generateReflectionRay(LocalGeo&,Ray*);
 	Ray generateRefractionRay(LocalGeo&,Ray*,float,float);
 	float reflectance(LocalGeo&,Ray&,float,float);
-	glm::vec3 trace(Ray &,int);
+	glm::vec3 trace(Ray &,int,bool);
 	bool intersect_checker(Ray&);
 
 	glm::vec3 shading(LocalGeo, BRDF, Ray, glm::vec3,glm::vec3);
