@@ -77,7 +77,8 @@ void Scene::render(Camera c, Film kodak) {
 			c.generateRay(pix_pos, &ray, eye_position);
 			color = glm::vec3(0,0,0);
 
-			color = trace(ray,maxdepth);
+			bool in_shape = false;
+			color = trace(ray,maxdepth,in_shape);
 			kodak.commit(width-i, height-j, color);
 		}
 	}
@@ -87,9 +88,11 @@ void Scene::render(Camera c, Film kodak) {
 
 /*
 Trace ray through scene. We use a while loop instead of a
-purely recurisve call.
+purely recurisve call. The bool in_shape flips value every time
+the ray hits an object when transmitting, keeps the same value 
+when reflecting (in recursive calls).
 */
-glm::vec3 Scene::trace(Ray &r,int level) {
+glm::vec3 Scene::trace(Ray &r,int level,bool in_shape) {
 	glm::vec3 color(0,0,0);
 	if(level<=0){
 		return color;
@@ -134,7 +137,7 @@ glm::vec3 Scene::trace(Ray &r,int level) {
 	float roullete = float(rand())/float(RAND_MAX);
 
 	float n1,n2;
-	if(inside_shape){
+	if(in_shape && best_shape->transparency){
 		n1 = best_shape->index_of_refraction;
 		n2 = 1.0f;
 		local.normal = -local.normal;
@@ -157,15 +160,15 @@ glm::vec3 Scene::trace(Ray &r,int level) {
 		float reflect_norm = glm::dot(brdf.kr,brdf.kr);
 		if(reflect>0.0f && reflect_norm>0.0f){
 			Ray reflected_ray = generateReflectionRay(local,&r);
-			color += reflect*brdf.kr*trace(reflected_ray,level-1);
+			color += reflect*brdf.kr*trace(reflected_ray,level-1,in_shape);
 		}
 	//}else{
 		//do refracted ray.
 		if(best_shape->transparency && transmit>0.0f){
 			Ray refracted_ray;
 			refracted_ray = generateRefractionRay(local,&r,n1,n2);
-			glm::vec3 refract_coeff(.3,.3,.3);
-			color += transmit*refract_coeff*trace(refracted_ray,level-1);
+			glm::vec3 refract_coeff(1,1,1);
+			color += transmit*refract_coeff*trace(refracted_ray,level-1,!in_shape);
 		}
 //	}
 
