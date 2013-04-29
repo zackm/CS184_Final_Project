@@ -48,7 +48,7 @@ BRDF RTriangle::get_brdf() {
 	return brdf;
 }
 
-bool RTriangle::intersect(Ray& ray, float* thit, LocalGeo* local){
+bool RTriangle::intersect(Ray& ray, float* thit, LocalGeo* local,bool* inside_shape){
 	glm::vec3 vec1 = b-a;
 	glm::vec3 vec2 = c-a;
 	glm::vec3 vec3 = -ray.direction;
@@ -93,6 +93,7 @@ bool RTriangle::intersect(Ray& ray, float* thit, LocalGeo* local){
 		LocalGeo temp_local(point, normal);
 
 		*local = temp_local;
+		(*inside_shape) = !(*inside_shape);
 		return true;
 	}else{
 		return false;

@@ -11,7 +11,7 @@ void DirectionalLight::generateLightRay(LocalGeo& local,Ray* lray,glm::vec3* lco
 		dir /= glm::sqrt(norm);
 	}
 
-	Ray temp_ray(pos,dir,t_min,t_max);
+	Ray temp_ray(pos,dir,t_min,t_max,1.0f);
 
 	*lray = temp_ray;
 

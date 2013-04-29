@@ -77,7 +77,7 @@ void Scene::render(Camera c, Film kodak) {
 			c.generateRay(pix_pos, &ray, eye_position);
 			color = glm::vec3(0,0,0);
 
-			trace(ray,&color);
+			color = trace(ray,maxdepth);
 			kodak.commit(width-i, height-j, color);
 		}
 	}
@@ -89,78 +89,110 @@ void Scene::render(Camera c, Film kodak) {
 Trace ray through scene. We use a while loop instead of a
 purely recurisve call.
 */
-void Scene::trace(Ray &r, glm::vec3 *color) {
-	int i = 0;
-	glm::vec3 reflection_coef(1.0f,1.0f,1.0f);
-	float reflect_norm = 1.0;//to check if we need to break while loop early
-
-	while (i<=maxdepth && reflect_norm>0.0f){
-		float thit = std::numeric_limits<float>::infinity();
-		LocalGeo local;
-		Shape* best_shape;
-		BRDF brdf;
-		bool no_hit = true;
-		glm::vec3 view_pos;
-		for (std::list<Shape*>::iterator iter=shapes.begin(); iter != shapes.end(); ++iter) {
-			Shape* s = *iter;
-
-			float current_T;
-			LocalGeo current_local;
-			bool hit = (*s).intersect(r, &current_T, &current_local);
-			if (current_T < thit && hit) {
-				thit = current_T;
-				local = current_local;
-				no_hit = false;
-				best_shape = s;
-				view_pos = r.direction;
-				brdf = s->get_brdf();
-			}
-		}
-
-		if (no_hit) {
-			//should break loop
-			break;
-		}
-
-		if (i<1){
-			//added only for initial rays
-			*color += brdf.ka;
-		}
-
-		//added in all reflections
-		*color += brdf.ke;
-
-		Ray lray;
-		glm::vec3 lcolor(0.0f,0.0f,0.0f);
-		glm::vec3 add_color;
-
-		for (std::list<Light*>::iterator iter=lights.begin(); iter != lights.end(); ++iter) {
-			Light* l = *iter;
-
-			(*l).generateLightRay(local,&lray,&lcolor);
-
-			if (!intersect_checker(lray)) {
-				add_color = shading(local, brdf, lray, lcolor, view_pos);
-				*color += reflection_coef*add_color;
-			}
-		}
-
-		//generate reflection ray and repeat
-		//do this by resetting r.
-		generateReflectionRay(local,&r);
-		reflection_coef *= brdf.kr;
-		reflect_norm = glm::dot(reflection_coef,reflection_coef);
-
-		i++;
+glm::vec3 Scene::trace(Ray &r,int level) {
+	glm::vec3 color(0,0,0);
+	if(level<=0){
+		return color;
 	}
+
+	//find the closest intersection point
+	float thit = std::numeric_limits<float>::infinity();
+	LocalGeo local;
+	Shape* best_shape;
+	BRDF brdf;
+	bool no_hit = true, inside_shape = r.inside_shape;
+	glm::vec3 view_pos;
+	for (std::list<Shape*>::iterator iter=shapes.begin(); iter != shapes.end(); ++iter) {
+		Shape* s = *iter;
+
+		float current_T;
+		LocalGeo current_local;
+		bool hit = (*s).intersect(r, &current_T, &current_local,&inside_shape);
+		if (current_T < thit && hit) {
+			thit = current_T;
+			local = current_local;
+			no_hit = false;
+			best_shape = s;
+			view_pos = r.position;
+			brdf = s->get_brdf();
+		}
+	}
+
+	if (no_hit) {
+		return color;
+	}
+
+	if (level==maxdepth){
+		//added only for initial rays
+		color += brdf.ka;
+	}
+
+	//added in all iterations
+	color += brdf.ke;
+
+	//interpreting transmission and reflection as probabilities
+	float roullete = float(rand())/float(RAND_MAX);
+
+	float n1,n2;
+	if(inside_shape){
+		n1 = best_shape->index_of_refraction;
+		n2 = 1.0f;
+		local.normal = -local.normal;
+	}else{
+		n1 = 1.0f;
+		n2 = best_shape->index_of_refraction;
+	}
+
+	float reflect,transmit;
+	if(best_shape->transparency){
+		reflect = reflectance(local,r,n1,n2);
+		transmit = 1.0f-reflect;
+	}else{
+		reflect = 1.0f;
+		transmit = 0.0f;
+	}
+
+	//if(roullete<=reflect){
+		//do reflected ray
+		float reflect_norm = glm::dot(brdf.kr,brdf.kr);
+		if(reflect>0.0f && reflect_norm>0.0f){
+			Ray reflected_ray = generateReflectionRay(local,&r);
+			color += reflect*brdf.kr*trace(reflected_ray,level-1);
+		}
+	//}else{
+		//do refracted ray.
+		if(best_shape->transparency && transmit>0.0f){
+			Ray refracted_ray;
+			refracted_ray = generateRefractionRay(local,&r,n1,n2);
+			glm::vec3 refract_coeff(.3,.3,.3);
+			color += transmit*refract_coeff*trace(refracted_ray,level-1);
+		}
+//	}
+
+	//do shadow/light ray for initial coloring
+	Ray lray;
+	glm::vec3 lcolor(0.0f,0.0f,0.0f);
+	glm::vec3 add_color;
+	for (std::list<Light*>::iterator iter=lights.begin(); iter != lights.end(); ++iter) {
+		Light* l = *iter;
+
+		(*l).generateLightRay(local,&lray,&lcolor);//need to check for transparency now
+
+		if (!intersect_checker(lray)) {
+			add_color = shading(local, brdf, lray, lcolor, view_pos);
+			color += add_color; //do we multiply by brdf.kr here?
+		}
+	}
+
+	return color;
 }
 
 /*
 Updates ray arg so that we can reuse it inside of trace method.
 */
-void Scene::generateReflectionRay(LocalGeo &local,Ray* ray){
+Ray Scene::generateReflectionRay(LocalGeo &local,Ray* ray){
 	glm::vec3 normal = local.normal;
-	glm::vec3 direction = -ray->direction;
+	glm::vec3 direction = ray->direction;
 
 	float norm_mag = glm::dot(normal,normal);
 	if (norm_mag>0.0f){
@@ -172,17 +204,78 @@ void Scene::generateReflectionRay(LocalGeo &local,Ray* ray){
 		direction /= glm::sqrt(direction_mag);
 	}
 
-	glm::vec3 reflection = (-direction)+2*glm::dot(direction,normal)*normal;
+	glm::vec3 reflection = (direction)-2*glm::dot(direction,normal)*normal;
 	float reflect_mag = glm::dot(reflection,reflection);
 	if (reflect_mag>0.0f){
 		reflection /= glm::sqrt(reflect_mag);
 	}
 
-	ray->direction = reflection;
-	ray->direction = local.point;
-	ray->t_min = .001;
-	ray->t_max = std::numeric_limits<float>::infinity();
+	Ray new_ray(local.point,reflection,.001,std::numeric_limits<float>::infinity(),ray->index_of_refraction);
+	new_ray.inside_shape = ray->inside_shape;
+	return new_ray;
 }
+
+/*
+n1 and n2 are the two indices of refraction, n1 for where the ray starts
+and n2 for where the ray ends up.
+*/
+Ray Scene::generateRefractionRay(LocalGeo &local,Ray* ray,float n1, float n2){
+	glm::vec3 normal = local.normal;
+	glm::vec3 direction = ray->direction;
+
+	float norm_mag = glm::dot(normal,normal);
+	if (norm_mag>0.0f){
+		normal /= glm::sqrt(norm_mag);
+	}
+
+	float direction_mag = glm::dot(direction,direction);
+	if (direction_mag>0.0f){
+		direction /= glm::sqrt(direction_mag);
+	}
+
+	float cos_theta_in = -glm::dot(direction,normal);
+	float sin_theta_out_squared = glm::pow((n1/n2),2.0f)*(1-cos_theta_in*cos_theta_in);
+
+	glm::vec3 refraction = (n1/n2)*(direction)
+		+ ((n1/n2)*cos_theta_in - glm::sqrt(1-sin_theta_out_squared))*normal;
+
+	float reflect_mag = glm::dot(refraction,refraction);
+	if(reflect_mag>0){
+		refraction /= glm::sqrt(reflect_mag);
+	}
+
+	Ray new_ray(local.point,refraction,.001,std::numeric_limits<float>::infinity(),n2);
+	new_ray.inside_shape = !ray->inside_shape;
+	return new_ray;
+}
+
+float Scene::reflectance(LocalGeo& local,Ray& ray,float n1, float n2){
+	glm::vec3 normal = local.normal;
+	glm::vec3 direction = ray.direction;
+	float n = n1/n2;
+
+	float norm_mag = glm::dot(normal,normal);
+	if (norm_mag>0.0f){
+		normal /= glm::sqrt(norm_mag);
+	}
+
+	float direction_mag = glm::dot(direction,direction);
+	if (direction_mag>0.0f){
+		direction /= glm::sqrt(direction_mag);
+	}
+
+	float cos_theta_in = -glm::dot(direction,normal);
+	float sin_theta_out_squared = n*n*(1-(cos_theta_in*cos_theta_in));
+	if(sin_theta_out_squared>1.0f){
+		return 1.0f;//pure reflectance
+	}
+
+	float cos_theta_out = glm::sqrt(1.0f-sin_theta_out_squared);
+	float R_nought = (n1*cos_theta_in - n2 * cos_theta_out)/(n1*cos_theta_in + n2*cos_theta_out);
+	float R_current = (n2*cos_theta_in - n1 * cos_theta_out)/(n2*cos_theta_in + n1*cos_theta_out);
+	return (R_nought*R_nought + R_current*R_current)/2.0f;
+}
+
 
 /*
 Iterates through all shapes and just does basic intersect or not routine

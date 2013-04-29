@@ -13,7 +13,7 @@ void Camera::generateRay(glm::vec3 pos, Ray *r, glm::vec3 eye) {
 		ray_vec /= glm::sqrt(norm);
 	}
 
-	Ray temp_ray(eye, ray_vec,.001,std::numeric_limits<float>::infinity());
+	Ray temp_ray(eye, ray_vec,.001,std::numeric_limits<float>::infinity(),1.0f);
 
 	*r = temp_ray;
 }

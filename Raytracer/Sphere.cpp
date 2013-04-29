@@ -35,11 +35,11 @@ BRDF Sphere::get_brdf() {
 	return brdf;
 }
 
-bool Sphere::intersect(Ray& ray_arg, float* thit,LocalGeo* local){
+bool Sphere::intersect(Ray& ray_arg, float* thit,LocalGeo* local,bool* inside_shape){
 	//transform ray to object space and make a new ray
 	glm::vec3 pos = trans.object_point(ray_arg.position);
 	glm::vec3 dir = trans.object_vector(ray_arg.direction);
-	Ray ray(pos,dir,ray_arg.t_min,ray_arg.t_max);
+	Ray ray(pos,dir,ray_arg.t_min,ray_arg.t_max,index_of_refraction);
 
 	float a = glm::dot(ray.direction, ray.direction);
 
@@ -76,6 +76,12 @@ bool Sphere::intersect(Ray& ray_arg, float* thit,LocalGeo* local){
 		*thit = glm::min(root1,root2);
 	}
 
+	if (root1<ray.t_min ^ root2<ray.t_min){
+		(*inside_shape) = true;
+	}else{
+		(*inside_shape) = false;
+	}
+
 	//convert point and normal back to world coordinates
 	glm::vec3 temp_obj = ray.position+(*thit)*ray.direction;
 	glm::vec3 temp = trans.world_point(temp_obj);
@@ -95,7 +101,7 @@ bool Sphere::intersect(Ray& ray_arg){
 
 	glm::vec3 dir = trans.object_vector(ray_arg.direction);
 
-	Ray ray(pos,dir,ray_arg.t_min,ray_arg.t_max);
+	Ray ray(pos,dir,ray_arg.t_min,ray_arg.t_max,index_of_refraction);
 
 	float a = glm::dot(ray.direction, ray.direction);
 
