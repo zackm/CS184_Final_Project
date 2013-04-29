@@ -92,7 +92,7 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, Vec3 max_point, Vec3 
     return num;
 }
 
-void Neighbor::place_particles(vector<Particle*> &particles, float support_rad, Container c) {
+void Neighbor::place_particles(vector<Particle*> &particles, float support_rad, Container c,int number_particles) {
     // assuming square container
 //    float width = c.max.x - c.min.x;
     
@@ -115,7 +115,7 @@ void Neighbor::place_particles(vector<Particle*> &particles, float support_rad, 
     }
     
     int box_num;
-    for (int i = 0; i < particles.size(); i++) {
+    for (int i = 0; i < number_particles; i++) {
         // determine box #
         box_num = compute_box_num(particles[i]->position, support_rad, c.max, c.min);
         // set box # in particle
@@ -125,7 +125,7 @@ void Neighbor::place_particles(vector<Particle*> &particles, float support_rad, 
     }
     
     // get all particles from neighboring boxes and add to particle's neighbor vector
-    for (int i = 0; i < particles.size(); i++) {
+    for (int i = 0; i < number_particles; i++) {
         particles[i]->neighbors.clear(); // clear out old neighbor vector
         int particle_num;
         vector<int> neighbor_boxes; // contains the numbers of all the neighboring boxes
