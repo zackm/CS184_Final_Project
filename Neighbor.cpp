@@ -5,6 +5,8 @@
 
 #include <iostream>
 
+#include <algorithm>
+
 using namespace std;
 
 void Neighbor::add_to_box_particles(int box_num,int particle_num) {
@@ -20,13 +22,20 @@ void Neighbor::set_particle_neighbors(int particle_num, Particle *p) {
 }
 
 
-int Neighbor::compute_box_num(Vec3 pos, float support_rad, float min_width, float max_width) {
-    // assuming container is cube
-    int row = -1,col = -1, depth = -1;
-    float width = max_width - min_width;
-    int box_per_row = (int)width / support_rad; // casting to int, assuming support radius evenly divides width
+int Neighbor::compute_box_num(Vec3 pos, float support_rad, Vec3 max_point, Vec3 min_point) {
+    // assuming container is rectangular, axis aligned
+    int x = -1,y = -1, z = -1;
+    float x_span = max_point.x - min_point.x;
+    float y_span = max_point.y - min_point.y;
+    float z_span = max_point.z - min_point.z;
+    float max_span = max(x_span,y_span);
+    max_span = max(max_span,z_span);
+    int x_divs = (int)(x_span / support_rad);
+    int y_divs = (int)(y_span / support_rad);
+    int z_divs = (int)(z_span / support_rad);
+    // int box_per_row = (int)max_span / support_rad; // casting to int, assuming support radius evenly divides width
     
-    float curr_x = min_width, curr_y = min_width, curr_z = min_width;
+    float curr_x = min_point.x, curr_y = min_point.y, curr_z = min_point.z;
     
 	float col_point, row_point, depth_point;
     
@@ -43,34 +52,31 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, float min_width, floa
 	
     ////return num;//int(max(float(num),0.0f));
     
-	for (int i = 0; i < box_per_row && curr_x < max_width; i++) {
+	for (int i = 0; i < max_span && (x == -1 || y == -1 || z == -1); i++) {
         col_point = abs(pos.x - curr_x);
         row_point = abs(pos.y - curr_y);
         depth_point = abs(pos.z - curr_z);
         
-		if (col_point <= support_rad && col == -1) {
-			col = i;
+		if (col_point <= support_rad && x == -1) {
+			x = i;
 		}
-        if (row_point <= support_rad && row == -1) {
-			row = i;
+        if (row_point <= support_rad && y == -1) {
+			y = i;
 		}
-        if (depth_point <= support_rad && depth == -1) {
-            depth = i;
+        if (depth_point <= support_rad && z == -1) {
+            z = i;
         }
         
-        if (row != -1 && col != -1 && depth != -1) {
-			break;
-		}
         curr_x += support_rad;
         curr_y += support_rad;
         curr_z += support_rad;
 	}
     
-    int num = col + row * box_per_row + depth * box_per_row * box_per_row;
+    int num = x + y * y_span + z * y_span * z_span;
     //cout<<"Num = "<<num<<" = "<<col<<" + "<<row<<" * "<<box_per_row<<endl;
     // cout<<endl;
     
-    if (num >= box_per_row * box_per_row * box_per_row || num < 0 || row == -1 || col == -1 || depth == -1) {
+    if (num >= x_span * y_span * z_span || num < 0 || x == -1 || y == -1 || z == -1) {
         //cout<<"Error, incorrect box # assigned in Neighbor: "<<num<<endl;
         num = 0; // set box number to 0 to prevent bad vector access
         // exit(0);
@@ -81,10 +87,12 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, float min_width, floa
 
 void Neighbor::place_particles(vector<Particle*> &particles, float support_rad, Container c) {
     // assuming square container
-    float width = c.max.x - c.min.x;
-    float min = c.min.x;
-    float max = c.max.x;
-    int box_per_row = width/support_rad;
+//    float width = c.max.x - c.min.x;
+    float x_span = c.max.x - c.min.x;
+    float y_span = c.max.y - c.min.y;
+    float z_span = c.max.z - c.min.z;
+    
+    int box_per_row = x_span/support_rad; // change
     int square_face = box_per_row * box_per_row;
     
     box_particles.clear();
@@ -96,7 +104,7 @@ void Neighbor::place_particles(vector<Particle*> &particles, float support_rad, 
     int box_num;
     for (int i = 0; i < particles.size(); i++) {
         // determine box #
-        box_num = compute_box_num(particles[i]->position, support_rad, min, max);
+        box_num = compute_box_num(particles[i]->position, support_rad, c.max, c.min);
         // set box # in particle
         particles[i]->box = box_num;
         // add particle number to corresponding box
