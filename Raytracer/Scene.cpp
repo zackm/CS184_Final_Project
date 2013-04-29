@@ -1,12 +1,9 @@
 #include "Scene.h"
 
-#pragma once
 #include <iostream>
 
-#pragma once
 #include <limits>
 
-#pragma once
 #include "BRDF.h"
 
 #include "Sphere.h"

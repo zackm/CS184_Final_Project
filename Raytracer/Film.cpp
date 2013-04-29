@@ -9,7 +9,6 @@
 #include <iostream>
 #include "glm/glm.hpp"
 
-#pragma once
 #include <string>
 
 using namespace std;

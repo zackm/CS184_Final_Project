@@ -1,7 +1,5 @@
-#pragma once
 #include "Transformation.h"
 
-#pragma once
 #include "glm/glm.hpp"
 
 Transformation::Transformation(vector<glm::mat4> mat_vec){

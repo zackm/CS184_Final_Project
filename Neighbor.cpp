@@ -37,36 +37,22 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, Vec3 max_point, Vec3 
     int max_divs = max(x_divs,y_divs);
     max_divs = max(max_divs,z_divs);
     
-    // int box_per_row = (int)max_span / support_rad; // casting to int, assuming support radius evenly divides width
-    
     float curr_x = min_point.x, curr_y = min_point.y, curr_z = min_point.z;
-	float x_point, y_point, z_point;
-    
-	////if(col_point>curr_x || row_point>curr_y || col_point<0 || row_point<0){
-	////	point is not inside the container.
-	////	cout<<'h'<<endl;
-	////	return 0;
-	////}
-    
-	////row = floor(row_point/support_rad);
-	////col = floor(col_point/support_rad);
-    
-	//int num = col + row*box_per_row - 1;
-	
-    ////return num;//int(max(float(num),0.0f));
+	float x_diff, y_diff, z_diff;
     
 	for (int i = 0; i < max_divs; i++) {
-        x_point = abs(pos.x - curr_x);
-        y_point = abs(pos.y - curr_y);
-        z_point = abs(pos.z - curr_z);
+        x_diff = abs(pos.x - curr_x);
+        y_diff = abs(pos.y - curr_y);
+        z_diff = abs(pos.z - curr_z);
         
-		if (x_point <= support_rad && x == -1) {
+        // .01f + support_rad might be needed due to precision loss somewhere
+		if (x == -1 && x_diff <= support_rad) {
 			x = i;
 		}
-        if (y_point <= support_rad && y == -1) {
+        if (y == -1 && y_diff <= support_rad) {
 			y = i;
 		}
-        if (z_point <= support_rad && z == -1) {
+        if (z == -1 && z_diff <= support_rad) {
             z = i;
         }
         
@@ -80,21 +66,16 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, Vec3 max_point, Vec3 
 	}
     
     int num = x + y * x_divs + z * x_divs * y_divs;
-    //cout<<"Num = "<<num<<" = "<<col<<" + "<<row<<" * "<<box_per_row<<endl;
-    // cout<<endl;
     
     if (num >= x_divs * y_divs * z_divs || num < 0 || x == -1 || y == -1 || z == -1) {
-        //cout<<"Error, incorrect box # assigned in Neighbor: "<<num<<endl;
+        cout<<"Error, incorrect box # assigned in Neighbor: "<<num<<endl;
         num = 0; // set box number to 0 to prevent bad vector access
         // exit(0);
     }
-    //compute box num given row & col
     return num;
 }
 
 void Neighbor::place_particles(vector<Particle*> &particles, float support_rad, Container c,int number_particles) {
-    // assuming square container
-//    float width = c.max.x - c.min.x;
     
     // length covered in each dimension
     float x_span = c.max.x - c.min.x;
@@ -105,8 +86,8 @@ void Neighbor::place_particles(vector<Particle*> &particles, float support_rad, 
     int y_divs = (int)(y_span / support_rad);
     int z_divs = (int)(z_span / support_rad);
     
-    int box_per_row = x_span/support_rad; // change
-    int square_face = box_per_row * box_per_row;
+    int box_per_row = x_divs;
+    int square_face = x_divs * y_divs;
     
     box_particles.clear();
     
@@ -253,7 +234,7 @@ void Neighbor::place_particles(vector<Particle*> &particles, float support_rad, 
                 neighbor_boxes.push_back(box_num+square_face-box_per_row-1);
             }
             
-        } else if (box_num >= square_face * (box_per_row - 1)) {
+        } else if (box_num >= square_face * (z_divs - 1)) {
             // back face
             if (box_num % square_face < box_per_row) {
                 // bottom row

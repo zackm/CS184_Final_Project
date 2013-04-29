@@ -28,22 +28,16 @@ Zack Mayeda cs184-bg
 
 #include "Scene.h"
 
-#pragma once
 #include "Sphere.h"
 
-#pragma once
 #include "DirectionalLight.h"
 
-#pragma once
 #include "PointLight.h"
 
-#pragma once
 #include <vector>
 
-#pragma once
 #include "RTriangle.h"
 
-#pragma once
 #include "Transformation.h"
 
 #include "Raytracer.h"
@@ -118,8 +112,8 @@ void set_camera_and_perspective(Camera c, glm::vec3 max, glm::vec3 min) {
 }
 
 int Raytracer::ray_trace_start() {
-	int WIDTH = 400;
-	int HEIGHT = 400;
+	int WIDTH = 1200;
+	int HEIGHT = 1200;
 
 	Scene s;
 	Camera c;
