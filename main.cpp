@@ -10,7 +10,7 @@ using namespace std;
 /*******************
 * GLOBAL VARIABLES *
 *******************/
-Container CONTAINER(Vec3(1,.5,.5),Vec3(0,0,0));//very simple cube for now. Later, make it a particle itself.
+Container CONTAINER(Vec3(.5,.5,.5),Vec3(0,0,0));//very simple cube for now. Later, make it a particle itself.
 vector<Particle*> PARTICLES;//particles that we do SPH on.
 vector<Triangle*> TRIANGLES;//triangles made from marching cubes to render
 vector<vector<vector<float> > > GRID_DENSITY;//Grid for marching squares. Probably a better data structure we can use.
@@ -36,7 +36,7 @@ Neighbor NEIGHBOR; //neighbor object used for calculations
 const float H = .05;
 const float SUPPORT_RADIUS = .1;
 
-bool RENDERING_ISOSURFACE = false;
+bool RENDERING_ISOSURFACE = true;
 bool USE_ADAPTIVE = false; //for adaptive or uniform marching cubes.
 
 const float PI = 3.1415926;
@@ -901,24 +901,10 @@ void initScene(){
 //    }
 
 	////3D Drop Scene
-//    float step = .015;
-//    for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
-//        for(float j = 2.0*CONTAINER.max.y/5.0f; j<3.0f*(CONTAINER.max.y)/5.0f; j=j+step){
-//            for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.y)/5.0f; k=k+step){
-//                noise = float(rand())/(float(RAND_MAX))*.05f;
-//                Vec3 pos(i,j,k);
-//                Vec3 vel(0,-3,0);
-//                new_part = new Particle(pos,vel,MASS,1000.0f);
-//                PARTICLES.push_back(new_part);
-//            }
-//        }
-//    }
-
-    ////3D Dam Break Scene
-    float step = .025;
-    for(float i = 0; i<1.0f*(CONTAINER.max.x)/5.0f; i=i+step){
-        for(float j = 0; j<3.0f*(CONTAINER.max.y)/5.0f; j=j+step){
-            for(float k = 0; k<5.0f*(CONTAINER.max.y)/5.0f; k=k+step){
+    float step = .015;
+    for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+        for(float j = 2.0*CONTAINER.max.y/5.0f; j<3.0f*(CONTAINER.max.y)/5.0f; j=j+step){
+            for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.y)/5.0f; k=k+step){
                 noise = float(rand())/(float(RAND_MAX))*.05f;
                 Vec3 pos(i,j,k);
                 Vec3 vel(0,-3,0);
@@ -927,6 +913,20 @@ void initScene(){
             }
         }
     }
+
+    ////3D Dam Break Scene
+//    float step = .02;
+//    for(float i = 0; i<1.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+//        for(float j = 0; j<3.0f*(CONTAINER.max.y)/5.0f; j=j+step){
+//            for(float k = 0; k<5.0f*(CONTAINER.max.y)/5.0f; k=k+step){
+//                noise = float(rand())/(float(RAND_MAX))*.05f;
+//                Vec3 pos(i,j,k);
+//                Vec3 vel(0,-3,0);
+//                new_part = new Particle(pos,vel,MASS,1000.0f);
+//                PARTICLES.push_back(new_part);
+//            }
+//        }
+//    }
 
 	//step = .02;
 	//for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
@@ -1013,9 +1013,9 @@ void myDisplay(){
 	glLoadIdentity();
     
     // Rectangular Container
-	gluLookAt(.5f,.25f,1.75f,.5f,.25f,0.0f,0,1,0);
+//	gluLookAt(.5f,.25f,1.75f,.5f,.25f,0.0f,0,1,0);
     // Cube Container
-    // gluLookAt(.25f,.25f,.5f,.25f,.25f,0.0f,0,1,0);
+     gluLookAt(.25f,.25f,.5f,.25f,.25f,0.0f,0,1,0);
 
 	run_time_step();
 	CURRENT_TIME += TIMESTEP;
