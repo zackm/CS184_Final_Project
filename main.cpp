@@ -867,7 +867,7 @@ void initScene(){
             for(float k = 0; k<4.9f*(CONTAINER.max.y)/5.0f; k=k+step){
                 noise = float(rand())/(float(RAND_MAX))*.05f;
                 Vec3 pos(i,j,k);
-                Vec3 vel(2,-3,0);
+                Vec3 vel(3,0,0);
                 new_part = new Particle(pos,vel,MASS,1000.0f);
                 PARTICLES.push_back(new_part);
             }
