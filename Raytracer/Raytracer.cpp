@@ -12,6 +12,7 @@ Zack Mayeda cs184-bg
 #include <sstream>
 #include <vector>
 #include <iostream>
+#include <cstring>
 
 #include <list>
 
@@ -114,15 +115,14 @@ void set_camera_and_perspective(Camera c, glm::vec3 max, glm::vec3 min) {
 	// exit(0);
 }
 
-int Raytracer::ray_trace_start() {
-	int WIDTH = 150;
-	int HEIGHT = 150;
+int Raytracer::ray_trace_start(std::string input_filename, std::string output_filename, int WIDTH, int HEIGHT) {
 
 	vector<Particle*> particles;
 	Scene s;
 	Camera c;
 	int maxdepth = 5;
 	std::string output_name;
+
 	vector<glm::vec3> vertices;
 	vector<glm::vec3> vertexnorm_v;
 	vector<glm::vec3> vertexnorm_n;
@@ -157,14 +157,8 @@ int Raytracer::ray_trace_start() {
 	norm_list.push_back(glm::vec3(0,0,0));
 	vector<RTriangle*> filler_tri;
 
-	// Filename Business
-	//	if (argc < 2) {
-	//		cout << "No filname given. Terminating" << endl;
-	//		exit(1);
-	//	}
-
-	//std::string filename = argv[1];
-	std::string filename = "fluid.obj";
+    std::string filename = input_filename;
+    
 	cout << "Filename " << filename << " found." << endl;
 	if (filename.find(".obj") != std::string::npos) {
 		cout<<"OBJ Input File Detected."<<endl;
@@ -179,7 +173,6 @@ int Raytracer::ray_trace_start() {
 		Transformation directional_trans(mat_stack);
 		DirectionalLight* dl = new DirectionalLight(glm::vec3(x,y,z),glm::vec3(r,g,b),directional_trans);
 		s.add_light(dl);
-
 	}
 
 	// Arg Parser
@@ -225,7 +218,7 @@ int Raytracer::ray_trace_start() {
 				//output filename
 				//  output file to write image to 
 				else if(!splitline[0].compare("output")) {
-					output_name = splitline[1];
+                    output_filename = splitline[1];
 				}	
 
 				//sphere x y z radius
@@ -872,7 +865,7 @@ int Raytracer::ray_trace_start() {
 	}
 
 	int BitsPerPixel = 24;
-	Film canvas = Film(WIDTH, HEIGHT, BitsPerPixel, output_name);
+	Film canvas = Film(WIDTH, HEIGHT, BitsPerPixel, output_filename);
 
 	glm::vec3 UL,UR,LL,LR;
 
