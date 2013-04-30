@@ -37,7 +37,7 @@ Neighbor NEIGHBOR; //neighbor object used for calculations
 const float H = .0625; // .0625 works well, .05 good too
 const float SUPPORT_RADIUS = .125; // .125 works well, .1 good too
 
-bool RENDERING_TRIANGLES = true;
+bool RENDERING_TRIANGLES = false;
 bool RENDERING_BLOB = true;
 
 const float PI = 3.1415926;

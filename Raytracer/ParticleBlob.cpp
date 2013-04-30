@@ -3,7 +3,7 @@
 #include "../Particle.h"
 
 const float PI = 3.1415926;
-const float H = .05;
+const float H = .0625;
 const float SUPPORT_RADIUS = 2*H;
 const float EPS = .001;
 const Vec3 MAX(.5,.5,.5);
