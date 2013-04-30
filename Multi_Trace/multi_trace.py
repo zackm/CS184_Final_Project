@@ -10,4 +10,4 @@ for i in range(0,len(filenames)):
     print "Working on: " + filenames[i]
     name = filenames[i]
     name_pic = name[0:-3] + "png"
-    #os.system("./start_trace "+name+" "name_pic+" 1000 1000")
+    os.system("./start_trace "+name+" "name_pic+" 1000 1000")

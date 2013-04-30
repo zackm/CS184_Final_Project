@@ -15,6 +15,8 @@ as3
 glut32.dll
 output.png
 fluid.obj
+Multi_Trace/input_obj/
+Multi_Trace/output_pics/
 
 # Compiled Object files
 *.o
