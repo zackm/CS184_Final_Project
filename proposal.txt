@@ -17,14 +17,13 @@ Milestones Completed:
 - implement neighbors algorithm for speedup. (might be good to write out explicit run times for using neighbors algorithm and not using it).
 - move simulation of particles into 3D
 - particles drawn as isosurface in 3D. (will likely use a library for marching cubes).
+- raytracer is capable of doing refraction
+- output isosurface triangles to an obj format, or to the ray tracer assignment format.
 
 Milestones to complete of high priority:
-- use a better method (perhaps verlet) for differential equation.
+- use a better method (perhaps verlet) for differential equation (causing issues right now).
 - speedup using parallel processing of particles.
-- output isosurface triangles to an obj format, or to the ray tracer assignment format.
-- use raytracer to render image.
-- generate reflections and caustics (would involve adding things like Snell's law and stuff to ray tracer).
-- could also output to obj and render with approximate gaussian curvature in the bez surface renderer we made
+- use raytracer to render image with realistic watery look.
 
 Milestone to complete of low priority:
 - texture mapping on the container.

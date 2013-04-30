@@ -27,15 +27,19 @@ const float VISCOSITY = 3.5f;
 const float SURFACE_TENSION = .07f;
 const float TENSION_THRESHOLD = 7.0f;
 
-const float CUBE_TOL = .01f;//either grid size or tolerance for adaptive cubes, reciprocal must be an integer for now.
+const float CUBE_TOL = .05f;//either grid size or tolerance for adaptive cubes, reciprocal must be an integer for now.
 const float DENSITY_TOL = 100.0f;//also used for marching grid, for density of the particles
+const int WIDTH = 20;//floor((CONTAINER.max.x-CONTAINER.min.x)/CUBE_TOL);
+const int HEIGHT = 20;//floor((CONTAINER.max.y-CONTAINER.min.y)/CUBE_TOL);
+const int DEPTH = 20;//floor((CONTAINER.max.z-CONTAINER.min.z)/CUBE_TOL);
+
 
 Neighbor NEIGHBOR; //neighbor object used for calculations
 const float H = .05;
 const float SUPPORT_RADIUS = .1;
 
-bool RENDERING_ISOSURFACE = true;
-bool USE_ADAPTIVE = false; //for adaptive or uniform marching cubes.
+bool RENDERING_TRIANGLES = false;
+bool RENDERING_BLOB = true;
 
 const float PI = 3.1415926;
 const float DRAW_RADIUS = .01f;
@@ -347,35 +351,46 @@ void output_obj() {
 	output_file << "# OBJ File created by Tyler Brabham and Zack Mayeda\n";
 	output_file << "# UC Berkeley CS184 Spring 2013 Final Project\n\n";
 
-	vector<Vec3> v,vn;
+	if(RENDERING_TRIANGLES){
+		vector<Vec3> v,vn;
 
-	for (int i = 0; i < TRIANGLES.size(); i++) {
-		Triangle *t = TRIANGLES[i];
-		Vec3 v1(t->a.x,t->a.y,t->a.z);
-		Vec3 v2(t->b.x,t->b.y,t->b.z);
-		Vec3 v3(t->c.x,t->c.y,t->c.z);
-		Vec3 vn_1(t->a_normal.x,t->a_normal.y,t->a_normal.z);
-		Vec3 vn_2(t->b_normal.x,t->b_normal.y,t->b_normal.z);
-		Vec3 vn_3(t->c_normal.x,t->c_normal.y,t->c_normal.z);
-		v.push_back(v1); v.push_back(v2); v.push_back(v3);
-		vn.push_back(vn_1); vn.push_back(vn_2); vn.push_back(vn_3);
-	}
-	// write all vertices, v x y z
-	for (int i = 0; i < v.size(); i++) {
-		Vec3 v_temp = v[i];
-		output_file<<"v "<< v_temp.x<<" "<<v_temp.y<< " "<<v_temp.z<<endl;
-	}
-	// write all vertex normals, vn x y z
-	for (int i = 0; i < vn.size(); i++) {
-		Vec3 vn_temp = vn[i];
-		output_file<<"vn "<< vn_temp.x<<" "<<vn_temp.y<< " "<<vn_temp.z<<endl;
-	}
+		for (int i = 0; i < TRIANGLES.size(); i++) {
+			Triangle *t = TRIANGLES[i];
+			Vec3 v1(t->a.x,t->a.y,t->a.z);
+			Vec3 v2(t->b.x,t->b.y,t->b.z);
+			Vec3 v3(t->c.x,t->c.y,t->c.z);
+			Vec3 vn_1(t->a_normal.x,t->a_normal.y,t->a_normal.z);
+			Vec3 vn_2(t->b_normal.x,t->b_normal.y,t->b_normal.z);
+			Vec3 vn_3(t->c_normal.x,t->c_normal.y,t->c_normal.z);
+			v.push_back(v1); v.push_back(v2); v.push_back(v3);
+			vn.push_back(vn_1); vn.push_back(vn_2); vn.push_back(vn_3);
+		}
+		// write all vertices, v x y z
+		for (int i = 0; i < v.size(); i++) {
+			Vec3 v_temp = v[i];
+			output_file<<"v "<< v_temp.x<<" "<<v_temp.y<< " "<<v_temp.z<<endl;
+		}
+		// write all vertex normals, vn x y z
+		for (int i = 0; i < vn.size(); i++) {
+			Vec3 vn_temp = vn[i];
+			output_file<<"vn "<< vn_temp.x<<" "<<vn_temp.y<< " "<<vn_temp.z<<endl;
+		}
 
-	// face with vertex norms f v//n v//n v//n
-	// write all triangles
-	for (int i = 1; i <= TRIANGLES.size()*3; i+=3) {
-		output_file<<"f "<<i<<"//"<<i<<" "<<i+1<<"//"<<i+1<<" "<<i+2<<"//"<<i+2<<endl;
-		//        output_file<<"f "<<i<<" "<<i+1<<" "<<i+2<<endl;
+		// face with vertex norms f v//n v//n v//n
+		// write all triangles
+		for (int i = 1; i <= TRIANGLES.size()*3; i+=3) {
+			output_file<<"f "<<i<<"//"<<i<<" "<<i+1<<"//"<<i+1<<" "<<i+2<<"//"<<i+2<<endl;
+			//        output_file<<"f "<<i<<" "<<i+1<<" "<<i+2<<endl;
+		}
+	}else{
+		//we are rendering blobs, so we will make an obj point file.
+		Particle* temp_part;
+		for (int i = 0; i < NUM_PARTICLES; i++) {
+			temp_part = PARTICLES[i];
+			output_file<<"part "<< temp_part->position.x<<" "<<temp_part->position.y<<" "<<temp_part->position.z
+				<<" "<<temp_part->mass<<' '<<temp_part->density<<endl;
+		}
+
 	}
 
 	output_file.close();
@@ -498,13 +513,13 @@ vector<Triangle*> polygonise(GRIDCELL &Grid, int &NewVertexCount, vector<Vec3> v
 		a = NewVertexList[LocalRemap[triTable[CubeIndex][i+0]]];
 		b = NewVertexList[LocalRemap[triTable[CubeIndex][i+1]]];
 		c = NewVertexList[LocalRemap[triTable[CubeIndex][i+2]]];
-		//        a_norm = normal_at_point(a);
-		//        b_norm = normal_at_point(b);
-		//        c_norm = normal_at_point(c);
+		//a_norm = normal_at_point(a);
+		//b_norm = normal_at_point(b);
+		//c_norm = normal_at_point(c);
 		//        Vec3 midpoint = ((b-a) + (c-a))*.5f;
 		//        Vec3 mid_normal = normal_at_point(midpoint);
 
-		Triangle* new_tri = new Triangle(a,b,c);//,a_norm,b_norm,c_norm);
+		Triangle* new_tri = new Triangle(a,b,c);//a_norm,b_norm,c_norm);
 		new_triangles.push_back(new_tri);
 		TriangleCount++;
 	}
@@ -592,7 +607,7 @@ Vec3 normal_at_point(Vec3 point){
 		Vec3 r = point-temp_particle->position;
 		float mag = dot(r,r);
 		if(mag<H*H){
-			normal += default_gradient(point,temp_particle->position)*(temp_particle->mass / temp_particle->density);
+			normal += default_gradient(point,temp_particle->position)*(temp_particle->mass)/(temp_particle->density);
 		}
 
 	}
@@ -699,14 +714,16 @@ void run_time_step(){
 		new_velocity = velocity+acceleration*TIMESTEP;
 		new_position = position + (velocity + acceleration*TIMESTEP*.5f)*TIMESTEP;
 		//}else{
-		//new_velocity = (position-temp_particle->prev_position)/TIMESTEP;
-		//new_position = position*2.0f - temp_particle->prev_position + acceleration*TIMESTEP*TIMESTEP;
+		//	velocity = (position-temp_particle->prev_position)/TIMESTEP;
+		//	new_position = position*2.0f - temp_particle->prev_position + acceleration*TIMESTEP*TIMESTEP*.5f;
+		//	new_velocity = velocity + acceleration*TIMESTEP;
 		//}
 
 		float mass = temp_particle->mass;
 
 		temp_particle = new Particle(new_position,new_velocity,mass,temp_particle->density);
 		temp_particle->prev_position = position;
+		//temp_particle->prev_velocity = velocity;
 
 		CONTAINER.in_container(temp_particle,TIMESTEP); //applies reflections if outside of boundary.
 
@@ -725,6 +742,10 @@ Code modified from Matthew Ward.
 void generate_triangles(){
 	TRIANGLES.clear();
 	GRIDCELL grid;
+
+	//first generate all the densities at each point necessary
+	//float density_grid[WIDTH][HEIGHT][DEPTH];
+
 
 	//call polygonize, add triangles to TRIANGLES list.
 	vector<Triangle*> new_triangles;
@@ -793,10 +814,9 @@ void initScene(){
 	//float step = .017;
 	//for(float i = 2.0*CONTAINER.max.x/5.0f; i<3.0*(CONTAINER.max.x)/5.0f; i=i+step){
 	//	for(float j = 4.0*CONTAINER.max.y/5.0f; j<(CONTAINER.max.y); j=j+step){
-	//		noise = float(rand())/(float(RAND_MAX))*.05f;
 	//		Vec3 pos(i,j,0);
-	//		Vec3 vel(0,-5,0);
-	//		new_part = new Particle(pos,vel,MASS);
+	//		Vec3 vel(0,0,0);
+	//		new_part = new Particle(pos,vel,MASS,1000);
 	//		PARTICLES.push_back(new_part);
 	//	}
 	//}
@@ -804,44 +824,43 @@ void initScene(){
 	//step = .017;
 	//for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
 	//	for(float j = CONTAINER.min.y; j<(CONTAINER.max.y)/5.0f; j=j+step){
-	//		noise = float(rand())/(float(RAND_MAX))*.05f;
 	//		Vec3 pos(i,j,0);
 	//		Vec3 vel(0,0,0);
-	//		new_part = new Particle(pos,vel,MASS);
+	//		new_part = new Particle(pos,vel,MASS,1000);
 	//		PARTICLES.push_back(new_part);
 	//	}
 	//}
 
-	////2D Throw Scene
-	//Semi random grid of particles
-	//    float step = .025;
-	//    for(float i = 4.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
-	//        for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
-	//            for(float k = 2.0*CONTAINER.max.z/4.0f; k<(3.0f*CONTAINER.max.z/4.0f); k=k+step) {
-	//                noise = float(rand())/(float(RAND_MAX))*.05f;
-	//                Vec3 pos(i,j,k);
-	//                Vec3 vel(-1,-8,0);
-	//                new_part = new Particle(pos,vel,MASS);
-	//                PARTICLES.push_back(new_part);
-	//            }
-	//        }
-	//    }
-	//
-	//    step = .025;
-	//    for(float i = CONTAINER.min.x; i<1.0f*(CONTAINER.max.x)/5.0f; i=i+step){
-	//        for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
-	//            for(float k = 2.0*CONTAINER.max.z/4.0f; k<(3.0f*CONTAINER.max.z/4.0f); k=k+step) {
-	//                noise = float(rand())/(float(RAND_MAX))*.05f;
-	//                Vec3 pos(i,j,k);
-	//                Vec3 vel(5,-5,0);
-	//                new_part = new Particle(pos,vel,MASS);
-	//                PARTICLES.push_back(new_part);
-	//            }
-	//        }
-	//    }
+	////3D Throw Scene
+	//////Semi random grid of particles
+	//float step = .03;
+	//for(float i = 4.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
+	//	for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
+	//		for(float k = 2.0*CONTAINER.max.z/4.0f; k<(3.0f*CONTAINER.max.z/4.0f); k=k+step) {
+	//			noise = float(rand())/(float(RAND_MAX))*.05f;
+	//			Vec3 pos(i,j,k);
+	//			Vec3 vel(-1,-3,0);
+	//			new_part = new Particle(pos,vel,MASS,1000.0f);
+	//			PARTICLES.push_back(new_part);
+	//		}
+	//	}
+	//}
+
+	//step = .03;
+	//for(float i = CONTAINER.min.x; i<1.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+	//	for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
+	//		for(float k = 2.0*CONTAINER.max.z/4.0f; k<(3.0f*CONTAINER.max.z/4.0f); k=k+step) {
+	//			noise = float(rand())/(float(RAND_MAX))*.05f;
+	//			Vec3 pos(i,j,k);
+	//			Vec3 vel(3,-3,0);
+	//			new_part = new Particle(pos,vel,MASS,1000.0f);
+	//			PARTICLES.push_back(new_part);
+	//		}
+	//	}
+	//}
 
 	////3D Drop Scene
-	float step = .02;
+	float step = .025;
 	for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
 		for(float j = 2.0*CONTAINER.max.y/5.0f; j<3.0f*(CONTAINER.max.y)/5.0f; j=j+step){
 			for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.y)/5.0f; k=k+step){
@@ -884,24 +903,24 @@ void initScene(){
 	NUM_PARTICLES = PARTICLES.size();
 	cout<<NUM_PARTICLES<<endl;
 
-	////random particles
-	//    for (int i = 0; i<NUM_PARTICLES; i++){
-	//        x = .2f+float(rand())/(float(RAND_MAX))*.1f;
-	//        y = float(rand())/(float(RAND_MAX))/5.0 + .1f;
-	//        z = 0.0f;//.2f + float(rand())/(float(RAND_MAX))*.1f;
-	//
-	//        v_x = -.5f+float(rand())/(float(RAND_MAX))*2.0f*noise;
-	//        v_y = -0.2+float(rand())/(float(RAND_MAX))*noise;
-	//        v_z = 0.0f;//-0.2+float(rand())/(float(RAND_MAX))*noise;
-	//
-	//
-	//        Vec3 pos(x,y,z);
-	//        Vec3 vel(v_x,v_y,v_z);
-	//        float mass = 4.0f+(float(rand())/(float(RAND_MAX)))*5.0f;
-	//        //also need to instantiate the other fields
-	//        new_part = new Particle(pos,vel,MASS);
-	//        PARTICLES.push_back(new_part);
-	//    }
+	//random particles
+	//for (int i = 0; i<NUM_PARTICLES; i++){
+	//    x = .2f+float(rand())/(float(RAND_MAX))*.1f;
+	//    y = float(rand())/(float(RAND_MAX))/5.0 + .1f;
+	//    z = 0.0f;//.2f + float(rand())/(float(RAND_MAX))*.1f;
+
+	//    v_x = -.5f+float(rand())/(float(RAND_MAX))*2.0f*noise;
+	//    v_y = -0.2+float(rand())/(float(RAND_MAX))*noise;
+	//    v_z = 0.0f;//-0.2+float(rand())/(float(RAND_MAX))*noise;
+
+
+	//    Vec3 pos(x,y,z);
+	//    Vec3 vel(v_x,v_y,v_z);
+	//    float mass = 4.0f+(float(rand())/(float(RAND_MAX)))*5.0f;
+	//    //also need to instantiate the other fields
+	//    new_part = new Particle(pos,vel,MASS,1000);
+	//    PARTICLES.push_back(new_part);
+	//}
 
 	NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER,NUM_PARTICLES);
 
@@ -946,7 +965,7 @@ void myDisplay(){
 	}
 
 	glEnable(GL_LIGHTING);
-	if(RENDERING_ISOSURFACE){
+	if(RENDERING_TRIANGLES){
 		glEnable(GL_LIGHTING);
 		////draw triangles
 		generate_triangles();
@@ -974,6 +993,8 @@ void myDisplay(){
 		}
 	}else{
 		//draw particles
+		glPointSize(4.0f);
+		//glBegin(GL_POINTS);
 		glEnable(GL_LIGHTING);
 		Particle* temp_part;
 		for (int i = 0; i<PARTICLES.size(); i++){
@@ -982,26 +1003,30 @@ void myDisplay(){
 
 			//Draw sphere of radius H around particles
 			//glColor3f(0,0,1.0);
+
+			//glVertex3f(temp_part->position.x,temp_part->position.y,temp_part->position.z);
 			glPushMatrix();
 			glTranslated(temp_part->position.x,temp_part->position.y,temp_part->position.z);
 			glutSolidSphere(DRAW_RADIUS,16,16);
 			glPopMatrix();
+
 		}
+		//glEnd();
 	}
 
-	//Draw white floor
-	glClearColor(0,0,0,0);
-	glColor3f(1.0f,1.0f,1.0f);
-	glBegin(GL_POLYGON);
-	glVertex3f(0,-.01,0);
-	glNormal3f(0,1,0);
-	glVertex3f(0,-.01,.5f);
-	glNormal3f(0,1,0);
-	glVertex3f(.5f,-.01,.5f);
-	glNormal3f(0,1,0);
-	glVertex3f(0.5f,-.01,0);
-	glNormal3f(0,1,0);
-	glEnd();
+	////Draw white floor
+	//glClearColor(0,0,0,0);
+	//glColor3f(1.0f,1.0f,1.0f);
+	//glBegin(GL_POLYGON);
+	//glVertex3f(0,-.01,0);
+	//glNormal3f(0,1,0);
+	//glVertex3f(0,-.01,.5f);
+	//glNormal3f(0,1,0);
+	//glVertex3f(.5f,-.01,.5f);
+	//glNormal3f(0,1,0);
+	//glVertex3f(0.5f,-.01,0);
+	//glNormal3f(0,1,0);
+	//glEnd();
 
 	//Draw wireframe container
 	glPolygonMode(GL_FRONT, GL_LINE);
