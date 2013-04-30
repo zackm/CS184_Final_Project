@@ -76,7 +76,6 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, Vec3 max_point, Vec3 
 }
 
 int Neighbor::compute_box_num(Vec3 pos, float support_rad, Vec3 max_point, Vec3 min_point, bool ray_tracing){
-	//called only by ray tracer, returns -1 when outside container instead of 0.
     // assuming container is rectangular, axis aligned
     int x = -1,y = -1, z = -1;
     float x_span = max_point.x - min_point.x;

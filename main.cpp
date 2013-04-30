@@ -18,7 +18,7 @@ const float TIMESTEP = .01;//time elapsed between iterations
 const float LIFETIME = 100.0f;
 float CURRENT_TIME = 0.0f;
 int NUM_PARTICLES = 0;
-Vec3 GRAVITY(0,-9.8,0);
+Vec3 GRAVITY(0,-9.8f,0);
 const float MASS = .02f;//could set it to any number really.
 const float IDEAL_DENSITY = 1000.0f;
 const float STIFFNESS = 3.0f;//for pressure difference
@@ -26,7 +26,7 @@ const float VISCOSITY = 3.5f;
 const float SURFACE_TENSION = .07f;
 const float TENSION_THRESHOLD = 7.0f;
 
-const float CUBE_TOL = .05f;//either grid size or tolerance for adaptive cubes, reciprocal must be an integer for now.
+const float CUBE_TOL = .025f;//either grid size or tolerance for adaptive cubes, reciprocal must be an integer for now. .025f ok, .01 for high quality
 const float DENSITY_TOL = 100.0f;//also used for marching grid, for density of the particles
 const int WIDTH = 20;//floor((CONTAINER.max.x-CONTAINER.min.x)/CUBE_TOL);
 const int HEIGHT = 20;//floor((CONTAINER.max.y-CONTAINER.min.y)/CUBE_TOL);
@@ -34,8 +34,8 @@ const int DEPTH = 20;//floor((CONTAINER.max.z-CONTAINER.min.z)/CUBE_TOL);
 
 
 Neighbor NEIGHBOR; //neighbor object used for calculations
-const float H = .05;
-const float SUPPORT_RADIUS = .1;
+const float H = .0625; // .0625 works well, .05 good too
+const float SUPPORT_RADIUS = .125; // .125 works well, .1 good too
 
 bool RENDERING_TRIANGLES = false;
 bool RENDERING_BLOB = true;
@@ -46,6 +46,11 @@ const float DRAW_RADIUS = .01f;
 bool OUTPUT_IMAGE = false;
 bool OUTPUT_SINGLE_IMAGE = false;
 int IMAGE_COUNTER = 0;
+int PIC_WIDTH = 600; // display window and output image dimensions
+int PIC_HEIGHT = 600;
+
+bool SHOW_FPS = false; // print out FPS to console
+int SETUP_SCENE = 0; // choice of preset scene, from command line input
 
 Vec3 normal_at_point(Vec3);
 
@@ -411,13 +416,16 @@ void keyPressed(unsigned char key, int x, int y) {
 		// possible call raytracer here
 		exit(0);
 		break;
-    case 'p':
-        OUTPUT_SINGLE_IMAGE = true;
-        break;
-    case 'i':
-        RENDERING_TRIANGLES = !RENDERING_TRIANGLES;
-        break;
-    }
+	case 'p':
+		OUTPUT_SINGLE_IMAGE = true;
+		break;
+	case 'i':
+		RENDERING_TRIANGLES = !RENDERING_TRIANGLES;
+		break;
+	case 'f':
+		SHOW_FPS = true;
+		break;
+	}
 }
 
 /*
@@ -584,7 +592,7 @@ float viscosity_kernel_laplacian(Vec3 r_i, Vec3 r_j){
 *******************/
 float density_at_point(Vec3 point){
 	//first should generate a list of the particles we need to check, using the box for this point.
-	int box_number = NEIGHBOR.compute_box_num(point,SUPPORT_RADIUS,CONTAINER.max,CONTAINER.min);
+	int box_number = NEIGHBOR.compute_box_num(point,SUPPORT_RADIUS,CONTAINER.min,CONTAINER.max);
 
 	Particle* temp_particle;
 	vector<int> neighbor_vec = NEIGHBOR.box_particles[box_number];
@@ -604,7 +612,7 @@ float density_at_point(Vec3 point){
 
 Vec3 normal_at_point(Vec3 point){
 	//set the normal at each point
-	int box_number = NEIGHBOR.compute_box_num(point,SUPPORT_RADIUS,CONTAINER.max,CONTAINER.min);
+	int box_number = NEIGHBOR.compute_box_num(point,SUPPORT_RADIUS,CONTAINER.min,CONTAINER.max);
 	Particle* temp_particle;
 	vector<int> neighbor_vec = NEIGHBOR.box_particles[box_number];
 	Vec3 normal(0,0,0);
@@ -816,6 +824,117 @@ void initScene(){
 	float noise = float(rand())/(float(RAND_MAX))*.1;
 	float x,y,z,v_x,v_y,v_z;
 
+	float step;
+	switch (SETUP_SCENE) {
+	case 1:
+		cout<<"Dam Break Scene"<<endl;
+		step = .025;
+		for(float i = 0; i<2.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+			for(float j = 0; j<2.0f*(CONTAINER.max.y)/5.0f; j=j+step){
+				for(float k = 0; k<2.0f*(CONTAINER.max.z)/5.0f; k=k+step){
+					//                        noise = float(rand())/(float(RAND_MAX))*.05f;
+					Vec3 pos(i,j,k);
+					Vec3 vel(0,0,0);
+					new_part = new Particle(pos,vel,MASS,1000.0f);
+					PARTICLES.push_back(new_part);
+				}
+			}
+		}
+		break;
+
+	case 2:
+		cout<<"Drop Scene"<<endl;
+		step = .015;
+		for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+			for(float j = 3.0*CONTAINER.max.y/5.0f; j<4.0f*(CONTAINER.max.y)/5.0f; j=j+step){
+				for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.z)/5.0f; k=k+step){
+					//                        noise = float(rand())/(float(RAND_MAX))*.05f;
+					Vec3 pos(i,j,k);
+					Vec3 vel(0,-3,0);
+					new_part = new Particle(pos,vel,MASS,1000.0f);
+					PARTICLES.push_back(new_part);
+				}
+			}
+		}
+		break;
+
+	case 3:
+		cout<<"Flat Scene"<<endl;
+		step = .015;
+		for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+			for(float j = 3.0*CONTAINER.max.y/5.0f; j<4.0f*(CONTAINER.max.y)/5.0f; j=j+step){
+				for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.z)/5.0f; k=k+step){
+					//                        noise = float(rand())/(float(RAND_MAX))*.05f;
+					Vec3 pos(i,j,k);
+					Vec3 vel(0,-3,0);
+					new_part = new Particle(pos,vel,MASS,1000.0f);
+					PARTICLES.push_back(new_part);
+				}
+			}
+		}
+		break;
+
+	case 4:
+		cout<<"No Gravity Scene"<<endl;
+		GRAVITY = Vec3(0,0,0);
+		step = .015;
+		for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+			for(float j = 3.0*CONTAINER.max.y/5.0f; j<4.0f*(CONTAINER.max.y)/5.0f; j=j+step){
+				for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.z)/5.0f; k=k+step){
+					//                        noise = float(rand())/(float(RAND_MAX))*.05f;
+					Vec3 pos(i,j,k);
+					Vec3 vel(0,0,0);
+					new_part = new Particle(pos,vel,MASS,1000.0f);
+					PARTICLES.push_back(new_part);
+				}
+			}
+		}
+		break;
+
+	case 5:
+		cout<<"2 Glob Collision Scene"<<endl;
+		step = .02;
+		for(float i = 4.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
+			for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
+				for(float k = 2.0*CONTAINER.max.z/4.0f; k<(3.0f*CONTAINER.max.z/4.0f); k=k+step) {
+					noise = float(rand())/(float(RAND_MAX))*.05f;
+					Vec3 pos(i,j,k);
+					Vec3 vel(-1,-8,0);
+					new_part = new Particle(pos,vel,MASS,1000.0f);
+					PARTICLES.push_back(new_part);
+				}
+			}
+		}
+		for(float i = CONTAINER.min.x; i<1.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+			for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
+				for(float k = 2.0*CONTAINER.max.z/4.0f; k<(3.0f*CONTAINER.max.z/4.0f); k=k+step) {
+					noise = float(rand())/(float(RAND_MAX))*.05f;
+					Vec3 pos(i,j,k);
+					Vec3 vel(5,-5,0);
+					new_part = new Particle(pos,vel,MASS,1000.f);
+					PARTICLES.push_back(new_part);
+				}
+			}
+		}
+		break;
+
+	default:
+		////3D Uniform Scene
+		cout<<"Default Uniform Scene"<<endl;
+		step = .025;
+		for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
+			for(float j = CONTAINER.min.y; j<1.0f*(CONTAINER.max.y)/5.0f; j=j+step){
+				for(float k = 1.0*CONTAINER.min.z; k<(CONTAINER.max.z); k=k+step){
+					//                        noise = float(rand())/(float(RAND_MAX))*.05f;
+					Vec3 pos(i,j,k);
+					Vec3 vel(-5,-3,0);
+					new_part = new Particle(pos,vel,MASS,1000.0f);
+					PARTICLES.push_back(new_part);
+				}
+			}
+		}
+		break;
+	}
 	////2D Drop Scene
 	//float step = .017;
 	//for(float i = 2.0*CONTAINER.max.x/5.0f; i<3.0*(CONTAINER.max.x)/5.0f; i=i+step){
@@ -837,20 +956,20 @@ void initScene(){
 	//	}
 	//}
 
-	//3D Throw Scene
-	////Semi random grid of particles
-	float step = .01;
-	for(float i = 4.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
-		for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
-			for(float k = 2.0*CONTAINER.max.z/4.0f; k<(3.0f*CONTAINER.max.z/4.0f); k=k+step) {
-				noise = float(rand())/(float(RAND_MAX))*.05f;
-				Vec3 pos(i,j,k);
-				Vec3 vel(-1,-3,0);
-				new_part = new Particle(pos,vel,MASS,1000.0f);
-				PARTICLES.push_back(new_part);
-			}
-		}
-	}
+	////3D Throw Scene
+	//////Semi random grid of particles
+	//float step = .01;
+	//for(float i = 4.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
+	//	for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
+	//		for(float k = 2.0*CONTAINER.max.z/4.0f; k<(3.0f*CONTAINER.max.z/4.0f); k=k+step) {
+	//			noise = float(rand())/(float(RAND_MAX))*.05f;
+	//			Vec3 pos(i,j,k);
+	//			Vec3 vel(-1,-3,0);
+	//			new_part = new Particle(pos,vel,MASS,1000.0f);
+	//			PARTICLES.push_back(new_part);
+	//		}
+	//	}
+	//}
 
 	//step = .03;
 	//for(float i = CONTAINER.min.x; i<1.0f*(CONTAINER.max.x)/5.0f; i=i+step){
@@ -879,7 +998,6 @@ void initScene(){
 	//	}
 	//}
 
-
 	//step = .02;
 	//for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
 	//	for(float j = CONTAINER.min.y; j<1.0f*(CONTAINER.max.y)/5.0f; j=j+step){
@@ -893,22 +1011,8 @@ void initScene(){
 	//	}
 	//}
 
-	////3D Uniform Scene
-	//	float step = .05;
-	//	for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
-	//		for(float j = CONTAINER.min.y; j<(CONTAINER.max.y); j=j+step){
-	//			for(float k = 1.0*CONTAINER.min.z; k<(CONTAINER.max.z); k=k+step){
-	//				//noise = float(rand())/(float(RAND_MAX))*.05f;
-	//				Vec3 pos(i,j,k);
-	//				Vec3 vel(-5,-3,0);
-	//				new_part = new Particle(pos,vel,MASS,1000.0f);
-	//				PARTICLES.push_back(new_part);
-	//			}
-	//		}
-	//	}
-
 	NUM_PARTICLES = PARTICLES.size();
-	cout<<NUM_PARTICLES<<endl;
+	cout<<NUM_PARTICLES<<" Particles"<<endl;
 
 	//random particles
 	//for (int i = 0; i<NUM_PARTICLES; i++){
@@ -947,12 +1051,15 @@ void initScene(){
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
+
+	glClearColor(1,1,1,1);
 }
 
 void myDisplay(){
+	float time_start = glutGet(GLUT_ELAPSED_TIME);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glViewport(0,0,400,400);
+	glViewport(0,0,PIC_WIDTH,PIC_HEIGHT);
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -961,11 +1068,11 @@ void myDisplay(){
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-    
-    // Rectangular Container
-	gluLookAt(.5f,.25f,1.75f,.5f,.25f,0.0f,0,1,0);
-    // Cube Container
-//     gluLookAt(.25f,.25f,1.5f,.25f,.25f,0.0f,0,1,0);
+
+	// Rectangular Container
+	//	gluLookAt(.5f,.25f,1.75f,.5f,.25f,0.0f,0,1,0);
+	// Cube Container
+	gluLookAt(.25f,.4f,1.2f,.25f,.18f,0.0f,0,1,0);
 
 	run_time_step();
 	CURRENT_TIME += TIMESTEP;
@@ -983,7 +1090,7 @@ void myDisplay(){
 		for (int i = 0; i<TRIANGLES.size(); i++){
 			temp_triangle = TRIANGLES[i];
 
-			glClearColor(0,0,0,0);
+			glClearColor(1,1,1,1);
 			//glColor3f(1.0f,1.0f,1.0f);
 
 			////wireframe for now
@@ -1007,7 +1114,7 @@ void myDisplay(){
 		//glBegin(GL_POINTS);
 		glEnable(GL_LIGHTING);
 		Particle* temp_part;
-        glClearColor(0,0,0,0);
+		glClearColor(1,1,1,1);
 		for (int i = 0; i<PARTICLES.size(); i++){
 			temp_part = PARTICLES[i];
 
@@ -1024,59 +1131,61 @@ void myDisplay(){
 		//glEnd();
 	}
 
-	////Draw white floor
-	//glClearColor(0,0,0,0);
-	//glColor3f(1.0f,1.0f,1.0f);
-	//glBegin(GL_POLYGON);
-	//glVertex3f(0,-.01,0);
-	//glNormal3f(0,1,0);
-	//glVertex3f(0,-.01,.5f);
-	//glNormal3f(0,1,0);
-	//glVertex3f(.5f,-.01,.5f);
-	//glNormal3f(0,1,0);
-	//glVertex3f(0.5f,-.01,0);
-	//glNormal3f(0,1,0);
-	//glEnd();
+	//Draw floor
+	glDisable(GL_LIGHTING);
+	glClearColor(1,1,1,1);
+	glColor3f(.7f,.7f,.7f);
+	glBegin(GL_POLYGON);
+	glVertex3f(CONTAINER.max.x+DRAW_RADIUS,CONTAINER.min.y-DRAW_RADIUS,CONTAINER.min.z-DRAW_RADIUS);
+	glNormal3f(0,1,0);
+	glVertex3f(CONTAINER.max.x+DRAW_RADIUS,CONTAINER.min.y-DRAW_RADIUS,CONTAINER.max.z+DRAW_RADIUS);
+	glNormal3f(0,1,0);
+	glVertex3f(CONTAINER.min.x-DRAW_RADIUS,CONTAINER.min.y-DRAW_RADIUS,CONTAINER.max.z+DRAW_RADIUS);
+	glNormal3f(0,1,0);
+	glVertex3f(CONTAINER.min.x-DRAW_RADIUS,CONTAINER.min.y-DRAW_RADIUS,CONTAINER.min.z-DRAW_RADIUS);
+	glNormal3f(0,1,0);
+	glEnd();
+
 	//Draw wireframe container
 	glPolygonMode(GL_FRONT, GL_LINE);
 	glPolygonMode(GL_BACK, GL_LINE);
 
 	glDisable(GL_LIGHTING);
-	glClearColor (0, 0, 0, 0);
-	glColor3f(1.0f,1.0f,1.0f);
+	glClearColor (1, 1, 1, 1);
+	glColor3f(.8f,.8f,.8f);
 
 	glBegin(GL_POLYGON);
-	glVertex3f(CONTAINER.min.x,CONTAINER.min.y,CONTAINER.max.z);
-	glVertex3f(CONTAINER.min.x,CONTAINER.max.y,CONTAINER.max.z);
-	glVertex3f(CONTAINER.max.x,CONTAINER.max.y,CONTAINER.max.z);
-	glVertex3f(CONTAINER.max.x,CONTAINER.min.y,CONTAINER.max.z);
+	glVertex3f(CONTAINER.min.x-DRAW_RADIUS,CONTAINER.min.y-DRAW_RADIUS,CONTAINER.max.z+DRAW_RADIUS);
+	glVertex3f(CONTAINER.min.x-DRAW_RADIUS,CONTAINER.max.y+DRAW_RADIUS,CONTAINER.max.z+DRAW_RADIUS);
+	glVertex3f(CONTAINER.max.x+DRAW_RADIUS,CONTAINER.max.y+DRAW_RADIUS,CONTAINER.max.z+DRAW_RADIUS);
+	glVertex3f(CONTAINER.max.x+DRAW_RADIUS,CONTAINER.min.y-DRAW_RADIUS,CONTAINER.max.z+DRAW_RADIUS);
 	glEnd();
 
 	glBegin(GL_POLYGON);
-	glVertex3f(CONTAINER.min.x,CONTAINER.min.y,CONTAINER.min.z);
-	glVertex3f(CONTAINER.min.x,CONTAINER.max.y,CONTAINER.min.z);
-	glVertex3f(CONTAINER.max.x,CONTAINER.max.y,CONTAINER.min.z);
-	glVertex3f(CONTAINER.max.x,CONTAINER.min.y,CONTAINER.min.z);
+	glVertex3f(CONTAINER.min.x-DRAW_RADIUS,CONTAINER.min.y-DRAW_RADIUS,CONTAINER.min.z-DRAW_RADIUS);
+	glVertex3f(CONTAINER.min.x-DRAW_RADIUS,CONTAINER.max.y+DRAW_RADIUS,CONTAINER.min.z-DRAW_RADIUS);
+	glVertex3f(CONTAINER.max.x+DRAW_RADIUS,CONTAINER.max.y+DRAW_RADIUS,CONTAINER.min.z-DRAW_RADIUS);
+	glVertex3f(CONTAINER.max.x+DRAW_RADIUS,CONTAINER.min.y-DRAW_RADIUS,CONTAINER.min.z-DRAW_RADIUS);
 	glEnd();
 
 	glBegin(GL_LINES);
-	glVertex3f(CONTAINER.min.x,CONTAINER.min.y,CONTAINER.min.z);
-	glVertex3f(CONTAINER.min.x,CONTAINER.min.y,CONTAINER.max.z);
+	glVertex3f(CONTAINER.min.x-DRAW_RADIUS,CONTAINER.min.y-DRAW_RADIUS,CONTAINER.min.z-DRAW_RADIUS);
+	glVertex3f(CONTAINER.min.x-DRAW_RADIUS,CONTAINER.min.y-DRAW_RADIUS,CONTAINER.max.z+DRAW_RADIUS);
 	glEnd();
 
 	glBegin(GL_LINES);
-	glVertex3f(CONTAINER.min.x,CONTAINER.max.y,CONTAINER.min.z);
-	glVertex3f(CONTAINER.min.x,CONTAINER.max.y,CONTAINER.max.z);
+	glVertex3f(CONTAINER.min.x-DRAW_RADIUS,CONTAINER.max.y+DRAW_RADIUS,CONTAINER.min.z-DRAW_RADIUS);
+	glVertex3f(CONTAINER.min.x-DRAW_RADIUS,CONTAINER.max.y+DRAW_RADIUS,CONTAINER.max.z+DRAW_RADIUS);
 	glEnd();
 
 	glBegin(GL_LINES);
-	glVertex3f(CONTAINER.max.x,CONTAINER.max.y,CONTAINER.min.z);
-	glVertex3f(CONTAINER.max.x,CONTAINER.max.y,CONTAINER.max.z);
+	glVertex3f(CONTAINER.max.x+DRAW_RADIUS,CONTAINER.max.y+DRAW_RADIUS,CONTAINER.min.z-DRAW_RADIUS);
+	glVertex3f(CONTAINER.max.x+DRAW_RADIUS,CONTAINER.max.y+DRAW_RADIUS,CONTAINER.max.z+DRAW_RADIUS);
 	glEnd();
 
 	glBegin(GL_LINES);
-	glVertex3f(CONTAINER.max.x,CONTAINER.min.y,CONTAINER.min.z);
-	glVertex3f(CONTAINER.max.x,CONTAINER.min.y,CONTAINER.max.z);
+	glVertex3f(CONTAINER.max.x+DRAW_RADIUS,CONTAINER.min.y-DRAW_RADIUS,CONTAINER.min.z-DRAW_RADIUS);
+	glVertex3f(CONTAINER.max.x+DRAW_RADIUS,CONTAINER.min.y-DRAW_RADIUS,CONTAINER.max.z+DRAW_RADIUS);
 	glEnd();
 
 	glPolygonMode(GL_FRONT, GL_FILL); // fill mode
@@ -1089,13 +1198,12 @@ void myDisplay(){
 		FreeImage_Initialise();
 
 		// Make the BYTE array, factor of 3 because it's RBG.
-		int width = 400, height = 400;
-		BYTE* pixels = new BYTE[ 3 * width * height];
+		BYTE* pixels = new BYTE[ 3 * PIC_HEIGHT * PIC_WIDTH];
 
-		glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+		glReadPixels(0, 0, PIC_WIDTH, PIC_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, pixels);
 
 		// Convert to FreeImage format & save to file
-		FIBITMAP* image = FreeImage_ConvertFromRawBits(pixels, width, height, 3 * width, 24, 0xFF0000, 0x00FF00, 0x0000FF, false);
+		FIBITMAP* image = FreeImage_ConvertFromRawBits(pixels, PIC_WIDTH, PIC_HEIGHT, 3 * PIC_WIDTH, 24, 0xFF0000, 0x00FF00, 0x0000FF, false);
 
 		// I HATE C++ STRINGS
 		std::stringstream ss;
@@ -1112,11 +1220,23 @@ void myDisplay(){
 		if (IMAGE_COUNTER == 400) {
 			exit(0);
 		}
-        if (OUTPUT_SINGLE_IMAGE) {
-            OUTPUT_SINGLE_IMAGE = false;
-            cout<<"Saved single image."<<endl;
-        }
+		if (OUTPUT_SINGLE_IMAGE) {
+			OUTPUT_SINGLE_IMAGE = false;
+			cout<<"Saved single image."<<endl;
+		}
 	}
+
+	if (SHOW_FPS) {
+		float time_end = glutGet(GLUT_ELAPSED_TIME);
+		cout<<1000/(time_end - time_start)<<" FPS"<<endl;
+		SHOW_FPS = false;
+	}
+	//    FPS stuff if we want to display on screen, incomplete
+	//    glColor3f(rgb.r, rgb.g, rgb.b);
+	//    glRasterPos2f(x, y);
+	//    GLUT_BITMAP_HELVETICA_12
+	//    glutBitmapString(font, string);
+	//    std::string fps = 1/((time_end - time_start)/1000)<<" FPS";
 
 	glFlush();
 	glutSwapBuffers();
@@ -1125,9 +1245,29 @@ void myDisplay(){
 int main(int argc, char* argv[]){
 
 	// Arg parsing
-	if (argc >= 2) {
-		cout<<"Generating images for animation."<<endl;
-		OUTPUT_IMAGE = true;
+	for (int i = 1; i < argc; ) {
+		if (strcmp(argv[i],"-m") == 0) {
+			cout<<"Generating images for animation."<<endl;
+			OUTPUT_IMAGE = true;
+			i += 1;
+			continue;
+		}
+
+		if (strcmp(argv[i],"-s") == 0) {
+			SETUP_SCENE = atoi(argv[i+1]);
+			i += 2;
+			continue;
+		}
+
+		if (strcmp(argv[i],"-h") == 0) {
+			cout<<"Help Info for UC Berkeley CS184 Spring 2013 Final Project"<<endl;
+			cout<<"by Tyler Brabham and Zack Mayeda"<<endl;
+			cout<<endl;
+			cout<<"Command Line Arguments:"<<endl;
+			cout<<"Live Commands:"<<endl;
+			i += 1;
+			exit(0);
+		}
 	}
 
 	glutInit(&argc, argv);
@@ -1135,7 +1275,7 @@ int main(int argc, char* argv[]){
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGB);
 
 	//The size and position of the window
-	glutInitWindowSize(400,400);
+	glutInitWindowSize(PIC_WIDTH,PIC_HEIGHT);
 	glutInitWindowPosition(0,0);
 	glutCreateWindow("Tyler and Zack Final Project");
 
