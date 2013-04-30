@@ -32,7 +32,7 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, float max_point, floa
     
 	float col_point, row_point, depth_point;
     
-	for (int i = 0; i < box_per_row && curr_x < max_width; i++) {
+	for (int i = 0; i < box_per_row && curr_x < max_point; i++) {
         col_point = abs(pos.x - curr_x);
         row_point = abs(pos.y - curr_y);
         depth_point = abs(pos.z - curr_z);
@@ -76,7 +76,7 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, float max_point, floa
     
 	float col_point, row_point, depth_point;
     
-	for (int i = 0; i < box_per_row && curr_x < max_width; i++) {
+	for (int i = 0; i < box_per_row && curr_x < max_point; i++) {
         col_point = abs(pos.x - curr_x);
         row_point = abs(pos.y - curr_y);
         depth_point = abs(pos.z - curr_z);
@@ -110,7 +110,7 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, float max_point, floa
     return num;
 }
 
-int Neighbor::place_particles(vector<Particle*>& particles,float support_rad, Container c, int num_particles){
+void Neighbor::place_particles(vector<Particle*>& particles,float support_rad, Container c, int num_particles){
     // assuming square container
     float width = c.max.x - c.min.x;
     float min = c.min.x;
