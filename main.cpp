@@ -4,6 +4,7 @@
 
 #include <sstream>
 #include <fstream>
+#include <cstring>
 
 using namespace std;
 
@@ -45,6 +46,7 @@ const float DRAW_RADIUS = .01f;
 
 bool OUTPUT_IMAGE = false;
 bool OUTPUT_SINGLE_IMAGE = false;
+bool RAYTRACE_MOVIE = false;
 int IMAGE_COUNTER = 0;
 int PIC_WIDTH = 600; // display window and output image dimensions
 int PIC_HEIGHT = 600;
@@ -351,8 +353,13 @@ Output triangle mesh to OBJ file.
 */
 void output_obj() {
 	// open file
+    std::stringstream ss1;
+    ss1 << IMAGE_COUNTER;
+    std::string s1(ss1.str());
+    string save_name = std::string("Multi_Trace/input_obj/fluid")+s1+".obj";
+    
 	ofstream output_file;
-	output_file.open ("fluid.obj");
+	output_file.open (save_name.c_str());
 	output_file << "# OBJ File created by Tyler Brabham and Zack Mayeda\n";
 	output_file << "# UC Berkeley CS184 Spring 2013 Final Project\n\n";
 
@@ -400,7 +407,12 @@ void output_obj() {
 
 	output_file.close();
 	Raytracer r(NEIGHBOR);
-	r.ray_trace_start();
+    std::stringstream ss;
+    ss << IMAGE_COUNTER;
+    std::string s(ss.str());
+    string out_name = std::string("Multi_Trace/output_pics/fluid")+s+".png";
+	r.ray_trace_start(save_name.c_str(),out_name.c_str(),500,500);
+    IMAGE_COUNTER++;
 }
 
 /* 
@@ -1239,6 +1251,11 @@ void myDisplay(){
 	//    glutBitmapString(font, string);
 	//    std::string fps = 1/((time_end - time_start)/1000)<<" FPS";
 
+    // Raytrace Movie Call
+    if (RAYTRACE_MOVIE) {
+        output_obj();
+    }
+    
 	glFlush();
 	glutSwapBuffers();
 }
@@ -1269,6 +1286,13 @@ int main(int argc, char* argv[]){
 			i += 1;
 			exit(0);
 		}
+        
+        if (strcmp(argv[i],"-rm") == 0) {
+            cout<<"Outputting raytrace OBJ files for movie."<<endl;
+            RAYTRACE_MOVIE = true;
+            i += 1;
+            continue;
+        }
 	}
 
 	glutInit(&argc, argv);
