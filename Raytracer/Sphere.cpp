@@ -93,7 +93,7 @@ bool Sphere::intersect(Ray& ray_arg, float* thit,LocalGeo* local,bool* inside_sh
 	return true;
 }
 
-bool Sphere::intersect(Ray& ray_arg){
+bool Sphere::intersect(Ray& ray_arg,bool* in_shape){
 	glm::vec3 pos = trans.object_point(ray_arg.position);
 
 	glm::vec3 dir = trans.object_vector(ray_arg.direction);

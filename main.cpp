@@ -405,7 +405,7 @@ void output_obj() {
 	ss << IMAGE_COUNTER;
 	std::string s(ss.str());
 	string out_name = std::string("Multi_Trace/output_pics/fluid")+s+".png";
-	r.ray_trace_start(save_name,out_name,100,100);
+	r.ray_trace_start(save_name,out_name,700,700);
 	IMAGE_COUNTER++;
 }
 

@@ -99,7 +99,7 @@ bool RTriangle::intersect(Ray& ray, float* thit, LocalGeo* local,bool* inside_sh
 	}
 }
 
-bool RTriangle::intersect(Ray& ray){
+bool RTriangle::intersect(Ray& ray,bool*in_shape){
 	float thit = 0;
 	glm::vec3 vec1 = b-a;
 	glm::vec3 vec2 = c-a;

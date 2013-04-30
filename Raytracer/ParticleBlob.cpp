@@ -81,7 +81,7 @@ glm::vec3 ParticleBlob::normal_at_point(glm::vec3 position){
 
 bool ParticleBlob::intersect(Ray& ray, float* thit, LocalGeo* local,bool* in_shape){
 	float t_start = ray.t_min;
-	float t_end = glm::min(ray.t_max,10.0f);
+	float t_end = glm::min(ray.t_max,5.0f);
 
 	bool hit = false;
 	glm::vec3 position;
@@ -106,8 +106,9 @@ bool ParticleBlob::intersect(Ray& ray, float* thit, LocalGeo* local,bool* in_sha
 				}
 			}
 		}
-
-		if(glm::abs(dense_value-boundary_density)<=tolerance){
+		//boundary condition
+		if((*in_shape)){
+			if(dense_value<900){
 			hit = true;
 			(*thit) = i;
 			//interpolate position to get more accurate value.
@@ -117,14 +118,27 @@ bool ParticleBlob::intersect(Ray& ray, float* thit, LocalGeo* local,bool* in_sha
 			//compute normal
 			local->normal = normal_at_point(position);;
 			return hit;
+			}
+		}else{
+			if(dense_value>900){
+				hit = true;
+			(*thit) = i;
+			//interpolate position to get more accurate value.
+
+			local->point = position;
+
+			//compute normal
+			local->normal = normal_at_point(position);;
+			return hit;
+			}
 		}
 	}
 	return hit;
 }
 
-bool ParticleBlob::intersect(Ray& ray){
+bool ParticleBlob::intersect(Ray& ray,bool* in_shape){
 	float t_start = ray.t_min;
-	float t_end = glm::min(ray.t_max,10.0f);
+	float t_end = glm::min(ray.t_max,5.0f);
 
 	bool hit = false;
 	glm::vec3 position;
@@ -150,9 +164,16 @@ bool ParticleBlob::intersect(Ray& ray){
 			}
 		}
 
-		if(glm::abs(dense_value-boundary_density)<=tolerance){
+		if((*in_shape)){
+			if(dense_value<900){
 			hit = true;
 			return hit;
+			}
+		}else{
+			if(dense_value>900){
+			hit = true;
+			return hit;
+			}
 		}
 	}
 	return hit;
