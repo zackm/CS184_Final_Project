@@ -37,7 +37,8 @@ Zack Mayeda cs184-bg
 #include <vector>
 
 #include "RTriangle.h"
-#include "RParticle.h"
+#include "../Particle.h"
+#include "../Vec3.h"
 #include "ParticleBlob.h"
 
 #include "Transformation.h"
@@ -114,10 +115,10 @@ void set_camera_and_perspective(Camera c, glm::vec3 max, glm::vec3 min) {
 }
 
 int Raytracer::ray_trace_start() {
-	int WIDTH = 800;
-	int HEIGHT = 800;
+	int WIDTH = 500;
+	int HEIGHT = 500;
 
-	vector<RParticle*> particles;
+	vector<Particle*> particles;
 	Scene s;
 	Camera c;
 	int maxdepth = 4;
@@ -691,7 +692,8 @@ int Raytracer::ray_trace_start() {
 					float z = atof(splitline[3].c_str());
 					float mass = atof(splitline[4].c_str());
 					float density = atof(splitline[5].c_str());
-					RParticle* temp_part = new RParticle(x,y,z,mass);
+					Vec3 velocity(0,0,0);//not really needed
+					Particle* temp_part = new Particle(Vec3(x,y,z),velocity,mass,density);
 					particles.push_back(temp_part);
 				}
 				else {
@@ -747,7 +749,7 @@ int Raytracer::ray_trace_start() {
 		kr.x = .2; kr.y = .2; kr.z = .7;
 		glm::vec3 e(0,0,0);
 		sp = 30;
-		ParticleBlob* blob = new ParticleBlob(particles,ka,kd,ks,kr,e,sp);
+		ParticleBlob* blob = new ParticleBlob(particles,neighborhood,ka,kd,ks,kr,e,sp);
 		blob->transparency = true;
 		blob->index_of_refraction = 1.33;
 		s.add_shape(blob);

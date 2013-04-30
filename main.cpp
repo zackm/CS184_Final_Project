@@ -394,7 +394,7 @@ void output_obj() {
 	}
 
 	output_file.close();
-	Raytracer r;
+	Raytracer r(NEIGHBOR);
 	r.ray_trace_start();
 }
 
@@ -839,7 +839,7 @@ void initScene(){
 
 	//3D Throw Scene
 	////Semi random grid of particles
-	float step = .02;
+	float step = .01;
 	for(float i = 4.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
 		for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
 			for(float k = 2.0*CONTAINER.max.z/4.0f; k<(3.0f*CONTAINER.max.z/4.0f); k=k+step) {

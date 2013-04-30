@@ -75,6 +75,60 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, Vec3 max_point, Vec3 
     return num;
 }
 
+int Neighbor::compute_box_num(Vec3 pos, float support_rad, Vec3 max_point, Vec3 min_point, bool ray_tracing){
+	//called only by ray tracer, returns -1 when outside container instead of 0.
+    // assuming container is rectangular, axis aligned
+    int x = -1,y = -1, z = -1;
+    float x_span = max_point.x - min_point.x;
+    float y_span = max_point.y - min_point.y;
+    float z_span = max_point.z - min_point.z;
+    float max_span = max(x_span,y_span);
+    max_span = max(max_span,z_span);
+    
+    int x_divs = (int)(x_span / support_rad);
+    int y_divs = (int)(y_span / support_rad);
+    int z_divs = (int)(z_span / support_rad);
+    int max_divs = max(x_divs,y_divs);
+    max_divs = max(max_divs,z_divs);
+    
+    float curr_x = min_point.x, curr_y = min_point.y, curr_z = min_point.z;
+	float x_diff, y_diff, z_diff;
+    
+	for (int i = 0; i < max_divs; i++) {
+        x_diff = abs(pos.x - curr_x);
+        y_diff = abs(pos.y - curr_y);
+        z_diff = abs(pos.z - curr_z);
+        
+        // .01f + support_rad might be needed due to precision loss somewhere
+		if (x == -1 && x_diff <= support_rad + .01f) {
+			x = i;
+		}
+        if (y == -1 && y_diff <= support_rad + .01f) {
+			y = i;
+		}
+        if (z == -1 && z_diff <= support_rad + .01f) {
+            z = i;
+        }
+        
+        if (x != -1 && y != -1 && z != -1) {
+            break;
+        }
+        
+        curr_x += support_rad;
+        curr_y += support_rad;
+        curr_z += support_rad;
+	}
+    
+    int num = x + y * x_divs + z * x_divs * y_divs;
+    
+    if (num >= x_divs * y_divs * z_divs || num < 0 || x == -1 || y == -1 || z == -1) {
+        //cout<<"Error, incorrect box # assigned in Neighbor: "<<num<<endl;
+        num = -1; // set box number to 0 to prevent bad vector access
+        // exit(0);
+    }
+    return num;
+}
+
 void Neighbor::place_particles(vector<Particle*> &particles, float support_rad, Container c,int number_particles) {
     
     // length covered in each dimension
