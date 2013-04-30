@@ -352,6 +352,7 @@ char triTable[256][16] =
 Output triangle mesh to OBJ file.
 */
 void output_obj() {
+
 	// open file
     std::stringstream ss1;
     ss1 << IMAGE_COUNTER;
@@ -386,15 +387,7 @@ void output_obj() {
 		for (int i = 0; i < vn.size(); i++) {
 			Vec3 vn_temp = vn[i];
 			output_file<<"vn "<< vn_temp.x<<" "<<vn_temp.y<< " "<<vn_temp.z<<endl;
-		}
-
-		// face with vertex norms f v//n v//n v//n
-		// write all triangles
-		for (int i = 1; i <= TRIANGLES.size()*3; i+=3) {
-			output_file<<"f "<<i<<"//"<<i<<" "<<i+1<<"//"<<i+1<<" "<<i+2<<"//"<<i+2<<endl;
-			//        output_file<<"f "<<i<<" "<<i+1<<" "<<i+2<<endl;
-		}
-	}else{
+		}else{
 		//we are rendering blobs, so we will make an obj point file.
 		Particle* temp_part;
 		for (int i = 0; i < NUM_PARTICLES; i++) {
@@ -405,7 +398,7 @@ void output_obj() {
 
 	}
 
-	output_file.close();
+	//output_file.close();
 	Raytracer r(NEIGHBOR);
     std::stringstream ss;
     ss << IMAGE_COUNTER;

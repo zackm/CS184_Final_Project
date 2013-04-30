@@ -19,11 +19,11 @@ Milestones Completed:
 - particles drawn as isosurface in 3D. (will likely use a library for marching cubes).
 - raytracer is capable of doing refraction
 - output isosurface triangles to an obj format, or to the ray tracer assignment format.
+- use raytracer to render image with realistic watery look.
 
 Milestones to complete of high priority:
 - use a better method (perhaps verlet) for differential equation (causing issues right now).
 - speedup using parallel processing of particles.
-- use raytracer to render image with realistic watery look.
 
 Milestone to complete of low priority:
 - texture mapping on the container.
