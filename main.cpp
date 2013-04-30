@@ -26,7 +26,7 @@ const float VISCOSITY = 3.5f;
 const float SURFACE_TENSION = .07f;
 const float TENSION_THRESHOLD = 7.0f;
 
-const float CUBE_TOL = .025f;//either grid size or tolerance for adaptive cubes, reciprocal must be an integer for now. .025f ok, .01 for high quality
+const float CUBE_TOL = .01f;//either grid size or tolerance for adaptive cubes, reciprocal must be an integer for now. .025f ok, .01 for high quality
 const float DENSITY_TOL = 100.0f;//also used for marching grid, for density of the particles
 const int WIDTH = 20;//floor((CONTAINER.max.x-CONTAINER.min.x)/CUBE_TOL);
 const int HEIGHT = 20;//floor((CONTAINER.max.y-CONTAINER.min.y)/CUBE_TOL);
@@ -37,7 +37,7 @@ Neighbor NEIGHBOR; //neighbor object used for calculations
 const float H = .0625; // .0625 works well, .05 good too
 const float SUPPORT_RADIUS = .125; // .125 works well, .1 good too
 
-bool RENDERING_TRIANGLES = false;
+bool RENDERING_TRIANGLES = true;
 bool RENDERING_BLOB = true;
 
 const float PI = 3.1415926;
@@ -829,9 +829,9 @@ void initScene(){
         case 1:
             cout<<"Dam Break Scene"<<endl;
             step = .025;
-            for(float i = 0; i<2.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+            for(float i = 0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
                 for(float j = 0; j<2.0f*(CONTAINER.max.y)/5.0f; j=j+step){
-                    for(float k = 0; k<2.0f*(CONTAINER.max.z)/5.0f; k=k+step){
+                    for(float k = 0; k<3.0f*(CONTAINER.max.z)/5.0f; k=k+step){
 //                        noise = float(rand())/(float(RAND_MAX))*.05f;
                         Vec3 pos(i,j,k);
                         Vec3 vel(0,0,0);
@@ -1175,7 +1175,7 @@ void myDisplay(){
 		delete [] pixels;
 
 		IMAGE_COUNTER++;
-		if (IMAGE_COUNTER == 400) {
+		if (IMAGE_COUNTER == 350) {
 			exit(0);
 		}
         if (OUTPUT_SINGLE_IMAGE) {
