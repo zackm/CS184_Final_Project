@@ -387,7 +387,8 @@ void output_obj() {
 		for (int i = 0; i < vn.size(); i++) {
 			Vec3 vn_temp = vn[i];
 			output_file<<"vn "<< vn_temp.x<<" "<<vn_temp.y<< " "<<vn_temp.z<<endl;
-		}else{
+		}
+    }else{
 		//we are rendering blobs, so we will make an obj point file.
 		Particle* temp_part;
 		for (int i = 0; i < NUM_PARTICLES; i++) {
@@ -404,7 +405,7 @@ void output_obj() {
     ss << IMAGE_COUNTER;
     std::string s(ss.str());
     string out_name = std::string("Multi_Trace/output_pics/fluid")+s+".png";
-	r.ray_trace_start(save_name.c_str(),out_name.c_str(),600,600);
+	r.ray_trace_start(save_name,out_name,600,600);
     IMAGE_COUNTER++;
 }
 
@@ -1276,11 +1277,11 @@ int main(int argc, char* argv[]){
 			cout<<endl;
 			cout<<"Command Line Arguments:"<<endl;
             cout<<"-h : List all options"<<endl;
-            cout<<"-s # : "<<endl;
-            cout<<"-m : "<<endl;
-            cout<<"-rm : "<<endl;
-            cout<<"-i : "<<endl;
-            cout<<"-p : "<<endl;
+            cout<<"-s # : Load scene number #"<<endl;
+            cout<<"-m : Export Still Frames for movie into Images/"<<endl;
+            cout<<"-rm : Export Raytraced Still Frames for movie into Multi_Trace/output_pics/"<<endl;
+            cout<<"-i : Render Isosurface"<<endl;
+            cout<<"-p : Render Particles"<<endl;
 			cout<<"Live Commands:"<<endl;
 			i += 1;
 			exit(0);
