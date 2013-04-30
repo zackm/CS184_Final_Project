@@ -114,8 +114,8 @@ void set_camera_and_perspective(Camera c, glm::vec3 max, glm::vec3 min) {
 }
 
 int Raytracer::ray_trace_start() {
-	int WIDTH = 300;
-	int HEIGHT = 300;
+	int WIDTH = 800;
+	int HEIGHT = 800;
 
 	vector<RParticle*> particles;
 	Scene s;
