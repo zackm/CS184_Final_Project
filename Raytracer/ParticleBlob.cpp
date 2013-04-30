@@ -59,7 +59,7 @@ glm::vec3 ParticleBlob::normal_at_point(glm::vec3 position){
 	int box_num = neighbors.compute_box_num(Vec3(position.x,position.y,position.z),SUPPORT_RADIUS, MAX.x,MIN.x,RAY_TRACING);//such bad code....it makes me cry
 	if(box_num>=0){
 		vector<int> neighbor_vec = neighbors.box_particles[box_num];
-		//evaluate density at point i.
+		//evaluate normal at point i.
 		for(int j = 0; j<neighbor_vec.size(); j++){
 			temp_part = particles[neighbor_vec[j]];
 			glm::vec3 part_pos(temp_part->position.x,temp_part->position.y,temp_part->position.z);
@@ -78,20 +78,6 @@ glm::vec3 ParticleBlob::normal_at_point(glm::vec3 position){
 	}
 	return -1.0f*normal;
 }
-glm::vec3 ParticleBlob::get_normal(glm::vec3 p){
-	float x_comp = density_at_point(glm::vec3(p.x-EPS,p.y,p.z))-density_at_point(glm::vec3(p.x+EPS,p.y,p.z));
-	float y_comp = density_at_point(glm::vec3(p.x,p.y-EPS,p.z))-density_at_point(glm::vec3(p.x,p.y+EPS,p.z));
-	float z_comp = density_at_point(glm::vec3(p.x,p.y,p.z-EPS))-density_at_point(glm::vec3(p.x,p.y,p.z+EPS));
-	glm::vec3 n(x_comp,y_comp,z_comp);
-
-	//normalize
-	float mag = glm::dot(n,n);
-	if(mag>0){
-		n /= glm::sqrt(mag);
-	}
-
-	return n;
-}
 
 bool ParticleBlob::intersect(Ray& ray, float* thit, LocalGeo* local,bool* in_shape){
 	float t_start = ray.t_min;
@@ -102,6 +88,7 @@ bool ParticleBlob::intersect(Ray& ray, float* thit, LocalGeo* local,bool* in_sha
 	float dense_value = 0.0;
 	Particle* temp_part;
 	for(float i = t_start; i<t_end; i+= t_step){
+		float dense_value = 0.0;
 		//get the point
 		position = ray.position + i*ray.direction;
 		int box_num = neighbors.compute_box_num(Vec3(position.x,position.y,position.z),SUPPORT_RADIUS, MAX.x,MIN.x,RAY_TRACING);//such bad code....it makes me cry
@@ -144,6 +131,7 @@ bool ParticleBlob::intersect(Ray& ray){
 	float dense_value = 0.0;
 	Particle* temp_part;
 	for(float i = t_start; i<t_end; i+= t_step){
+		float dense_value = 0.0;
 		//get the point
 		position = ray.position + i*ray.direction;
 		int box_num = neighbors.compute_box_num(Vec3(position.x,position.y,position.z),SUPPORT_RADIUS, MAX.x,MIN.x,RAY_TRACING);//such bad code....it makes me cry

@@ -405,7 +405,7 @@ void output_obj() {
 	ss << IMAGE_COUNTER;
 	std::string s(ss.str());
 	string out_name = std::string("Multi_Trace/output_pics/fluid")+s+".png";
-	r.ray_trace_start(save_name,out_name,600,600);
+	r.ray_trace_start(save_name,out_name,100,100);
 	IMAGE_COUNTER++;
 }
 
@@ -640,7 +640,7 @@ Vec3 normal_at_point(Vec3 point){
 	if(length>0){
 		normal = normal/length;
 	}
-	return normal*(-1.0f);
+	return normal*(-1.0f);//normal for triangles
 }
 
 /*
