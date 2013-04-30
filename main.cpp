@@ -350,55 +350,55 @@ char triTable[256][16] =
 Output triangle mesh to OBJ file.
 */
 void output_obj() {
-	// open file
-	ofstream output_file;
-	output_file.open ("fluid.obj");
-	output_file << "# OBJ File created by Tyler Brabham and Zack Mayeda\n";
-	output_file << "# UC Berkeley CS184 Spring 2013 Final Project\n\n";
+	//// open file
+	//ofstream output_file;
+	//output_file.open ("fluid.obj");
+	//output_file << "# OBJ File created by Tyler Brabham and Zack Mayeda\n";
+	//output_file << "# UC Berkeley CS184 Spring 2013 Final Project\n\n";
 
-	if(RENDERING_TRIANGLES){
-		vector<Vec3> v,vn;
+	//if(RENDERING_TRIANGLES){
+	//	vector<Vec3> v,vn;
 
-		for (int i = 0; i < TRIANGLES.size(); i++) {
-			Triangle *t = TRIANGLES[i];
-			Vec3 v1(t->a.x,t->a.y,t->a.z);
-			Vec3 v2(t->b.x,t->b.y,t->b.z);
-			Vec3 v3(t->c.x,t->c.y,t->c.z);
-			Vec3 vn_1(t->a_normal.x,t->a_normal.y,t->a_normal.z);
-			Vec3 vn_2(t->b_normal.x,t->b_normal.y,t->b_normal.z);
-			Vec3 vn_3(t->c_normal.x,t->c_normal.y,t->c_normal.z);
-			v.push_back(v1); v.push_back(v2); v.push_back(v3);
-			vn.push_back(vn_1); vn.push_back(vn_2); vn.push_back(vn_3);
-		}
-		// write all vertices, v x y z
-		for (int i = 0; i < v.size(); i++) {
-			Vec3 v_temp = v[i];
-			output_file<<"v "<< v_temp.x<<" "<<v_temp.y<< " "<<v_temp.z<<endl;
-		}
-		// write all vertex normals, vn x y z
-		for (int i = 0; i < vn.size(); i++) {
-			Vec3 vn_temp = vn[i];
-			output_file<<"vn "<< vn_temp.x<<" "<<vn_temp.y<< " "<<vn_temp.z<<endl;
-		}
+	//	for (int i = 0; i < TRIANGLES.size(); i++) {
+	//		Triangle *t = TRIANGLES[i];
+	//		Vec3 v1(t->a.x,t->a.y,t->a.z);
+	//		Vec3 v2(t->b.x,t->b.y,t->b.z);
+	//		Vec3 v3(t->c.x,t->c.y,t->c.z);
+	//		Vec3 vn_1(t->a_normal.x,t->a_normal.y,t->a_normal.z);
+	//		Vec3 vn_2(t->b_normal.x,t->b_normal.y,t->b_normal.z);
+	//		Vec3 vn_3(t->c_normal.x,t->c_normal.y,t->c_normal.z);
+	//		v.push_back(v1); v.push_back(v2); v.push_back(v3);
+	//		vn.push_back(vn_1); vn.push_back(vn_2); vn.push_back(vn_3);
+	//	}
+	//	// write all vertices, v x y z
+	//	for (int i = 0; i < v.size(); i++) {
+	//		Vec3 v_temp = v[i];
+	//		output_file<<"v "<< v_temp.x<<" "<<v_temp.y<< " "<<v_temp.z<<endl;
+	//	}
+	//	// write all vertex normals, vn x y z
+	//	for (int i = 0; i < vn.size(); i++) {
+	//		Vec3 vn_temp = vn[i];
+	//		output_file<<"vn "<< vn_temp.x<<" "<<vn_temp.y<< " "<<vn_temp.z<<endl;
+	//	}
 
-		// face with vertex norms f v//n v//n v//n
-		// write all triangles
-		for (int i = 1; i <= TRIANGLES.size()*3; i+=3) {
-			output_file<<"f "<<i<<"//"<<i<<" "<<i+1<<"//"<<i+1<<" "<<i+2<<"//"<<i+2<<endl;
-			//        output_file<<"f "<<i<<" "<<i+1<<" "<<i+2<<endl;
-		}
-	}else{
-		//we are rendering blobs, so we will make an obj point file.
-		Particle* temp_part;
-		for (int i = 0; i < NUM_PARTICLES; i++) {
-			temp_part = PARTICLES[i];
-			output_file<<"part "<< temp_part->position.x<<" "<<temp_part->position.y<<" "<<temp_part->position.z
-				<<" "<<temp_part->mass<<' '<<temp_part->density<<endl;
-		}
+	//	// face with vertex norms f v//n v//n v//n
+	//	// write all triangles
+	//	for (int i = 1; i <= TRIANGLES.size()*3; i+=3) {
+	//		output_file<<"f "<<i<<"//"<<i<<" "<<i+1<<"//"<<i+1<<" "<<i+2<<"//"<<i+2<<endl;
+	//		//        output_file<<"f "<<i<<" "<<i+1<<" "<<i+2<<endl;
+	//	}
+	//}else{
+	//	//we are rendering blobs, so we will make an obj point file.
+	//	Particle* temp_part;
+	//	for (int i = 0; i < NUM_PARTICLES; i++) {
+	//		temp_part = PARTICLES[i];
+	//		output_file<<"part "<< temp_part->position.x<<" "<<temp_part->position.y<<" "<<temp_part->position.z
+	//			<<" "<<temp_part->mass<<' '<<temp_part->density<<endl;
+	//	}
 
-	}
+	//}
 
-	output_file.close();
+	//output_file.close();
 	Raytracer r(NEIGHBOR);
 	r.ray_trace_start();
 }
@@ -893,7 +893,7 @@ void initScene(){
             
         case 5:
             cout<<"2 Glob Collision Scene"<<endl;
-            step = .02;
+            step = .015;
             for(float i = 4.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
                 for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
                     for(float k = 2.0*CONTAINER.max.z/4.0f; k<(3.0f*CONTAINER.max.z/4.0f); k=k+step) {

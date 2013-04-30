@@ -115,13 +115,13 @@ void set_camera_and_perspective(Camera c, glm::vec3 max, glm::vec3 min) {
 }
 
 int Raytracer::ray_trace_start() {
-	int WIDTH = 500;
-	int HEIGHT = 500;
+	int WIDTH = 150;
+	int HEIGHT = 150;
 
 	vector<Particle*> particles;
 	Scene s;
 	Camera c;
-	int maxdepth = 4;
+	int maxdepth = 5;
 	std::string output_name;
 	vector<glm::vec3> vertices;
 	vector<glm::vec3> vertexnorm_v;
@@ -710,11 +710,11 @@ int Raytracer::ray_trace_start() {
 		// set_camera_and_perspective(c,max,min);
 
 		// working camera basics, later set auto function
-		float from_x = .25;
-		float from_y = .25;
-		float from_z = .65;
+		float from_x = .3;
+		float from_y = .4;//.25;
+		float from_z = .7;//.65;
 		float to_x = 0.25;
-		float to_y = 0.25;
+		float to_y = 0.18;
 		float to_z = 0;
 		float up_x = 0;
 		float up_y = 1;
@@ -744,7 +744,7 @@ int Raytracer::ray_trace_start() {
 		particles.push_back(temp_part);*/
 
 		ka.x = 0; ka.y = 0; ka.z = 0;
-		kd.x = 0; kd.y = 0; kd.z = .1;
+		kd.x = 0; kd.y = 0; kd.z = .3; //should add more blue probably
 		ks.x = .1; ks.y = .5; ks.z = .5;
 		kr.x = .2; kr.y = .2; kr.z = .7;
 		glm::vec3 e(0,0,0);
@@ -756,9 +756,9 @@ int Raytracer::ray_trace_start() {
 
 		//add light
 		Transformation tri_trans(mat_stack);
-		Light* l = new DirectionalLight(glm::vec3(-1,1,1),glm::vec3(.5,0,1),tri_trans);
-		s.add_light(l);
-		l = new PointLight(glm::vec3(1,1,1),glm::vec3(1,1,1),tri_trans);
+		Light* l = new DirectionalLight(glm::vec3(0,.4,.4),glm::vec3(1,1,1),tri_trans);
+		//s.add_light(l);
+		//Light* l = new PointLight(glm::vec3(0,.4,.4),glm::vec3(1,1,1),tri_trans);
 		s.add_light(l);
 
 		//make checker board background
@@ -776,35 +776,35 @@ int Raytracer::ray_trace_start() {
 		glm::vec3 r(0,0,0);
 		float sp = 0;
 
-		e = glm::vec3(0,0,1);
+		e = glm::vec3(0,0,0);
 		t = new RTriangle(corner1,corner2,corner9,ka,d,spec,r,e,sp);
 		t->transparency = false;
 		s.add_shape(t);
-		e = glm::vec3(1,0,0);
+		e = glm::vec3(1,1,1);
 		t = new RTriangle(corner2,corner3,corner9,ka,d,spec,r,e,sp);
 		t->transparency = false;
 		s.add_shape(t);
-		e = glm::vec3(0,0,1);
+		e = glm::vec3(1,1,1);
 		t->transparency = false;
 		t = new RTriangle(corner3,corner4,corner9,ka,d,spec,r,e,sp);
 		s.add_shape(t);
-		e = glm::vec3(1,0,0);
+		e = glm::vec3(0,0,0);
 		t->transparency = false;
 		t = new RTriangle(corner4,corner5,corner9,ka,d,spec,r,e,sp);
 		s.add_shape(t);
-		e = glm::vec3(0,0,1);
+		e = glm::vec3(0,0,0);
 		t->transparency = false;
 		t = new RTriangle(corner5,corner6,corner9,ka,d,spec,r,e,sp);
 		s.add_shape(t);
-		e = glm::vec3(1,0,0);
+		e = glm::vec3(1,1,1);
 		t->transparency = false;
 		t = new RTriangle(corner6,corner7,corner9,ka,d,spec,r,e,sp);
 		s.add_shape(t);
-		e = glm::vec3(0,0,1);
+		e = glm::vec3(1,1,1);
 		t->transparency = false;
 		t = new RTriangle(corner7,corner8,corner9,ka,d,spec,r,e,sp);
 		s.add_shape(t);
-		e = glm::vec3(1,0,0);
+		e = glm::vec3(0,0,0);
 		t->transparency = false;
 		t = new RTriangle(corner8,corner1,corner9,ka,d,spec,r,e,sp);
 		s.add_shape(t);
@@ -822,13 +822,17 @@ int Raytracer::ray_trace_start() {
 		t->index_of_refraction = 1.33;
 		s.add_shape(t);*/
 
-		e = glm::vec3(.5,.5,0);
+		//left wall
+		e = glm::vec3(.5,0,.5);
+		d = glm::vec3(.5,.5,.5);
+		r = glm::vec3(.1,.1,.1);
 		t = new RTriangle(glm::vec3(0,0,.5),glm::vec3(0,0,0),glm::vec3(0,.5,.5),ka,d,spec,r,e,sp);
 		s.add_shape(t);
 
 		t = new RTriangle(glm::vec3(0,0,0),glm::vec3(0,.5,0),glm::vec3(0,.5,.5),ka,d,spec,r,e,sp);
 		s.add_shape(t);
 
+		//right wall
 		e = glm::vec3(.5,0,.5);
 		t = new RTriangle(glm::vec3(.5,0,.5),glm::vec3(.5,0,0),glm::vec3(.5,.5,.5),ka,d,spec,r,e,sp);
 		s.add_shape(t);
@@ -836,25 +840,28 @@ int Raytracer::ray_trace_start() {
 		t = new RTriangle(glm::vec3(.5,0,0),glm::vec3(.5,.5,0),glm::vec3(.5,.5,.5),ka,d,spec,r,e,sp);
 		s.add_shape(t);
 
-		e = glm::vec3(0,.5,.5);
+		//floor
+		e = glm::vec3(0,0,.5);
 		t = new RTriangle(glm::vec3(0,0,0),glm::vec3(0,0,.5),glm::vec3(.5,0,.5),ka,d,spec,r,e,sp);
 		s.add_shape(t);
 
 		t = new RTriangle(glm::vec3(.5,0,.5),glm::vec3(.5,0,0),glm::vec3(0,0,0),ka,d,spec,r,e,sp);
 		s.add_shape(t);
 
-		e = glm::vec3(.5,.5,.5);
+		//ceiling
+		e = glm::vec3(0,0,.5);
 		t = new RTriangle(glm::vec3(0,.5,0),glm::vec3(0,.5,.5),glm::vec3(.5,.5,.5),ka,d,spec,r,e,sp);
 		s.add_shape(t);
 
 		t = new RTriangle(glm::vec3(.5,.5,.5),glm::vec3(.5,.5,0),glm::vec3(0,.5,0),ka,d,spec,r,e,sp);
 		s.add_shape(t);
 
+		//behind camera
 		e = glm::vec3(1,1,1);
-		t = new RTriangle(glm::vec3(-1,-1,1),glm::vec3(1,-1,1),glm::vec3(-1,1,1),ka,d,spec,r,e,sp);
+		t = new RTriangle(glm::vec3(-10,-10,10),glm::vec3(10,-10,10),glm::vec3(-10,10,10),ka,d,spec,r,e,sp);
 		s.add_shape(t);
 
-		t = new RTriangle(glm::vec3(-1,1,1),glm::vec3(1,-1,1),glm::vec3(1,1,1),ka,d,spec,r,e,sp);
+		t = new RTriangle(glm::vec3(-10,10,10),glm::vec3(10,-10,10),glm::vec3(10,10,10),ka,d,spec,r,e,sp);
 		s.add_shape(t);
 
 		//Transformation tri_trans(mat_stack);
