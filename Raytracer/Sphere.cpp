@@ -1,14 +1,11 @@
-#pragma once
 #include "Sphere.h"
 #include "Ray.h"
 #include "LocalGeo.h"
 #include "glm/glm.hpp"
 #include "DirectionalLight.h"
 
-#pragma once
 #include "Transformation.h"
 
-#pragma once
 #include <limits>
 
 using namespace std;

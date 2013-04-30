@@ -28,24 +28,18 @@ Zack Mayeda cs184-bg
 
 #include "Scene.h"
 
-#pragma once
 #include "Sphere.h"
 
-#pragma once
 #include "DirectionalLight.h"
 
-#pragma once
 #include "PointLight.h"
 
-#pragma once
 #include <vector>
 
-#pragma once
 #include "RTriangle.h"
 #include "RParticle.h"
 #include "ParticleBlob.h"
 
-#pragma once
 #include "Transformation.h"
 
 #include "Raytracer.h"

@@ -4,14 +4,13 @@
 
 #include <sstream>
 #include <fstream>
-#include <unordered_map>
 
 using namespace std;
 
 /*******************
 * GLOBAL VARIABLES *
 *******************/
-Container CONTAINER(Vec3(.5,.5,.5),Vec3(0,0,0));//very simple cube for now. Later, make it a particle itself.
+Container CONTAINER(Vec3(1,.5,.5),Vec3(0,0,0));//very simple cube for now. Later, make it a particle itself.
 vector<Particle*> PARTICLES;//particles that we do SPH on.
 vector<Triangle*> TRIANGLES;//triangles made from marching cubes to render
 
@@ -45,6 +44,7 @@ const float PI = 3.1415926;
 const float DRAW_RADIUS = .01f;
 
 bool OUTPUT_IMAGE = false;
+bool OUTPUT_SINGLE_IMAGE = false;
 int IMAGE_COUNTER = 0;
 
 Vec3 normal_at_point(Vec3);
@@ -411,7 +411,13 @@ void keyPressed(unsigned char key, int x, int y) {
 		// possible call raytracer here
 		exit(0);
 		break;
-	}
+    case 'p':
+        OUTPUT_SINGLE_IMAGE = true;
+        break;
+    case 'i':
+        RENDERING_TRIANGLES = !RENDERING_TRIANGLES;
+        break;
+    }
 }
 
 /*
@@ -578,7 +584,7 @@ float viscosity_kernel_laplacian(Vec3 r_i, Vec3 r_j){
 *******************/
 float density_at_point(Vec3 point){
 	//first should generate a list of the particles we need to check, using the box for this point.
-	int box_number = NEIGHBOR.compute_box_num(point,SUPPORT_RADIUS,CONTAINER.min.x,CONTAINER.max.x);
+	int box_number = NEIGHBOR.compute_box_num(point,SUPPORT_RADIUS,CONTAINER.max,CONTAINER.min);
 
 	Particle* temp_particle;
 	vector<int> neighbor_vec = NEIGHBOR.box_particles[box_number];
@@ -598,7 +604,7 @@ float density_at_point(Vec3 point){
 
 Vec3 normal_at_point(Vec3 point){
 	//set the normal at each point
-	int box_number = NEIGHBOR.compute_box_num(point,SUPPORT_RADIUS,CONTAINER.min.x,CONTAINER.max.x);
+	int box_number = NEIGHBOR.compute_box_num(point,SUPPORT_RADIUS,CONTAINER.max,CONTAINER.min);
 	Particle* temp_particle;
 	vector<int> neighbor_vec = NEIGHBOR.box_particles[box_number];
 	Vec3 normal(0,0,0);
@@ -873,6 +879,7 @@ void initScene(){
 		}
 	}
 
+
 	//step = .02;
 	//for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
 	//	for(float j = CONTAINER.min.y; j<1.0f*(CONTAINER.max.y)/5.0f; j=j+step){
@@ -954,8 +961,11 @@ void myDisplay(){
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-
-	gluLookAt(.25f,.25f,1.25f,.25f,.25f,0.0f,0,1,0);
+    
+    // Rectangular Container
+	gluLookAt(.5f,.25f,1.75f,.5f,.25f,0.0f,0,1,0);
+    // Cube Container
+//     gluLookAt(.25f,.25f,1.5f,.25f,.25f,0.0f,0,1,0);
 
 	run_time_step();
 	CURRENT_TIME += TIMESTEP;
@@ -997,9 +1007,9 @@ void myDisplay(){
 		//glBegin(GL_POINTS);
 		glEnable(GL_LIGHTING);
 		Particle* temp_part;
+        glClearColor(0,0,0,0);
 		for (int i = 0; i<PARTICLES.size(); i++){
 			temp_part = PARTICLES[i];
-			glClearColor(0,0,0,0);
 
 			//Draw sphere of radius H around particles
 			//glColor3f(0,0,1.0);
@@ -1027,7 +1037,6 @@ void myDisplay(){
 	//glVertex3f(0.5f,-.01,0);
 	//glNormal3f(0,1,0);
 	//glEnd();
-
 	//Draw wireframe container
 	glPolygonMode(GL_FRONT, GL_LINE);
 	glPolygonMode(GL_BACK, GL_LINE);
@@ -1075,7 +1084,7 @@ void myDisplay(){
 
 	glPopMatrix();
 
-	if (OUTPUT_IMAGE) {
+	if (OUTPUT_IMAGE || OUTPUT_SINGLE_IMAGE) {
 		// Output image to file
 		FreeImage_Initialise();
 
@@ -1103,6 +1112,10 @@ void myDisplay(){
 		if (IMAGE_COUNTER == 400) {
 			exit(0);
 		}
+        if (OUTPUT_SINGLE_IMAGE) {
+            OUTPUT_SINGLE_IMAGE = false;
+            cout<<"Saved single image."<<endl;
+        }
 	}
 
 	glFlush();

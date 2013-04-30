@@ -2,10 +2,8 @@
 
 #include "glm/glm.hpp"
 
-#pragma once
 #include <limits>
 
-#pragma once
 #include "Transformation.h"
 
 #include <iostream>
