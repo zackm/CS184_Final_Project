@@ -411,7 +411,7 @@ void output_obj() {
     ss << IMAGE_COUNTER;
     std::string s(ss.str());
     string out_name = std::string("Multi_Trace/output_pics/fluid")+s+".png";
-	r.ray_trace_start(save_name.c_str(),out_name.c_str(),500,500);
+	r.ray_trace_start(save_name.c_str(),out_name.c_str(),600,600);
     IMAGE_COUNTER++;
 }
 
@@ -905,7 +905,7 @@ void initScene(){
             
         case 5:
             cout<<"2 Glob Collision Scene"<<endl;
-            step = .02;
+            step = .015;
             for(float i = 4.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
                 for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
                     for(float k = 2.0*CONTAINER.max.z/4.0f; k<(3.0f*CONTAINER.max.z/4.0f); k=k+step) {
@@ -1213,7 +1213,7 @@ void myDisplay(){
 		// Make the BYTE array, factor of 3 because it's RBG.
 		BYTE* pixels = new BYTE[ 3 * PIC_HEIGHT * PIC_WIDTH];
 
-		glReadPixels(0, 0, PIC_WIDTH, PIC_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+		glReadPixels(0, 0, PIC_WIDTH, PIC_HEIGHT, GL_BGR, GL_UNSIGNED_BYTE, pixels);
 
 		// Convert to FreeImage format & save to file
 		FIBITMAP* image = FreeImage_ConvertFromRawBits(pixels, PIC_WIDTH, PIC_HEIGHT, 3 * PIC_WIDTH, 24, 0xFF0000, 0x00FF00, 0x0000FF, false);
@@ -1282,6 +1282,7 @@ int main(int argc, char* argv[]){
 			cout<<"by Tyler Brabham and Zack Mayeda"<<endl;
 			cout<<endl;
 			cout<<"Command Line Arguments:"<<endl;
+            cout<<"-h "<<endl;
 			cout<<"Live Commands:"<<endl;
 			i += 1;
 			exit(0);
@@ -1290,6 +1291,18 @@ int main(int argc, char* argv[]){
         if (strcmp(argv[i],"-rm") == 0) {
             cout<<"Outputting raytrace OBJ files for movie."<<endl;
             RAYTRACE_MOVIE = true;
+            i += 1;
+            continue;
+        }
+        
+        if (strcmp(argv[i],"-i") == 0) {
+            RENDERING_TRIANGLES = true;
+            i += 1;
+            continue;
+        }
+        
+        if (strcmp(argv[i],"-p") == 0) {
+            RENDERING_TRIANGLES = false;
             i += 1;
             continue;
         }
