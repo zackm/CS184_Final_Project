@@ -861,13 +861,13 @@ void initScene(){
 //    }
 
     ////3D Dam Break Scene
-    float step = .025;
+    float step = .02;
     for(float i = 0; i<1.0f*(CONTAINER.max.x)/5.0f; i=i+step){
         for(float j = 0; j<2.0f*(CONTAINER.max.y)/5.0f; j=j+step){
             for(float k = 0; k<4.9f*(CONTAINER.max.y)/5.0f; k=k+step){
                 noise = float(rand())/(float(RAND_MAX))*.05f;
                 Vec3 pos(i,j,k);
-                Vec3 vel(3,0,0);
+                Vec3 vel(2,0,0);
                 new_part = new Particle(pos,vel,MASS,1000.0f);
                 PARTICLES.push_back(new_part);
             }

@@ -46,13 +46,13 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, Vec3 max_point, Vec3 
         z_diff = abs(pos.z - curr_z);
         
         // .01f + support_rad might be needed due to precision loss somewhere
-		if (x == -1 && x_diff <= support_rad + .01f) {
+		if (x == -1 && x_diff <= support_rad) {
 			x = i;
 		}
-        if (y == -1 && y_diff <= support_rad + .01f) {
+        if (y == -1 && y_diff <= support_rad) {
 			y = i;
 		}
-        if (z == -1 && z_diff <= support_rad + .01f) {
+        if (z == -1 && z_diff <= support_rad) {
             z = i;
         }
         
