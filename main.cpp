@@ -354,11 +354,11 @@ Output triangle mesh to OBJ file.
 void output_obj() {
 
 	// open file
-    std::stringstream ss1;
-    ss1 << IMAGE_COUNTER;
-    std::string s1(ss1.str());
-    string save_name = std::string("Multi_Trace/input_obj/fluid")+s1+".obj";
-    
+	std::stringstream ss1;
+	ss1 << IMAGE_COUNTER;
+	std::string s1(ss1.str());
+	string save_name = std::string("Multi_Trace/input_obj/fluid")+s1+".obj";
+
 	ofstream output_file;
 	output_file.open (save_name.c_str());
 	output_file << "# OBJ File created by Tyler Brabham and Zack Mayeda\n";
@@ -388,7 +388,7 @@ void output_obj() {
 			Vec3 vn_temp = vn[i];
 			output_file<<"vn "<< vn_temp.x<<" "<<vn_temp.y<< " "<<vn_temp.z<<endl;
 		}
-    }else{
+	}else{
 		//we are rendering blobs, so we will make an obj point file.
 		Particle* temp_part;
 		for (int i = 0; i < NUM_PARTICLES; i++) {
@@ -401,12 +401,12 @@ void output_obj() {
 
 	//output_file.close();
 	Raytracer r(NEIGHBOR);
-    std::stringstream ss;
-    ss << IMAGE_COUNTER;
-    std::string s(ss.str());
-    string out_name = std::string("Multi_Trace/output_pics/fluid")+s+".png";
+	std::stringstream ss;
+	ss << IMAGE_COUNTER;
+	std::string s(ss.str());
+	string out_name = std::string("Multi_Trace/output_pics/fluid")+s+".png";
 	r.ray_trace_start(save_name,out_name,600,600);
-    IMAGE_COUNTER++;
+	IMAGE_COUNTER++;
 }
 
 /* 
@@ -583,6 +583,10 @@ Vec3 pressure_kernel_gradient(Vec3 r_i, Vec3 r_j){
 	float coeff = (45/(PI*pow(H,6.0f)))*pow((H-sqrt(mag)),2.0f);
 
 	Vec3 v(0,0,0);
+	//might want to return random vector if sqrt(mag)==0
+	if(mag==0){
+		cout<<'h'<<endl;
+	}
 	return diff_vec*(-coeff)/(sqrt(mag));
 }
 
@@ -685,20 +689,19 @@ void run_time_step(){
 
 		vector<int> neighbor_vec = base_particle->neighbors;
 		for (int j = 0; j<neighbor_vec.size(); j++){ // changed to neighbors
-			if(i!=neighbor_vec[j]){
-				temp_particle = PARTICLES[neighbor_vec[j]];
-				Vec3 r = base_particle->position-temp_particle->position;
-				float mag = dot(r,r);
-				if(mag<H*H){
+			temp_particle = PARTICLES[neighbor_vec[j]];
+			Vec3 r = base_particle->position-temp_particle->position;
+			float mag = dot(r,r);
+			if(mag<H*H){
+				float weight = viscosity_kernel_laplacian(base_particle->position,temp_particle->position);
+				viscosity_laplacian += ((temp_particle->velocity - base_particle->velocity)/temp_particle->density)*weight * temp_particle->mass;
+
+				color += (temp_particle->mass / temp_particle->density) * default_laplacian(base_particle->position,temp_particle->position);
+
+				normal += default_gradient(base_particle->position,temp_particle->position)*(temp_particle->mass / temp_particle->density);
+				if(i!=neighbor_vec[j]){
 					Vec3 weight_vec = pressure_kernel_gradient(base_particle->position,temp_particle->position);
-					pressure_gradient += weight_vec * temp_particle->mass * ((pressure_list[i]+pressure_list[j])/(2.0f*temp_particle->density)); 
-
-					float weight = viscosity_kernel_laplacian(base_particle->position,temp_particle->position);
-					viscosity_laplacian += ((temp_particle->velocity - base_particle->velocity)/temp_particle->density)*weight * temp_particle->mass;
-
-					color += (temp_particle->mass / temp_particle->density) * default_laplacian(base_particle->position,temp_particle->position);
-
-					normal += default_gradient(base_particle->position,temp_particle->position)*(temp_particle->mass / temp_particle->density);
+					pressure_gradient += weight_vec * temp_particle->mass * ((pressure_list[i]+pressure_list[neighbor_vec[j]])/(2.0f*temp_particle->density)); 
 				}
 			}
 		}
@@ -830,117 +833,117 @@ void initScene(){
 	float noise = float(rand())/(float(RAND_MAX))*.1;
 	float x,y,z,v_x,v_y,v_z;
 
-    float step;
-    switch (SETUP_SCENE) {
-        case 1:
-            cout<<"Dam Break Scene"<<endl;
-            step = .025;
-            for(float i = 0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
-                for(float j = 0; j<2.0f*(CONTAINER.max.y)/5.0f; j=j+step){
-                    for(float k = 0; k<3.0f*(CONTAINER.max.z)/5.0f; k=k+step){
-//                        noise = float(rand())/(float(RAND_MAX))*.05f;
-                        Vec3 pos(i,j,k);
-                        Vec3 vel(0,0,0);
-                        new_part = new Particle(pos,vel,MASS,1000.0f);
-                        PARTICLES.push_back(new_part);
-                    }
-                }
-            }
-            break;
-            
-        case 2:
-            cout<<"Drop Scene"<<endl;
-            step = .015;
-            for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
-                for(float j = 3.0*CONTAINER.max.y/5.0f; j<4.0f*(CONTAINER.max.y)/5.0f; j=j+step){
-                    for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.z)/5.0f; k=k+step){
-//                        noise = float(rand())/(float(RAND_MAX))*.05f;
-                        Vec3 pos(i,j,k);
-                        Vec3 vel(0,-3,0);
-                        new_part = new Particle(pos,vel,MASS,1000.0f);
-                        PARTICLES.push_back(new_part);
-                    }
-                }
-            }
-            break;
-            
-        case 3:
-            cout<<"Flat Scene"<<endl;
-            step = .015;
-            for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
-                for(float j = 3.0*CONTAINER.max.y/5.0f; j<4.0f*(CONTAINER.max.y)/5.0f; j=j+step){
-                    for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.z)/5.0f; k=k+step){
-                        //                        noise = float(rand())/(float(RAND_MAX))*.05f;
-                        Vec3 pos(i,j,k);
-                        Vec3 vel(0,-3,0);
-                        new_part = new Particle(pos,vel,MASS,1000.0f);
-                        PARTICLES.push_back(new_part);
-                    }
-                }
-            }
-            break;
-            
-        case 4:
-            cout<<"No Gravity Scene"<<endl;
-            GRAVITY = Vec3(0,0,0);
-            step = .015;
-            for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
-                for(float j = 3.0*CONTAINER.max.y/5.0f; j<4.0f*(CONTAINER.max.y)/5.0f; j=j+step){
-                    for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.z)/5.0f; k=k+step){
-                        //                        noise = float(rand())/(float(RAND_MAX))*.05f;
-                        Vec3 pos(i,j,k);
-                        Vec3 vel(0,0,0);
-                        new_part = new Particle(pos,vel,MASS,1000.0f);
-                        PARTICLES.push_back(new_part);
-                    }
-                }
-            }
-            break;
-            
-        case 5:
-            cout<<"2 Glob Collision Scene"<<endl;
-            step = .015;
-            for(float i = 4.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
-                for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
-                    for(float k = 2.0*CONTAINER.max.z/4.0f; k<(3.0f*CONTAINER.max.z/4.0f); k=k+step) {
-                        noise = float(rand())/(float(RAND_MAX))*.05f;
-                        Vec3 pos(i,j,k);
-                        Vec3 vel(-1,-8,0);
-                        new_part = new Particle(pos,vel,MASS,1000.0f);
-                        PARTICLES.push_back(new_part);
-                    }
-                }
-            }
-            for(float i = CONTAINER.min.x; i<1.0f*(CONTAINER.max.x)/5.0f; i=i+step){
-                for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
-                    for(float k = 2.0*CONTAINER.max.z/4.0f; k<(3.0f*CONTAINER.max.z/4.0f); k=k+step) {
-                        noise = float(rand())/(float(RAND_MAX))*.05f;
-                        Vec3 pos(i,j,k);
-                        Vec3 vel(5,-5,0);
-                        new_part = new Particle(pos,vel,MASS,1000.f);
-                        PARTICLES.push_back(new_part);
-                    }
-                }
-            }
-            break;
-            
-        default:
-            ////3D Uniform Scene
-            cout<<"Default Uniform Scene"<<endl;
-            step = .025;
-            for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
-                for(float j = CONTAINER.min.y; j<1.0f*(CONTAINER.max.y)/5.0f; j=j+step){
-                    for(float k = 1.0*CONTAINER.min.z; k<(CONTAINER.max.z); k=k+step){
-//                        noise = float(rand())/(float(RAND_MAX))*.05f;
-                        Vec3 pos(i,j,k);
-                        Vec3 vel(-5,-3,0);
-                        new_part = new Particle(pos,vel,MASS,1000.0f);
-                        PARTICLES.push_back(new_part);
-                    }
-                }
-            }
-            break;
-    }
+	float step;
+	switch (SETUP_SCENE) {
+	case 1:
+		cout<<"Dam Break Scene"<<endl;
+		step = .025;
+		for(float i = 0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+			for(float j = 0; j<2.0f*(CONTAINER.max.y)/5.0f; j=j+step){
+				for(float k = 0; k<3.0f*(CONTAINER.max.z)/5.0f; k=k+step){
+					//                        noise = float(rand())/(float(RAND_MAX))*.05f;
+					Vec3 pos(i,j,k);
+					Vec3 vel(0,0,0);
+					new_part = new Particle(pos,vel,MASS,1000.0f);
+					PARTICLES.push_back(new_part);
+				}
+			}
+		}
+		break;
+
+	case 2:
+		cout<<"Drop Scene"<<endl;
+		step = .015;
+		for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+			for(float j = 3.0*CONTAINER.max.y/5.0f; j<4.0f*(CONTAINER.max.y)/5.0f; j=j+step){
+				for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.z)/5.0f; k=k+step){
+					//                        noise = float(rand())/(float(RAND_MAX))*.05f;
+					Vec3 pos(i,j,k);
+					Vec3 vel(0,-3,0);
+					new_part = new Particle(pos,vel,MASS,1000.0f);
+					PARTICLES.push_back(new_part);
+				}
+			}
+		}
+		break;
+
+	case 3:
+		cout<<"Flat Scene"<<endl;
+		step = .015;
+		for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+			for(float j = 3.0*CONTAINER.max.y/5.0f; j<4.0f*(CONTAINER.max.y)/5.0f; j=j+step){
+				for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.z)/5.0f; k=k+step){
+					//                        noise = float(rand())/(float(RAND_MAX))*.05f;
+					Vec3 pos(i,j,k);
+					Vec3 vel(0,-3,0);
+					new_part = new Particle(pos,vel,MASS,1000.0f);
+					PARTICLES.push_back(new_part);
+				}
+			}
+		}
+		break;
+
+	case 4:
+		cout<<"No Gravity Scene"<<endl;
+		GRAVITY = Vec3(0,0,0);
+		step = .015;
+		for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+			for(float j = 3.0*CONTAINER.max.y/5.0f; j<4.0f*(CONTAINER.max.y)/5.0f; j=j+step){
+				for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.z)/5.0f; k=k+step){
+					//                        noise = float(rand())/(float(RAND_MAX))*.05f;
+					Vec3 pos(i,j,k);
+					Vec3 vel(0,0,0);
+					new_part = new Particle(pos,vel,MASS,1000.0f);
+					PARTICLES.push_back(new_part);
+				}
+			}
+		}
+		break;
+
+	case 5:
+		cout<<"2 Glob Collision Scene"<<endl;
+		step = .015;
+		for(float i = 4.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
+			for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
+				for(float k = 2.0*CONTAINER.max.z/4.0f; k<(3.0f*CONTAINER.max.z/4.0f); k=k+step) {
+					noise = float(rand())/(float(RAND_MAX))*.05f;
+					Vec3 pos(i,j,k);
+					Vec3 vel(-1,-8,0);
+					new_part = new Particle(pos,vel,MASS,1000.0f);
+					PARTICLES.push_back(new_part);
+				}
+			}
+		}
+		for(float i = CONTAINER.min.x; i<1.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+			for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
+				for(float k = 2.0*CONTAINER.max.z/4.0f; k<(3.0f*CONTAINER.max.z/4.0f); k=k+step) {
+					noise = float(rand())/(float(RAND_MAX))*.05f;
+					Vec3 pos(i,j,k);
+					Vec3 vel(5,-5,0);
+					new_part = new Particle(pos,vel,MASS,1000.f);
+					PARTICLES.push_back(new_part);
+				}
+			}
+		}
+		break;
+
+	default:
+		////3D Uniform Scene
+		cout<<"Default Uniform Scene"<<endl;
+		step = .025;
+		for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
+			for(float j = CONTAINER.min.y; j<1.0f*(CONTAINER.max.y)/5.0f; j=j+step){
+				for(float k = 1.0*CONTAINER.min.z; k<(CONTAINER.max.z); k=k+step){
+					//                        noise = float(rand())/(float(RAND_MAX))*.05f;
+					Vec3 pos(i,j,k);
+					Vec3 vel(-5,-3,0);
+					new_part = new Particle(pos,vel,MASS,1000.0f);
+					PARTICLES.push_back(new_part);
+				}
+			}
+		}
+		break;
+	}
 
 	////2D Drop Scene
 	//float step = .017;
@@ -1207,7 +1210,7 @@ void myDisplay(){
 		// Make the BYTE array, factor of 3 because it's RBG.
 		BYTE* pixels = new BYTE[ 3 * PIC_HEIGHT * PIC_WIDTH];
 
-		glReadPixels(0, 0, PIC_WIDTH, PIC_HEIGHT, GL_BGR, GL_UNSIGNED_BYTE, pixels);
+		glReadPixels(0, 0, PIC_WIDTH, PIC_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, pixels);
 
 		// Convert to FreeImage format & save to file
 		FIBITMAP* image = FreeImage_ConvertFromRawBits(pixels, PIC_WIDTH, PIC_HEIGHT, 3 * PIC_WIDTH, 24, 0xFF0000, 0x00FF00, 0x0000FF, false);
@@ -1245,11 +1248,11 @@ void myDisplay(){
 	//    glutBitmapString(font, string);
 	//    std::string fps = 1/((time_end - time_start)/1000)<<" FPS";
 
-    // Raytrace Movie Call
-    if (RAYTRACE_MOVIE) {
-        output_obj();
-    }
-    
+	// Raytrace Movie Call
+	if (RAYTRACE_MOVIE) {
+		output_obj();
+	}
+
 	glFlush();
 	glutSwapBuffers();
 }
@@ -1276,35 +1279,35 @@ int main(int argc, char* argv[]){
 			cout<<"by Tyler Brabham and Zack Mayeda"<<endl;
 			cout<<endl;
 			cout<<"Command Line Arguments:"<<endl;
-            cout<<"-h : List all options"<<endl;
-            cout<<"-s # : Load scene number #"<<endl;
-            cout<<"-m : Export Still Frames for movie into Images/"<<endl;
-            cout<<"-rm : Export Raytraced Still Frames for movie into Multi_Trace/output_pics/"<<endl;
-            cout<<"-i : Render Isosurface"<<endl;
-            cout<<"-p : Render Particles"<<endl;
+			cout<<"-h : List all options"<<endl;
+			cout<<"-s # : Load scene number #"<<endl;
+			cout<<"-m : Export Still Frames for movie into Images/"<<endl;
+			cout<<"-rm : Export Raytraced Still Frames for movie into Multi_Trace/output_pics/"<<endl;
+			cout<<"-i : Render Isosurface"<<endl;
+			cout<<"-p : Render Particles"<<endl;
 			cout<<"Live Commands:"<<endl;
 			i += 1;
 			exit(0);
 		}
-        
-        if (strcmp(argv[i],"-rm") == 0) {
-            cout<<"Outputting raytrace OBJ files for movie."<<endl;
-            RAYTRACE_MOVIE = true;
-            i += 1;
-            continue;
-        }
-        
-        if (strcmp(argv[i],"-i") == 0) {
-            RENDERING_TRIANGLES = true;
-            i += 1;
-            continue;
-        }
-        
-        if (strcmp(argv[i],"-p") == 0) {
-            RENDERING_TRIANGLES = false;
-            i += 1;
-            continue;
-        }
+
+		if (strcmp(argv[i],"-rm") == 0) {
+			cout<<"Outputting raytrace OBJ files for movie."<<endl;
+			RAYTRACE_MOVIE = true;
+			i += 1;
+			continue;
+		}
+
+		if (strcmp(argv[i],"-i") == 0) {
+			RENDERING_TRIANGLES = true;
+			i += 1;
+			continue;
+		}
+
+		if (strcmp(argv[i],"-p") == 0) {
+			RENDERING_TRIANGLES = false;
+			i += 1;
+			continue;
+		}
 	}
 
 	glutInit(&argc, argv);
