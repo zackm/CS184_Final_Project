@@ -25,25 +25,12 @@ void Neighbor::set_particle_neighbors(int particle_num, Particle *p) {
 int Neighbor::compute_box_num(Vec3 pos, float support_rad, float max_point, float min_point) {
     // assuming container is cube
     int row = -1,col = -1, depth = -1;
-    float width = max_width - min_width;
-    int box_per_row = (int)width / support_rad; // casting to int, assuming support radius evenly divides width
+    float width = max_point - min_point;
+    int box_per_row = (int)(width / support_rad); // casting to int, assuming support radius evenly divides width
     
-    float curr_x = min_width, curr_y = min_width, curr_z = min_width;
+    float curr_x = min_point, curr_y = min_point, curr_z = min_point;
     
 	float col_point, row_point, depth_point;
-    
-	////if(col_point>curr_x || row_point>curr_y || col_point<0 || row_point<0){
-	////	point is not inside the container.
-	////	cout<<'h'<<endl;
-	////	return 0;
-	////}
-    
-	////row = floor(row_point/support_rad);
-	////col = floor(col_point/support_rad);
-    
-	//int num = col + row*box_per_row - 1;
-    
-    ////return num;//int(max(float(num),0.0f));
     
 	for (int i = 0; i < box_per_row && curr_x < max_width; i++) {
         col_point = abs(pos.x - curr_x);
@@ -69,8 +56,6 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, float max_point, floa
 	}
     
     int num = col + row * box_per_row + depth * box_per_row * box_per_row;
-    //cout<<"Num = "<<num<<" = "<<col<<" + "<<row<<" * "<<box_per_row<<endl;
-    // cout<<endl;
     
     if (num >= box_per_row * box_per_row * box_per_row || num < 0 || row == -1 || col == -1 || depth == -1) {
         //cout<<"Error, incorrect box # assigned in Neighbor: "<<num<<endl;
@@ -81,7 +66,51 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, float max_point, floa
     return num;
 }
 
-int Neighbor::compute_box_num(Vec3 pos, float support_rad, float max_point, float min_point, bool ray_tracing){
+int Neighbor::compute_box_num(Vec3 pos, float support_rad, float max_point, float min_point, bool flag) {
+    // assuming container is cube
+    int row = -1,col = -1, depth = -1;
+    float width = max_point - min_point;
+    int box_per_row = (int)(width / support_rad); // casting to int, assuming support radius evenly divides width
+    
+    float curr_x = min_point, curr_y = min_point, curr_z = min_point;
+    
+	float col_point, row_point, depth_point;
+    
+	for (int i = 0; i < box_per_row && curr_x < max_width; i++) {
+        col_point = abs(pos.x - curr_x);
+        row_point = abs(pos.y - curr_y);
+        depth_point = abs(pos.z - curr_z);
+        
+		if (col_point <= support_rad && col == -1) {
+			col = i;
+		}
+        if (row_point <= support_rad && row == -1) {
+			row = i;
+		}
+        if (depth_point <= support_rad && depth == -1) {
+            depth = i;
+        }
+        
+        if (row != -1 && col != -1 && depth != -1) {
+			break;
+		}
+        curr_x += support_rad;
+        curr_y += support_rad;
+        curr_z += support_rad;
+	}
+    
+    int num = col + row * box_per_row + depth * box_per_row * box_per_row;
+    
+    if (num >= box_per_row * box_per_row * box_per_row || num < 0 || row == -1 || col == -1 || depth == -1) {
+        //cout<<"Error, incorrect box # assigned in Neighbor: "<<num<<endl;
+        num = -1; // set box number to 0 to prevent bad vector access
+        // exit(0);
+    }
+    //compute box num given row & col
+    return num;
+}
+
+int Neighbor::place_particles(vector<Particle*>& particles,float support_rad, Container c, int num_particles){
     // assuming square container
     float width = c.max.x - c.min.x;
     float min = c.min.x;
@@ -96,7 +125,7 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, float max_point, floa
     }
     
     int box_num;
-    for (int i = 0; i < particles.size(); i++) {
+    for (int i = 0; i < num_particles; i++) {
         // determine box #
         box_num = compute_box_num(particles[i]->position, support_rad, max, min);
         // set box # in particle
@@ -106,7 +135,7 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, float max_point, floa
     }
     
     // get all particles from neighboring boxes and add to particle's neighbor vector
-    for (int i = 0; i < particles.size(); i++) {
+    for (int i = 0; i < num_particles; i++) {
         particles[i]->neighbors.clear(); // clear out old neighbor vector
         int particle_num;
         vector<int> neighbor_boxes; // contains the numbers of all the neighboring boxes
