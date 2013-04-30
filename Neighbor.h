@@ -19,7 +19,7 @@ public:
     
     Neighbor(void){};
     void place_particles(vector<Particle*>&,float,Container,int);
-    int compute_box_num(Vec3,float,Vec3,Vec3);
+    int compute_box_num(Vec3,float,float,float);
     void add_to_box_particles(int,int);
     void set_particle_neighbors(int, Particle*);
 };

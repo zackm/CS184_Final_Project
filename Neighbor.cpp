@@ -1,11 +1,8 @@
-
 #include "Neighbor.h"
 
 #include <cmath>
 
 #include <iostream>
-
-#include <algorithm>
 
 using namespace std;
 
@@ -22,72 +19,72 @@ void Neighbor::set_particle_neighbors(int particle_num, Particle *p) {
 }
 
 
-int Neighbor::compute_box_num(Vec3 pos, float support_rad, Vec3 max_point, Vec3 min_point) {
-    // assuming container is rectangular, axis aligned
-    int x = -1,y = -1, z = -1;
-    float x_span = max_point.x - min_point.x;
-    float y_span = max_point.y - min_point.y;
-    float z_span = max_point.z - min_point.z;
-    float max_span = max(x_span,y_span);
-    max_span = max(max_span,z_span);
+int Neighbor::compute_box_num(Vec3 pos, float support_rad, float min_width, float max_width) {
+    // assuming container is cube
+    int row = -1,col = -1, depth = -1;
+    float width = max_width - min_width;
+    int box_per_row = (int)width / support_rad; // casting to int, assuming support radius evenly divides width
     
-    int x_divs = (int)(x_span / support_rad);
-    int y_divs = (int)(y_span / support_rad);
-    int z_divs = (int)(z_span / support_rad);
-    int max_divs = max(x_divs,y_divs);
-    max_divs = max(max_divs,z_divs);
+    float curr_x = min_width, curr_y = min_width, curr_z = min_width;
     
-    float curr_x = min_point.x, curr_y = min_point.y, curr_z = min_point.z;
-	float x_diff, y_diff, z_diff;
+	float col_point, row_point, depth_point;
     
-	for (int i = 0; i < max_divs; i++) {
-        x_diff = abs(pos.x - curr_x);
-        y_diff = abs(pos.y - curr_y);
-        z_diff = abs(pos.z - curr_z);
+	////if(col_point>curr_x || row_point>curr_y || col_point<0 || row_point<0){
+	////	point is not inside the container.
+	////	cout<<'h'<<endl;
+	////	return 0;
+	////}
+    
+	////row = floor(row_point/support_rad);
+	////col = floor(col_point/support_rad);
+    
+	//int num = col + row*box_per_row - 1;
+    
+    ////return num;//int(max(float(num),0.0f));
+    
+	for (int i = 0; i < box_per_row && curr_x < max_width; i++) {
+        col_point = abs(pos.x - curr_x);
+        row_point = abs(pos.y - curr_y);
+        depth_point = abs(pos.z - curr_z);
         
-        // .01f + support_rad might be needed due to precision loss somewhere
-		if (x == -1 && x_diff <= support_rad) {
-			x = i;
+		if (col_point <= support_rad && col == -1) {
+			col = i;
 		}
-        if (y == -1 && y_diff <= support_rad) {
-			y = i;
+        if (row_point <= support_rad && row == -1) {
+			row = i;
 		}
-        if (z == -1 && z_diff <= support_rad) {
-            z = i;
+        if (depth_point <= support_rad && depth == -1) {
+            depth = i;
         }
         
-        if (x != -1 && y != -1 && z != -1) {
-            break;
-        }
-        
+        if (row != -1 && col != -1 && depth != -1) {
+			break;
+		}
         curr_x += support_rad;
         curr_y += support_rad;
         curr_z += support_rad;
 	}
     
-    int num = x + y * x_divs + z * x_divs * y_divs;
+    int num = col + row * box_per_row + depth * box_per_row * box_per_row;
+    //cout<<"Num = "<<num<<" = "<<col<<" + "<<row<<" * "<<box_per_row<<endl;
+    // cout<<endl;
     
-    if (num >= x_divs * y_divs * z_divs || num < 0 || x == -1 || y == -1 || z == -1) {
-        cout<<"Error, incorrect box # assigned in Neighbor: "<<num<<endl;
+    if (num >= box_per_row * box_per_row * box_per_row || num < 0 || row == -1 || col == -1 || depth == -1) {
+        //cout<<"Error, incorrect box # assigned in Neighbor: "<<num<<endl;
         num = 0; // set box number to 0 to prevent bad vector access
         // exit(0);
     }
+    //compute box num given row & col
     return num;
 }
 
-void Neighbor::place_particles(vector<Particle*> &particles, float support_rad, Container c,int number_particles) {
-    
-    // length covered in each dimension
-    float x_span = c.max.x - c.min.x;
-    float y_span = c.max.y - c.min.y;
-    float z_span = c.max.z - c.min.z;
-    // number of cells in each dimension
-    int x_divs = (int)(x_span / support_rad);
-    int y_divs = (int)(y_span / support_rad);
-    int z_divs = (int)(z_span / support_rad);
-    
-    int box_per_row = x_divs;
-    int square_face = x_divs * y_divs;
+void Neighbor::place_particles(vector<Particle*> &particles, float support_rad, Container c,int particle_num) {
+    // assuming square container
+    float width = c.max.x - c.min.x;
+    float min = c.min.x;
+    float max = c.max.x;
+    int box_per_row = width/support_rad;
+    int square_face = box_per_row * box_per_row;
     
     box_particles.clear();
     
@@ -96,9 +93,9 @@ void Neighbor::place_particles(vector<Particle*> &particles, float support_rad, 
     }
     
     int box_num;
-    for (int i = 0; i < number_particles; i++) {
+    for (int i = 0; i < particle_num; i++) {
         // determine box #
-        box_num = compute_box_num(particles[i]->position, support_rad, c.max, c.min);
+        box_num = compute_box_num(particles[i]->position, support_rad, min, max);
         // set box # in particle
         particles[i]->box = box_num;
         // add particle number to corresponding box
@@ -106,7 +103,7 @@ void Neighbor::place_particles(vector<Particle*> &particles, float support_rad, 
     }
     
     // get all particles from neighboring boxes and add to particle's neighbor vector
-    for (int i = 0; i < number_particles; i++) {
+    for (int i = 0; i < particle_num; i++) {
         particles[i]->neighbors.clear(); // clear out old neighbor vector
         int particle_num;
         vector<int> neighbor_boxes; // contains the numbers of all the neighboring boxes
@@ -234,7 +231,7 @@ void Neighbor::place_particles(vector<Particle*> &particles, float support_rad, 
                 neighbor_boxes.push_back(box_num+square_face-box_per_row-1);
             }
             
-        } else if (box_num >= square_face * (z_divs - 1)) {
+        } else if (box_num >= square_face * (box_per_row - 1)) {
             // back face
             if (box_num % square_face < box_per_row) {
                 // bottom row
