@@ -46,8 +46,8 @@ const float DRAW_RADIUS = .01f;
 bool OUTPUT_IMAGE = false;
 bool OUTPUT_SINGLE_IMAGE = false;
 int IMAGE_COUNTER = 0;
-int WIDTH = 600; // display window and output image dimensions
-int HEIGHT = 600;
+int PIC_WIDTH = 600; // display window and output image dimensions
+int PIC_HEIGHT = 600;
 
 bool SHOW_FPS = false; // print out FPS to console
 int SETUP_SCENE = 0; // choice of preset scene, from command line input
@@ -1017,7 +1017,7 @@ void myDisplay(){
     float time_start = glutGet(GLUT_ELAPSED_TIME);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glViewport(0,0,WIDTH,HEIGHT);
+	glViewport(0,0,PIC_WIDTH,PIC_HEIGHT);
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -1156,12 +1156,12 @@ void myDisplay(){
 		FreeImage_Initialise();
 
 		// Make the BYTE array, factor of 3 because it's RBG.
-		BYTE* pixels = new BYTE[ 3 * HEIGHT * WIDTH];
+		BYTE* pixels = new BYTE[ 3 * PIC_HEIGHT * PIC_WIDTH];
 
-		glReadPixels(0, 0, WIDTH, HEIGHT, GL_BGR, GL_UNSIGNED_BYTE, pixels);
+		glReadPixels(0, 0, PIC_WIDTH, PIC_HEIGHT, GL_BGR, GL_UNSIGNED_BYTE, pixels);
 
 		// Convert to FreeImage format & save to file
-		FIBITMAP* image = FreeImage_ConvertFromRawBits(pixels, WIDTH, HEIGHT, 3 * WIDTH, 24, 0xFF0000, 0x00FF00, 0x0000FF, false);
+		FIBITMAP* image = FreeImage_ConvertFromRawBits(pixels, PIC_WIDTH, PIC_HEIGHT, 3 * PIC_WIDTH, 24, 0xFF0000, 0x00FF00, 0x0000FF, false);
 
 		// I HATE C++ STRINGS
 		std::stringstream ss;
@@ -1233,7 +1233,7 @@ int main(int argc, char* argv[]){
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGB);
 
 	//The size and position of the window
-	glutInitWindowSize(WIDTH,HEIGHT);
+	glutInitWindowSize(PIC_WIDTH,PIC_HEIGHT);
 	glutInitWindowPosition(0,0);
 	glutCreateWindow("Tyler and Zack Final Project");
 

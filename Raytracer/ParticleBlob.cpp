@@ -86,8 +86,8 @@ bool ParticleBlob::intersect(Ray& ray, float* thit, LocalGeo* local,bool* in_sha
 		position = ray.position + i*ray.direction;
 
 		//evaluate density at point i.
-		for(int i = 0; i<particles.size(); i++){
-			temp_part = particles[i];
+		for(int j = 0; j<particles.size(); j++){
+			temp_part = particles[j];
 			glm::vec3 diff_vec = position - temp_part->position;
 			float mag = glm::dot(diff_vec,diff_vec);
 			if(mag<H*H){
@@ -124,8 +124,8 @@ bool ParticleBlob::intersect(Ray& ray){
 		position = ray.position + i*ray.direction;
 
 		//evaluate density at point i.
-		for(int i = 0; i<particles.size(); i++){
-			temp_part = particles[i];
+		for(int j = 0; j<particles.size(); j++){
+			temp_part = particles[j];
 			glm::vec3 diff_vec = position - temp_part->position;
 			float mag = glm::dot(diff_vec,diff_vec);
 			if(mag<H*H){
