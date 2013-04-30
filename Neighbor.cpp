@@ -1,8 +1,11 @@
+
 #include "Neighbor.h"
 
 #include <cmath>
 
 #include <iostream>
+
+#include <algorithm>
 
 using namespace std;
 
@@ -19,7 +22,7 @@ void Neighbor::set_particle_neighbors(int particle_num, Particle *p) {
 }
 
 
-int Neighbor::compute_box_num(Vec3 pos, float support_rad, float min_width, float max_width) {
+int Neighbor::compute_box_num(Vec3 pos, float support_rad, float max_point, float min_point) {
     // assuming container is cube
     int row = -1,col = -1, depth = -1;
     float width = max_width - min_width;
@@ -78,7 +81,7 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, float min_width, floa
     return num;
 }
 
-void Neighbor::place_particles(vector<Particle*> &particles, float support_rad, Container c,int particle_num) {
+int Neighbor::compute_box_num(Vec3 pos, float support_rad, float max_point, float min_point, bool ray_tracing){
     // assuming square container
     float width = c.max.x - c.min.x;
     float min = c.min.x;
@@ -93,9 +96,9 @@ void Neighbor::place_particles(vector<Particle*> &particles, float support_rad, 
     }
     
     int box_num;
-    for (int i = 0; i < particle_num; i++) {
+    for (int i = 0; i < particles.size(); i++) {
         // determine box #
-        box_num = compute_box_num(particles[i]->position, support_rad, min, max);
+        box_num = compute_box_num(particles[i]->position, support_rad, max, min);
         // set box # in particle
         particles[i]->box = box_num;
         // add particle number to corresponding box
@@ -103,7 +106,7 @@ void Neighbor::place_particles(vector<Particle*> &particles, float support_rad, 
     }
     
     // get all particles from neighboring boxes and add to particle's neighbor vector
-    for (int i = 0; i < particle_num; i++) {
+    for (int i = 0; i < particles.size(); i++) {
         particles[i]->neighbors.clear(); // clear out old neighbor vector
         int particle_num;
         vector<int> neighbor_boxes; // contains the numbers of all the neighboring boxes

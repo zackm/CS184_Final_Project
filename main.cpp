@@ -399,7 +399,7 @@ void output_obj() {
 	}
 
 	output_file.close();
-	Raytracer r;
+	Raytracer r(NEIGHBOR);
 	r.ray_trace_start();
 }
 
@@ -416,16 +416,16 @@ void keyPressed(unsigned char key, int x, int y) {
 		// possible call raytracer here
 		exit(0);
 		break;
-    case 'p':
-        OUTPUT_SINGLE_IMAGE = true;
-        break;
-    case 'i':
-        RENDERING_TRIANGLES = !RENDERING_TRIANGLES;
-        break;
-    case 'f':
-        SHOW_FPS = true;
-        break;
-    }
+	case 'p':
+		OUTPUT_SINGLE_IMAGE = true;
+		break;
+	case 'i':
+		RENDERING_TRIANGLES = !RENDERING_TRIANGLES;
+		break;
+	case 'f':
+		SHOW_FPS = true;
+		break;
+	}
 }
 
 /*
@@ -592,7 +592,7 @@ float viscosity_kernel_laplacian(Vec3 r_i, Vec3 r_j){
 *******************/
 float density_at_point(Vec3 point){
 	//first should generate a list of the particles we need to check, using the box for this point.
-	int box_number = NEIGHBOR.compute_box_num(point,SUPPORT_RADIUS,CONTAINER.min.x,CONTAINER.max.x);
+	int box_number = NEIGHBOR.compute_box_num(point,SUPPORT_RADIUS,CONTAINER.max.x,CONTAINER.min.x);
 
 	Particle* temp_particle;
 	vector<int> neighbor_vec = NEIGHBOR.box_particles[box_number];
@@ -612,7 +612,7 @@ float density_at_point(Vec3 point){
 
 Vec3 normal_at_point(Vec3 point){
 	//set the normal at each point
-	int box_number = NEIGHBOR.compute_box_num(point,SUPPORT_RADIUS,CONTAINER.min.x,CONTAINER.max.x);
+	int box_number = NEIGHBOR.compute_box_num(point,SUPPORT_RADIUS,CONTAINER.max.x,CONTAINER.min.x);
 	Particle* temp_particle;
 	vector<int> neighbor_vec = NEIGHBOR.box_particles[box_number];
 	Vec3 normal(0,0,0);
@@ -935,6 +935,7 @@ void initScene(){
             }
             break;
     }
+
 	////2D Drop Scene
 	//float step = .017;
 	//for(float i = 2.0*CONTAINER.max.x/5.0f; i<3.0*(CONTAINER.max.x)/5.0f; i=i+step){
@@ -953,6 +954,48 @@ void initScene(){
 	//		Vec3 vel(0,0,0);
 	//		new_part = new Particle(pos,vel,MASS,1000);
 	//		PARTICLES.push_back(new_part);
+	//	}
+	//}
+
+	////3D Throw Scene
+	//////Semi random grid of particles
+	//float step = .01;
+	//for(float i = 4.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
+	//	for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
+	//		for(float k = 2.0*CONTAINER.max.z/4.0f; k<(3.0f*CONTAINER.max.z/4.0f); k=k+step) {
+	//			noise = float(rand())/(float(RAND_MAX))*.05f;
+	//			Vec3 pos(i,j,k);
+	//			Vec3 vel(-1,-3,0);
+	//			new_part = new Particle(pos,vel,MASS,1000.0f);
+	//			PARTICLES.push_back(new_part);
+	//		}
+	//	}
+	//}
+
+	//step = .03;
+	//for(float i = CONTAINER.min.x; i<1.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+	//	for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
+	//		for(float k = 2.0*CONTAINER.max.z/4.0f; k<(3.0f*CONTAINER.max.z/4.0f); k=k+step) {
+	//			noise = float(rand())/(float(RAND_MAX))*.05f;
+	//			Vec3 pos(i,j,k);
+	//			Vec3 vel(3,-3,0);
+	//			new_part = new Particle(pos,vel,MASS,1000.0f);
+	//			PARTICLES.push_back(new_part);
+	//		}
+	//	}
+	//}
+
+	//////3D Drop Scene
+	//float step = .025;
+	//for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
+	//	for(float j = 2.0*CONTAINER.max.y/5.0f; j<3.0f*(CONTAINER.max.y)/5.0f; j=j+step){
+	//		for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.y)/5.0f; k=k+step){
+	//			noise = float(rand())/(float(RAND_MAX))*.05f;
+	//			Vec3 pos(i,j,k);
+	//			Vec3 vel(0,-3,0);
+	//			new_part = new Particle(pos,vel,MASS,1000.0f);
+	//			PARTICLES.push_back(new_part);
+	//		}
 	//	}
 	//}
 
@@ -1009,12 +1052,12 @@ void initScene(){
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
-    
-    glClearColor(1,1,1,1);
+
+	glClearColor(1,1,1,1);
 }
 
 void myDisplay(){
-    float time_start = glutGet(GLUT_ELAPSED_TIME);
+	float time_start = glutGet(GLUT_ELAPSED_TIME);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glViewport(0,0,PIC_WIDTH,PIC_HEIGHT);
@@ -1026,11 +1069,11 @@ void myDisplay(){
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-    
-    // Rectangular Container
-//	gluLookAt(.5f,.25f,1.75f,.5f,.25f,0.0f,0,1,0);
-    // Cube Container
-     gluLookAt(.25f,.4f,1.2f,.25f,.18f,0.0f,0,1,0);
+
+	// Rectangular Container
+	//	gluLookAt(.5f,.25f,1.75f,.5f,.25f,0.0f,0,1,0);
+	// Cube Container
+	gluLookAt(.25f,.4f,1.2f,.25f,.18f,0.0f,0,1,0);
 
 	run_time_step();
 	CURRENT_TIME += TIMESTEP;
@@ -1072,7 +1115,7 @@ void myDisplay(){
 		//glBegin(GL_POINTS);
 		glEnable(GL_LIGHTING);
 		Particle* temp_part;
-        glClearColor(1,1,1,1);
+		glClearColor(1,1,1,1);
 		for (int i = 0; i<PARTICLES.size(); i++){
 			temp_part = PARTICLES[i];
 
@@ -1089,20 +1132,20 @@ void myDisplay(){
 		//glEnd();
 	}
 
-    //Draw floor
-    glDisable(GL_LIGHTING);
-    glClearColor(1,1,1,1);
-    glColor3f(.7f,.7f,.7f);
-    glBegin(GL_POLYGON);
-    glVertex3f(CONTAINER.max.x+DRAW_RADIUS,CONTAINER.min.y-DRAW_RADIUS,CONTAINER.min.z-DRAW_RADIUS);
-    glNormal3f(0,1,0);
-    glVertex3f(CONTAINER.max.x+DRAW_RADIUS,CONTAINER.min.y-DRAW_RADIUS,CONTAINER.max.z+DRAW_RADIUS);
-    glNormal3f(0,1,0);
-    glVertex3f(CONTAINER.min.x-DRAW_RADIUS,CONTAINER.min.y-DRAW_RADIUS,CONTAINER.max.z+DRAW_RADIUS);
-    glNormal3f(0,1,0);
+	//Draw floor
+	glDisable(GL_LIGHTING);
+	glClearColor(1,1,1,1);
+	glColor3f(.7f,.7f,.7f);
+	glBegin(GL_POLYGON);
+	glVertex3f(CONTAINER.max.x+DRAW_RADIUS,CONTAINER.min.y-DRAW_RADIUS,CONTAINER.min.z-DRAW_RADIUS);
+	glNormal3f(0,1,0);
+	glVertex3f(CONTAINER.max.x+DRAW_RADIUS,CONTAINER.min.y-DRAW_RADIUS,CONTAINER.max.z+DRAW_RADIUS);
+	glNormal3f(0,1,0);
+	glVertex3f(CONTAINER.min.x-DRAW_RADIUS,CONTAINER.min.y-DRAW_RADIUS,CONTAINER.max.z+DRAW_RADIUS);
+	glNormal3f(0,1,0);
 	glVertex3f(CONTAINER.min.x-DRAW_RADIUS,CONTAINER.min.y-DRAW_RADIUS,CONTAINER.min.z-DRAW_RADIUS);
-    glNormal3f(0,1,0);
-    glEnd();
+	glNormal3f(0,1,0);
+	glEnd();
 
 	//Draw wireframe container
 	glPolygonMode(GL_FRONT, GL_LINE);
@@ -1158,7 +1201,7 @@ void myDisplay(){
 		// Make the BYTE array, factor of 3 because it's RBG.
 		BYTE* pixels = new BYTE[ 3 * PIC_HEIGHT * PIC_WIDTH];
 
-		glReadPixels(0, 0, PIC_WIDTH, PIC_HEIGHT, GL_BGR, GL_UNSIGNED_BYTE, pixels);
+		glReadPixels(0, 0, PIC_WIDTH, PIC_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, pixels);
 
 		// Convert to FreeImage format & save to file
 		FIBITMAP* image = FreeImage_ConvertFromRawBits(pixels, PIC_WIDTH, PIC_HEIGHT, 3 * PIC_WIDTH, 24, 0xFF0000, 0x00FF00, 0x0000FF, false);
@@ -1178,24 +1221,24 @@ void myDisplay(){
 		if (IMAGE_COUNTER == 350) {
 			exit(0);
 		}
-        if (OUTPUT_SINGLE_IMAGE) {
-            OUTPUT_SINGLE_IMAGE = false;
-            cout<<"Saved single image."<<endl;
-        }
+		if (OUTPUT_SINGLE_IMAGE) {
+			OUTPUT_SINGLE_IMAGE = false;
+			cout<<"Saved single image."<<endl;
+		}
 	}
-    
-    if (SHOW_FPS) {
-        float time_end = glutGet(GLUT_ELAPSED_TIME);
-        cout<<1000/(time_end - time_start)<<" FPS"<<endl;
-        SHOW_FPS = false;
-    }
-//    FPS stuff if we want to display on screen, incomplete
-//    glColor3f(rgb.r, rgb.g, rgb.b);
-//    glRasterPos2f(x, y);
-//    GLUT_BITMAP_HELVETICA_12
-//    glutBitmapString(font, string);
-//    std::string fps = 1/((time_end - time_start)/1000)<<" FPS";
-    
+
+	if (SHOW_FPS) {
+		float time_end = glutGet(GLUT_ELAPSED_TIME);
+		cout<<1000/(time_end - time_start)<<" FPS"<<endl;
+		SHOW_FPS = false;
+	}
+	//    FPS stuff if we want to display on screen, incomplete
+	//    glColor3f(rgb.r, rgb.g, rgb.b);
+	//    glRasterPos2f(x, y);
+	//    GLUT_BITMAP_HELVETICA_12
+	//    glutBitmapString(font, string);
+	//    std::string fps = 1/((time_end - time_start)/1000)<<" FPS";
+
 	glFlush();
 	glutSwapBuffers();
 }
@@ -1203,30 +1246,30 @@ void myDisplay(){
 int main(int argc, char* argv[]){
 
 	// Arg parsing
-    for (int i = 1; i < argc; ) {
-        if (strcmp(argv[i],"-m") == 0) {
-            cout<<"Generating images for animation."<<endl;
-            OUTPUT_IMAGE = true;
-            i += 1;
-            continue;
-        }
-        
-        if (strcmp(argv[i],"-s") == 0) {
-            SETUP_SCENE = atoi(argv[i+1]);
-            i += 2;
-            continue;
-        }
-        
-        if (strcmp(argv[i],"-h") == 0) {
-            cout<<"Help Info for UC Berkeley CS184 Spring 2013 Final Project"<<endl;
-            cout<<"by Tyler Brabham and Zack Mayeda"<<endl;
-            cout<<endl;
-            cout<<"Command Line Arguments:"<<endl;
-            cout<<"Live Commands:"<<endl;
-            i += 1;
-            exit(0);
-        }
-    }
+	for (int i = 1; i < argc; ) {
+		if (strcmp(argv[i],"-m") == 0) {
+			cout<<"Generating images for animation."<<endl;
+			OUTPUT_IMAGE = true;
+			i += 1;
+			continue;
+		}
+
+		if (strcmp(argv[i],"-s") == 0) {
+			SETUP_SCENE = atoi(argv[i+1]);
+			i += 2;
+			continue;
+		}
+
+		if (strcmp(argv[i],"-h") == 0) {
+			cout<<"Help Info for UC Berkeley CS184 Spring 2013 Final Project"<<endl;
+			cout<<"by Tyler Brabham and Zack Mayeda"<<endl;
+			cout<<endl;
+			cout<<"Command Line Arguments:"<<endl;
+			cout<<"Live Commands:"<<endl;
+			i += 1;
+			exit(0);
+		}
+	}
 
 	glutInit(&argc, argv);
 
