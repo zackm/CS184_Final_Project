@@ -1282,7 +1282,12 @@ int main(int argc, char* argv[]){
 			cout<<"by Tyler Brabham and Zack Mayeda"<<endl;
 			cout<<endl;
 			cout<<"Command Line Arguments:"<<endl;
-            cout<<"-h "<<endl;
+            cout<<"-h : List all options"<<endl;
+            cout<<"-s # : "<<endl;
+            cout<<"-m : "<<endl;
+            cout<<"-rm : "<<endl;
+            cout<<"-i : "<<endl;
+            cout<<"-p : "<<endl;
 			cout<<"Live Commands:"<<endl;
 			i += 1;
 			exit(0);
