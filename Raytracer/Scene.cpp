@@ -91,7 +91,7 @@ when reflecting (in recursive calls).
 */
 glm::vec3 Scene::trace(Ray &r,int level,bool in_shape) {
 	glm::vec3 color(0,0,0);
-	if(level<=0){
+	if(level<0){//so we include the 0th case
 		return color;
 	}
 
@@ -130,9 +130,22 @@ glm::vec3 Scene::trace(Ray &r,int level,bool in_shape) {
 	//added in all iterations
 	color += brdf.ke;
 
-	//interpreting transmission and reflection as probabilities
-	float roullete = float(rand())/float(RAND_MAX);
+	//do shadow/light ray for initial coloring
+	Ray lray;
+	glm::vec3 lcolor(0.0f,0.0f,0.0f);
+	glm::vec3 add_color;
+	for (std::list<Light*>::iterator iter=lights.begin(); iter != lights.end(); ++iter) {
+		Light* l = *iter;
 
+		(*l).generateLightRay(local,&lray,&lcolor);//need to check for transparency now
+
+		if (!intersect_checker(lray)) {
+			add_color = shading(local, brdf, lray, lcolor, view_pos);
+			color += add_color; //do we multiply by brdf.kr here?
+		}
+	}
+
+	//interpreting transmission and reflection as probabilities
 	float n1,n2;
 	if(in_shape && best_shape->transparency){
 		n1 = best_shape->index_of_refraction;
@@ -153,36 +166,23 @@ glm::vec3 Scene::trace(Ray &r,int level,bool in_shape) {
 	}
 
 	//if(roullete<=reflect){
-		//do reflected ray
-		float reflect_norm = glm::dot(brdf.kr,brdf.kr);
-		if(reflect>0.0f && reflect_norm>0.0f){
-			Ray reflected_ray = generateReflectionRay(local,&r);
-			color += reflect*brdf.kr*trace(reflected_ray,level-1,in_shape);
-		}
-	//}else{
-		//do refracted ray.
-		if(best_shape->transparency && transmit>0.0f){
-			Ray refracted_ray;
-			refracted_ray = generateRefractionRay(local,&r,n1,n2);
-			glm::vec3 refract_coeff(1,1,1);
-			color += transmit*refract_coeff*trace(refracted_ray,level-1,!in_shape);
-		}
-//	}
-
-	//do shadow/light ray for initial coloring
-	Ray lray;
-	glm::vec3 lcolor(0.0f,0.0f,0.0f);
-	glm::vec3 add_color;
-	for (std::list<Light*>::iterator iter=lights.begin(); iter != lights.end(); ++iter) {
-		Light* l = *iter;
-
-		(*l).generateLightRay(local,&lray,&lcolor);//need to check for transparency now
-
-		if (!intersect_checker(lray)) {
-			add_color = shading(local, brdf, lray, lcolor, view_pos);
-			color += add_color; //do we multiply by brdf.kr here?
-		}
+	//do reflected ray
+	float reflect_norm = glm::dot(brdf.kr,brdf.kr);
+	if(reflect>0.0f && reflect_norm>0.0f){
+		Ray reflected_ray = generateReflectionRay(local,&r);
+		color += reflect*brdf.kr*trace(reflected_ray,level-1,in_shape);
 	}
+	//}else{
+	//do refracted ray.
+	if(best_shape->transparency && transmit>0.0f){
+		Ray refracted_ray;
+		refracted_ray = generateRefractionRay(local,&r,n1,n2);
+		glm::vec3 refract_coeff(.7,.7,.7);
+		color += transmit*refract_coeff*trace(refracted_ray,level-1,!in_shape);
+	}
+	//	}
+
+	
 
 	return color;
 }
@@ -210,7 +210,7 @@ Ray Scene::generateReflectionRay(LocalGeo &local,Ray* ray){
 		reflection /= glm::sqrt(reflect_mag);
 	}
 
-	Ray new_ray(local.point,reflection,.001,std::numeric_limits<float>::infinity(),ray->index_of_refraction);
+	Ray new_ray(local.point,reflection,.1,std::numeric_limits<float>::infinity(),ray->index_of_refraction);
 	new_ray.inside_shape = ray->inside_shape;
 	return new_ray;
 }
@@ -244,7 +244,7 @@ Ray Scene::generateRefractionRay(LocalGeo &local,Ray* ray,float n1, float n2){
 		refraction /= glm::sqrt(reflect_mag);
 	}
 
-	Ray new_ray(local.point,refraction,.001,std::numeric_limits<float>::infinity(),n2);
+	Ray new_ray(local.point,refraction,.1,std::numeric_limits<float>::infinity(),n2);
 	new_ray.inside_shape = !ray->inside_shape;
 	return new_ray;
 }

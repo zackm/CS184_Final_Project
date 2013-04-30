@@ -25,6 +25,6 @@ DirectionalLight::DirectionalLight(glm::vec3 dir,glm::vec3 col, Transformation t
 
 	direction = trans.world_vector(dir);
 	color = col;
-	t_min = .001;
+	t_min = .1;
 	t_max = std::numeric_limits<float>::infinity();
 }

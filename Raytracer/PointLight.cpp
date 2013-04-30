@@ -24,6 +24,6 @@ PointLight::PointLight(glm::vec3 pos,glm::vec3 col,Transformation tr){
 
 	position = trans.world_point(pos);
 	color = col;
-	t_min = .001;
+	t_min = .1;
 	t_max = 100000;//is set to distance when generating light ray.
 }

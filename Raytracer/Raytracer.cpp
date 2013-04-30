@@ -37,6 +37,8 @@ Zack Mayeda cs184-bg
 #include <vector>
 
 #include "RTriangle.h"
+#include "RParticle.h"
+#include "ParticleBlob.h"
 
 #include "Transformation.h"
 
@@ -112,12 +114,13 @@ void set_camera_and_perspective(Camera c, glm::vec3 max, glm::vec3 min) {
 }
 
 int Raytracer::ray_trace_start() {
-	int WIDTH = 1200;
-	int HEIGHT = 1200;
+	int WIDTH = 800;
+	int HEIGHT = 800;
 
+	vector<RParticle*> particles;
 	Scene s;
 	Camera c;
-	int maxdepth = 5;
+	int maxdepth = 4;
 	std::string output_name;
 	vector<glm::vec3> vertices;
 	vector<glm::vec3> vertexnorm_v;
@@ -154,13 +157,13 @@ int Raytracer::ray_trace_start() {
 	vector<RTriangle*> filler_tri;
 
 	// Filename Business
-//	if (argc < 2) {
-//		cout << "No filname given. Terminating" << endl;
-//		exit(1);
-//	}
+	//	if (argc < 2) {
+	//		cout << "No filname given. Terminating" << endl;
+	//		exit(1);
+	//	}
 
 	//std::string filename = argv[1];
-    std::string filename = "fluid.obj";
+	std::string filename = "fluid.obj";
 	cout << "Filename " << filename << " found." << endl;
 	if (filename.find(".obj") != std::string::npos) {
 		cout<<"OBJ Input File Detected."<<endl;
@@ -656,9 +659,9 @@ int Raytracer::ray_trace_start() {
 					kr.x = .2; kr.y = .2; kr.z = .2;
 					float ior = 1.33;//if it is water
 					ka.x = 0; ka.y = 0; ka.z = 0;
-					kd.x = 0; kd.y = 0; kd.z = 0;
-					ks.x = 0; kd.y = 0; kd.z = 0;
-					kr.x = 0; kr.y = 0; kr.z = 0;
+					kd.x = 0; kd.y = 0; kd.z = .1;
+					ks.x = .5; kd.y = .5; kd.z = .5;
+					kr.x = .2; kr.y = .2; kr.z = .7;
 					sp = 30;
 					RTriangle *t = new RTriangle(vert_1,vert_2,vert_3,ka,kd,ks,kr,ke,sp,norm_1,norm_2,norm_3);
 					//Add triangle to scene.
@@ -679,6 +682,17 @@ int Raytracer::ray_trace_start() {
 					// if(n+1>connected_triangles.size()){
 					// 	connected_triangles.resize(n+1); //+1 because numbering for obj starts at 1.
 					// }
+				}
+
+				else if(!splitline[0].compare("part")) {
+					//we are rendering particles from the fluid simulator
+					float x = atof(splitline[1].c_str());
+					float y = atof(splitline[2].c_str());
+					float z = atof(splitline[3].c_str());
+					float mass = atof(splitline[4].c_str());
+					float density = atof(splitline[5].c_str());
+					RParticle* temp_part = new RParticle(x,y,z,mass);
+					particles.push_back(temp_part);
 				}
 				else {
 					std::cout << "Unknown command: " << splitline[0] << std::endl;
@@ -708,6 +722,42 @@ int Raytracer::ray_trace_start() {
 		Camera cam(glm::vec3(from_x,from_y,from_z),glm::vec3(to_x,to_y,to_z),glm::vec3(up_x,up_y,up_z),fov);
 		c = cam;
 
+		//vector<RParticle*> particles;
+
+		RParticle* temp_part;// = new RParticle(.25,.25,.25,5);
+		//for (float i = 0; i<.3 ;i+= .1){
+		//	for (float j = 0; j<.3 ;j+= .1){
+		//		for (float k = 0; k<.3 ;k+= .1){
+		//			temp_part = new RParticle(i,j,k,5.0f);
+		//			particles.push_back(temp_part);
+		//		}
+		//	}
+		//}
+		/*for (float i = .2; i<.4 ;i+= .025){
+			temp_part = new RParticle(i,i,i,5.0f);
+			particles.push_back(temp_part);
+		}*/
+
+		/*temp_part = new RParticle(.25,.25,.5,5.0f);
+		particles.push_back(temp_part);*/
+
+		ka.x = 0; ka.y = 0; ka.z = 0;
+		kd.x = 0; kd.y = 0; kd.z = .1;
+		ks.x = .1; ks.y = .5; ks.z = .5;
+		kr.x = .2; kr.y = .2; kr.z = .7;
+		glm::vec3 e(0,0,0);
+		sp = 30;
+		ParticleBlob* blob = new ParticleBlob(particles,ka,kd,ks,kr,e,sp);
+		blob->transparency = true;
+		blob->index_of_refraction = 1.33;
+		s.add_shape(blob);
+
+		//add light
+		Transformation tri_trans(mat_stack);
+		Light* l = new DirectionalLight(glm::vec3(-1,1,1),glm::vec3(.5,0,1),tri_trans);
+		s.add_light(l);
+		l = new PointLight(glm::vec3(1,1,1),glm::vec3(1,1,1),tri_trans);
+		s.add_light(l);
 
 		//make checker board background
 		RTriangle* t;
@@ -724,7 +774,7 @@ int Raytracer::ray_trace_start() {
 		glm::vec3 r(0,0,0);
 		float sp = 0;
 
-		glm::vec3 e(0,0,1);
+		e = glm::vec3(0,0,1);
 		t = new RTriangle(corner1,corner2,corner9,ka,d,spec,r,e,sp);
 		t->transparency = false;
 		s.add_shape(t);
@@ -758,18 +808,52 @@ int Raytracer::ray_trace_start() {
 		s.add_shape(t);
 		t->transparency = false;
 
-		//r = glm::vec3(1,1,1);
-		//e = glm::vec3(0,0,0);
-		//t = new RTriangle(glm::vec3(0,0,.1),glm::vec3(.5,0,.1),glm::vec3(.25,.4,.1),ka,d,spec,r,e,sp);
-		//t->transparency = true;
-		//t->index_of_refraction = 1.33;
-		//s.add_shape(t);
+		/*r = glm::vec3(0,0,0);
+		e = glm::vec3(0,0,0);
+		t = new RTriangle(glm::vec3(0,0,.1),glm::vec3(.5,0,.1),glm::vec3(.25,.4,.1),ka,d,spec,r,e,sp);
+		t->transparency = true;
+		t->index_of_refraction = 1.33;
+		s.add_shape(t);
 
-		//t = new RTriangle(glm::vec3(0,0,.3),glm::vec3(.5,0,.3),glm::vec3(.25,.45,.3),ka,d,spec,r,e,sp);
-		//t->transparency = true;
-		//t->index_of_refraction = 1.33;
-		//s.add_shape(t);
+		t = new RTriangle(glm::vec3(0,0,.3),glm::vec3(.5,0,.3),glm::vec3(.25,.45,.3),ka,d,spec,r,e,sp);
+		t->transparency = true;
+		t->index_of_refraction = 1.33;
+		s.add_shape(t);*/
 
+		e = glm::vec3(.5,.5,0);
+		t = new RTriangle(glm::vec3(0,0,.5),glm::vec3(0,0,0),glm::vec3(0,.5,.5),ka,d,spec,r,e,sp);
+		s.add_shape(t);
+
+		t = new RTriangle(glm::vec3(0,0,0),glm::vec3(0,.5,0),glm::vec3(0,.5,.5),ka,d,spec,r,e,sp);
+		s.add_shape(t);
+
+		e = glm::vec3(.5,0,.5);
+		t = new RTriangle(glm::vec3(.5,0,.5),glm::vec3(.5,0,0),glm::vec3(.5,.5,.5),ka,d,spec,r,e,sp);
+		s.add_shape(t);
+
+		t = new RTriangle(glm::vec3(.5,0,0),glm::vec3(.5,.5,0),glm::vec3(.5,.5,.5),ka,d,spec,r,e,sp);
+		s.add_shape(t);
+
+		e = glm::vec3(0,.5,.5);
+		t = new RTriangle(glm::vec3(0,0,0),glm::vec3(0,0,.5),glm::vec3(.5,0,.5),ka,d,spec,r,e,sp);
+		s.add_shape(t);
+
+		t = new RTriangle(glm::vec3(.5,0,.5),glm::vec3(.5,0,0),glm::vec3(0,0,0),ka,d,spec,r,e,sp);
+		s.add_shape(t);
+
+		e = glm::vec3(.5,.5,.5);
+		t = new RTriangle(glm::vec3(0,.5,0),glm::vec3(0,.5,.5),glm::vec3(.5,.5,.5),ka,d,spec,r,e,sp);
+		s.add_shape(t);
+
+		t = new RTriangle(glm::vec3(.5,.5,.5),glm::vec3(.5,.5,0),glm::vec3(0,.5,0),ka,d,spec,r,e,sp);
+		s.add_shape(t);
+
+		e = glm::vec3(1,1,1);
+		t = new RTriangle(glm::vec3(-1,-1,1),glm::vec3(1,-1,1),glm::vec3(-1,1,1),ka,d,spec,r,e,sp);
+		s.add_shape(t);
+
+		t = new RTriangle(glm::vec3(-1,1,1),glm::vec3(1,-1,1),glm::vec3(1,1,1),ka,d,spec,r,e,sp);
+		s.add_shape(t);
 
 		//Transformation tri_trans(mat_stack);
 		//Sphere* sph = new Sphere(glm::vec3(.25,.35,.2),.15,ka,d,spec,r,e,sp,tri_trans);
