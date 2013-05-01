@@ -18,11 +18,9 @@ public:
 	glm::vec3 default_gradient(glm::vec3,glm::vec3);
 	float density_at_point(glm::vec3);
 	glm::vec3 normal_at_point(glm::vec3 position);
-	glm::vec3 normal(glm::vec3);
-	glm::vec3 get_normal(glm::vec3);
 
 	bool intersect(Ray&, float*, LocalGeo*,bool*);
-	bool intersect(Ray&);
+	bool intersect(Ray&,bool*);
 	BRDF get_brdf();
 
 	ParticleBlob(void){t_step = .01;tolerance = 500.0f; boundary_density = 1000.0f;};

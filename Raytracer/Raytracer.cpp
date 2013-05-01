@@ -739,7 +739,7 @@ int Raytracer::ray_trace_start(std::string input_filename, std::string output_fi
 		particles.push_back(temp_part);*/
 
 		ka.x = 0; ka.y = 0; ka.z = 0;
-		kd.x = 0; kd.y = 0; kd.z = .3; //should add more blue probably
+		kd.x = 0; kd.y = 0; kd.z = .5; //should add more blue probably
 		ks.x = .1; ks.y = .5; ks.z = .5;
 		kr.x = .2; kr.y = .2; kr.z = .7;
 		glm::vec3 e(0,0,0);
@@ -852,11 +852,11 @@ int Raytracer::ray_trace_start(std::string input_filename, std::string output_fi
 		s.add_shape(t);
 
 		//behind camera
-		e = glm::vec3(1,1,1);
-		t = new RTriangle(glm::vec3(-10,-10,10),glm::vec3(10,-10,10),glm::vec3(-10,10,10),ka,d,spec,r,e,sp);
+		e = glm::vec3(0,0,1);
+		t = new RTriangle(glm::vec3(-10,-10,1),glm::vec3(10,-10,1),glm::vec3(-10,10,1),ka,d,spec,r,e,sp);
 		s.add_shape(t);
 
-		t = new RTriangle(glm::vec3(-10,10,10),glm::vec3(10,-10,10),glm::vec3(10,10,10),ka,d,spec,r,e,sp);
+		t = new RTriangle(glm::vec3(-10,10,1),glm::vec3(10,-10,1),glm::vec3(10,10,1),ka,d,spec,r,e,sp);
 		s.add_shape(t);
 
 		//Transformation tri_trans(mat_stack);

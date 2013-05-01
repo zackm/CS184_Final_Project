@@ -355,11 +355,11 @@ Output triangle mesh to OBJ file.
 void output_obj() {
 
 	// open file
-    std::stringstream ss1;
-    ss1 << IMAGE_COUNTER;
-    std::string s1(ss1.str());
-    string save_name = std::string("Multi_Trace/input_obj/fluid")+s1+".obj";
-    
+	std::stringstream ss1;
+	ss1 << IMAGE_COUNTER;
+	std::string s1(ss1.str());
+	string save_name = std::string("Multi_Trace/input_obj/fluid")+s1+".obj";
+
 	ofstream output_file;
 	output_file.open (save_name.c_str());
 	output_file << "# OBJ File created by Tyler Brabham and Zack Mayeda\n";
@@ -389,7 +389,7 @@ void output_obj() {
 			Vec3 vn_temp = vn[i];
 			output_file<<"vn "<< vn_temp.x<<" "<<vn_temp.y<< " "<<vn_temp.z<<endl;
 		}
-    }else{
+	}else{
 		//we are rendering blobs, so we will make an obj point file.
 		Particle* temp_part;
 		for (int i = 0; i < NUM_PARTICLES; i++) {
@@ -403,6 +403,7 @@ void output_obj() {
 	output_file.close();
     
 	Raytracer r(NEIGHBOR);
+
     std::stringstream ss;
     ss << IMAGE_COUNTER;
     std::string s(ss.str());
@@ -590,6 +591,10 @@ Vec3 pressure_kernel_gradient(Vec3 r_i, Vec3 r_j){
 	float coeff = (45/(PI*pow(H,6.0f)))*pow((H-sqrt(mag)),2.0f);
 
 	Vec3 v(0,0,0);
+	//might want to return random vector if sqrt(mag)==0
+	if(mag==0){
+		cout<<'h'<<endl;
+	}
 	return diff_vec*(-coeff)/(sqrt(mag));
 }
 
@@ -643,7 +648,7 @@ Vec3 normal_at_point(Vec3 point){
 	if(length>0){
 		normal = normal/length;
 	}
-	return normal*(-1.0f);
+	return normal*(-1.0f);//normal for triangles
 }
 
 /*
@@ -692,20 +697,19 @@ void run_time_step(){
 
 		vector<int> neighbor_vec = base_particle->neighbors;
 		for (int j = 0; j<neighbor_vec.size(); j++){ // changed to neighbors
-			if(i!=neighbor_vec[j]){
-				temp_particle = PARTICLES[neighbor_vec[j]];
-				Vec3 r = base_particle->position-temp_particle->position;
-				float mag = dot(r,r);
-				if(mag<H*H){
+			temp_particle = PARTICLES[neighbor_vec[j]];
+			Vec3 r = base_particle->position-temp_particle->position;
+			float mag = dot(r,r);
+			if(mag<H*H){
+				float weight = viscosity_kernel_laplacian(base_particle->position,temp_particle->position);
+				viscosity_laplacian += ((temp_particle->velocity - base_particle->velocity)/temp_particle->density)*weight * temp_particle->mass;
+
+				color += (temp_particle->mass / temp_particle->density) * default_laplacian(base_particle->position,temp_particle->position);
+
+				normal += default_gradient(base_particle->position,temp_particle->position)*(temp_particle->mass / temp_particle->density);
+				if(i!=neighbor_vec[j]){
 					Vec3 weight_vec = pressure_kernel_gradient(base_particle->position,temp_particle->position);
-					pressure_gradient += weight_vec * temp_particle->mass * ((pressure_list[i]+pressure_list[j])/(2.0f*temp_particle->density)); 
-
-					float weight = viscosity_kernel_laplacian(base_particle->position,temp_particle->position);
-					viscosity_laplacian += ((temp_particle->velocity - base_particle->velocity)/temp_particle->density)*weight * temp_particle->mass;
-
-					color += (temp_particle->mass / temp_particle->density) * default_laplacian(base_particle->position,temp_particle->position);
-
-					normal += default_gradient(base_particle->position,temp_particle->position)*(temp_particle->mass / temp_particle->density);
+					pressure_gradient += weight_vec * temp_particle->mass * ((pressure_list[i]+pressure_list[neighbor_vec[j]])/(2.0f*temp_particle->density)); 
 				}
 			}
 		}
@@ -1211,7 +1215,7 @@ void myDisplay(){
 		// Make the BYTE array, factor of 3 because it's RBG.
 		BYTE* pixels = new BYTE[ 3 * PIC_HEIGHT * PIC_WIDTH];
 
-		glReadPixels(0, 0, PIC_WIDTH, PIC_HEIGHT, GL_BGR, GL_UNSIGNED_BYTE, pixels);
+		glReadPixels(0, 0, PIC_WIDTH, PIC_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, pixels);
 
 		// Convert to FreeImage format & save to file
 		FIBITMAP* image = FreeImage_ConvertFromRawBits(pixels, PIC_WIDTH, PIC_HEIGHT, 3 * PIC_WIDTH, 24, 0xFF0000, 0x00FF00, 0x0000FF, false);

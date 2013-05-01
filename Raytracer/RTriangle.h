@@ -15,7 +15,7 @@ public:
 	RTriangle(glm::vec3,glm::vec3,glm::vec3,glm::vec3,glm::vec3,glm::vec3,glm::vec3,glm::vec3,float,
 			 glm::vec3,glm::vec3,glm::vec3);
 	bool intersect(Ray&, float*, LocalGeo*,bool*);
-	bool intersect(Ray&);
+	bool intersect(Ray&,bool*);
 	RTriangle(void){};
 	~RTriangle(void){};
 	BRDF get_brdf();
