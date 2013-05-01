@@ -27,7 +27,7 @@ const float VISCOSITY = 3.5f;
 const float SURFACE_TENSION = .07f;
 const float TENSION_THRESHOLD = 7.0f;
 
-const float CUBE_TOL = .01f;//either grid size or tolerance for adaptive cubes, reciprocal must be an integer for now. .025f ok, .01 for high quality
+float CUBE_TOL = .01f;//either grid size or tolerance for adaptive cubes, reciprocal must be an integer for now. .025f ok, .01 for high quality
 const float DENSITY_TOL = 100.0f;//also used for marching grid, for density of the particles
 const int WIDTH = 20;//floor((CONTAINER.max.x-CONTAINER.min.x)/CUBE_TOL);
 const int HEIGHT = 20;//floor((CONTAINER.max.y-CONTAINER.min.y)/CUBE_TOL);
@@ -40,6 +40,7 @@ const float SUPPORT_RADIUS = .125; // .125 works well, .1 good too
 
 bool RENDERING_TRIANGLES = false;
 bool RENDERING_BLOB = true;
+bool RENDERING_WIREFRAME = false;
 
 const float PI = 3.1415926;
 const float DRAW_RADIUS = .01f;
@@ -657,6 +658,7 @@ To do this, calculate all quanities in Navier-Stokes, then use timestep to
 update particle location from old location and velocity.
 */
 void run_time_step(){
+    
 	vector<Particle*> new_particles; new_particles.resize(NUM_PARTICLES);
 	vector<float> pressure_list; pressure_list.resize(NUM_PARTICLES);
 	vector<Vec3> pressure_grad_list; pressure_grad_list.resize(NUM_PARTICLES);
@@ -862,7 +864,7 @@ void initScene(){
             
         case 2:
             cout<<"Drop Scene"<<endl;
-            step = .015;
+            step = .01;
             for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
                 for(float j = 3.0*CONTAINER.max.y/5.0f; j<4.0f*(CONTAINER.max.y)/5.0f; j=j+step){
                     for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.z)/5.0f; k=k+step){
@@ -876,13 +878,13 @@ void initScene(){
             break;
             
         case 3:
-            cout<<"Flat Scene"<<endl;
-            step = .015;
-            for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
-                for(float j = 3.0*CONTAINER.max.y/5.0f; j<4.0f*(CONTAINER.max.y)/5.0f; j=j+step){
-                    for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.z)/5.0f; k=k+step){
-                        Vec3 pos(i,j,k);
-                        Vec3 vel(0,-3,0);
+            cout<<"Randomized Scene"<<endl;
+            step = .02;
+            for(float i = 0.1f*CONTAINER.max.x/5.0; i<5*(CONTAINER.max.x)/5.0f; i=i+step){
+                for(float j = 0.1f*CONTAINER.max.y/5.0f; j<.5f*(CONTAINER.max.y)/5.0f; j=j+step){
+                    for(float k = 0.1f*CONTAINER.max.y/5.0f; k<5.0f*(CONTAINER.max.z)/5.0f; k=k+step){
+                        Vec3 pos(i,j*noise,k);
+                        Vec3 vel(1.5f,0,0);
                         new_part = new Particle(pos,vel,MASS,1000.0f);
                         PARTICLES.push_back(new_part);
                     }
@@ -936,7 +938,7 @@ void initScene(){
             
         default:
             ////3D Uniform Scene
-            cout<<"Default Uniform Scene"<<endl;
+            cout<<"Default Horizontal Velocity Scene"<<endl;
             step = .025;
             for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
                 for(float j = CONTAINER.min.y; j<1.0f*(CONTAINER.max.y)/5.0f; j=j+step){
@@ -1074,6 +1076,7 @@ void initScene(){
 }
 
 void myDisplay(){
+    
 	float time_start = glutGet(GLUT_ELAPSED_TIME);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -1108,20 +1111,54 @@ void myDisplay(){
 			glClearColor(1,1,1,1);
 			//glColor3f(1.0f,1.0f,1.0f);
 
-			////wireframe for now
-			//glPolygonMode(GL_FRONT, GL_LINE);
-			//glPolygonMode(GL_BACK, GL_LINE);
-			glBegin(GL_TRIANGLES);
-			glVertex3f(temp_triangle->a.x,temp_triangle->a.y,temp_triangle->a.z);
-			glNormal3f(temp_triangle->a_normal.x,temp_triangle->a_normal.y,temp_triangle->a_normal.z);
-			glVertex3f(temp_triangle->b.x,temp_triangle->b.y,temp_triangle->b.z);
-			glNormal3f(temp_triangle->b_normal.x,temp_triangle->b_normal.y,temp_triangle->b_normal.z);
-			glVertex3f(temp_triangle->c.x,temp_triangle->c.y,temp_triangle->c.z);
-			glNormal3f(temp_triangle->c_normal.x,temp_triangle->c_normal.y,temp_triangle->c_normal.z);
-			glEnd();
-
-			//glPolygonMode(GL_FRONT, GL_FILL); // fill mode
-			//glPolygonMode(GL_BACK, GL_FILL);
+			// wireframe
+            if (RENDERING_WIREFRAME) {
+                
+                /*renders object twice as white and black with an offset. The offset removes some
+                 artifacts from lines behind object.
+                 */
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+                
+                glDisable(GL_LIGHTING);
+                glClearColor(1,1,1,1);
+                glColor3f(.4f,.4f,.4f);//color as white for wireframe
+                
+                glBegin(GL_TRIANGLES);
+                glVertex3f(temp_triangle->a.x,temp_triangle->a.y,temp_triangle->a.z);
+                glNormal3f(temp_triangle->a_normal.x,temp_triangle->a_normal.y,temp_triangle->a_normal.z);
+                glVertex3f(temp_triangle->b.x,temp_triangle->b.y,temp_triangle->b.z);
+                glNormal3f(temp_triangle->b_normal.x,temp_triangle->b_normal.y,temp_triangle->b_normal.z);
+                glVertex3f(temp_triangle->c.x,temp_triangle->c.y,temp_triangle->c.z);
+                glNormal3f(temp_triangle->c_normal.x,temp_triangle->c_normal.y,temp_triangle->c_normal.z);
+                glEnd();
+                
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);//color as background color.
+                glEnable(GL_POLYGON_OFFSET_FILL);
+                glPolygonOffset(1.0,1.0);
+                glClearColor(1,1,1,1);
+                glColor3f(1,1,1);
+                
+                glBegin(GL_TRIANGLES);
+                glVertex3f(temp_triangle->a.x,temp_triangle->a.y,temp_triangle->a.z);
+                glNormal3f(temp_triangle->a_normal.x,temp_triangle->a_normal.y,temp_triangle->a_normal.z);
+                glVertex3f(temp_triangle->b.x,temp_triangle->b.y,temp_triangle->b.z);
+                glNormal3f(temp_triangle->b_normal.x,temp_triangle->b_normal.y,temp_triangle->b_normal.z);
+                glVertex3f(temp_triangle->c.x,temp_triangle->c.y,temp_triangle->c.z);
+                glNormal3f(temp_triangle->c_normal.x,temp_triangle->c_normal.y,temp_triangle->c_normal.z);
+                glEnd();
+                
+                glDisable(GL_POLYGON_OFFSET_FILL);
+                
+            } else {
+                glBegin(GL_TRIANGLES);
+                glVertex3f(temp_triangle->a.x,temp_triangle->a.y,temp_triangle->a.z);
+                glNormal3f(temp_triangle->a_normal.x,temp_triangle->a_normal.y,temp_triangle->a_normal.z);
+                glVertex3f(temp_triangle->b.x,temp_triangle->b.y,temp_triangle->b.z);
+                glNormal3f(temp_triangle->b_normal.x,temp_triangle->b_normal.y,temp_triangle->b_normal.z);
+                glVertex3f(temp_triangle->c.x,temp_triangle->c.y,temp_triangle->c.z);
+                glNormal3f(temp_triangle->c_normal.x,temp_triangle->c_normal.y,temp_triangle->c_normal.z);
+                glEnd();
+            }
 		}
 	}else{
 		//draw particles
@@ -1208,14 +1245,14 @@ void myDisplay(){
 
 	glPopMatrix();
 
-	if (OUTPUT_IMAGE || OUTPUT_SINGLE_IMAGE) {
+	if ((OUTPUT_IMAGE && IMAGE_DELAY == 0 )|| OUTPUT_SINGLE_IMAGE) {
 		// Output image to file
 		FreeImage_Initialise();
 
 		// Make the BYTE array, factor of 3 because it's RBG.
 		BYTE* pixels = new BYTE[ 3 * PIC_HEIGHT * PIC_WIDTH];
 
-		glReadPixels(0, 0, PIC_WIDTH, PIC_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+		glReadPixels(0, 0, PIC_WIDTH, PIC_HEIGHT, GL_BGR, GL_UNSIGNED_BYTE, pixels);
 
 		// Convert to FreeImage format & save to file
 		FIBITMAP* image = FreeImage_ConvertFromRawBits(pixels, PIC_WIDTH, PIC_HEIGHT, 3 * PIC_WIDTH, 24, 0xFF0000, 0x00FF00, 0x0000FF, false);
@@ -1317,6 +1354,12 @@ int main(int argc, char* argv[]){
         if (strcmp(argv[i],"-delay") == 0) {
             IMAGE_DELAY = atoi(argv[i+1]);
             i += 2;
+            continue;
+        }
+        if (strcmp(argv[i],"-w") == 0) {
+            RENDERING_WIREFRAME = true;
+            CUBE_TOL = .025f;
+            i += 1;
             continue;
         }
 	}

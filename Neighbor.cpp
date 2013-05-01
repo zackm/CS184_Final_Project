@@ -40,9 +40,9 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, float max_point, floa
     
     // loop until assign box number (1D numbering) in x,y, and z directions
 	for (int i = 0; i < box_per_row && curr_x < max_point; i++) {
-        col_point = abs(pos.x - curr_x);
-        row_point = abs(pos.y - curr_y);
-        depth_point = abs(pos.z - curr_z);
+        col_point = abs(pos.x - curr_x - support_rad/2);
+        row_point = abs(pos.y - curr_y - support_rad/2);
+        depth_point = abs(pos.z - curr_z - support_rad/2);
         
 		if (col_point <= support_rad && col == -1) {
 			col = i;
@@ -87,9 +87,9 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, float max_point, floa
 	float col_point, row_point, depth_point;
     
 	for (int i = 0; i < box_per_row && curr_x < max_point; i++) {
-        col_point = abs(pos.x - curr_x);
-        row_point = abs(pos.y - curr_y);
-        depth_point = abs(pos.z - curr_z);
+        col_point = abs(pos.x - curr_x - support_rad/2);
+        row_point = abs(pos.y - curr_y - support_rad/2);
+        depth_point = abs(pos.z - curr_z - support_rad/2);
         
 		if (col_point <= support_rad && col == -1) {
 			col = i;
