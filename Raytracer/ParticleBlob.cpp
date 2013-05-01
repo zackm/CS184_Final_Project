@@ -108,7 +108,7 @@ bool ParticleBlob::intersect(Ray& ray, float* thit, LocalGeo* local,bool* in_sha
 		}
 		//boundary condition
 		if((*in_shape)){
-			if(dense_value<900){
+			if(dense_value<500){
 			hit = true;
 			(*thit) = i;
 			//interpolate position to get more accurate value.
@@ -120,7 +120,7 @@ bool ParticleBlob::intersect(Ray& ray, float* thit, LocalGeo* local,bool* in_sha
 			return hit;
 			}
 		}else{
-			if(dense_value>900){
+			if(dense_value>500){
 				hit = true;
 			(*thit) = i;
 			//interpolate position to get more accurate value.
@@ -165,12 +165,12 @@ bool ParticleBlob::intersect(Ray& ray,bool* in_shape){
 		}
 
 		if((*in_shape)){
-			if(dense_value<900){
+			if(dense_value<500){
 			hit = true;
 			return hit;
 			}
 		}else{
-			if(dense_value>900){
+			if(dense_value>500){
 			hit = true;
 			return hit;
 			}
