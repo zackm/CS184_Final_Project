@@ -405,7 +405,7 @@ void output_obj() {
     ss << IMAGE_COUNTER;
     std::string s(ss.str());
     string out_name = std::string("Multi_Trace/output_pics/fluid")+s+".png";
-	r.ray_trace_start(save_name,out_name,600,600);
+	r.ray_trace_start(save_name,out_name,100,100);
     IMAGE_COUNTER++;
 }
 
@@ -1207,7 +1207,7 @@ void myDisplay(){
 		// Make the BYTE array, factor of 3 because it's RBG.
 		BYTE* pixels = new BYTE[ 3 * PIC_HEIGHT * PIC_WIDTH];
 
-		glReadPixels(0, 0, PIC_WIDTH, PIC_HEIGHT, GL_BGR, GL_UNSIGNED_BYTE, pixels);
+		glReadPixels(0, 0, PIC_WIDTH, PIC_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, pixels);
 
 		// Convert to FreeImage format & save to file
 		FIBITMAP* image = FreeImage_ConvertFromRawBits(pixels, PIC_WIDTH, PIC_HEIGHT, 3 * PIC_WIDTH, 24, 0xFF0000, 0x00FF00, 0x0000FF, false);
