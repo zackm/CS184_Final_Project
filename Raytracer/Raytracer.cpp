@@ -1,7 +1,8 @@
 /*
-CS184 Assignment 2 - Ray Tracing
-Tyler Brabham cs184-ej
-Zack Mayeda cs184-bg
+ CS184 Assignment 2 - Ray Tracing
+ == Modified for Final Project ==
+ Tyler Brabham cs184-ej
+ Zack Mayeda cs184-bg
 */
 
 #include "glm/glm.hpp"
@@ -115,6 +116,7 @@ void set_camera_and_perspective(Camera c, glm::vec3 max, glm::vec3 min) {
 	// exit(0);
 }
 
+// Modified main method from AS2, now called from Final Project main method
 int Raytracer::ray_trace_start(std::string input_filename, std::string output_filename, int WIDTH, int HEIGHT) {
 
 	vector<Particle*> particles;
