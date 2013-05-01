@@ -21,6 +21,8 @@ void Neighbor::set_particle_neighbors(int particle_num, Particle *p) {
 	}
 }
 
+float dot(Vec3,Vec3);
+
 /*
  Compute Box Number Function:
  Given a particle position, support radius, maximum container x value, and minimum container x value, returns
@@ -128,7 +130,7 @@ void Neighbor::place_particles(vector<Particle*>& particles,float support_rad, C
     float width = c.max.x - c.min.x;
     float min = c.min.x;
     float max = c.max.x;
-    int box_per_row = width/support_rad; // numbers of boxes along each axis
+    int box_per_row = (int)(width/support_rad); // numbers of boxes along each axis
     int square_face = box_per_row * box_per_row; // number of boxes on one face of the cube container
     
     // Clear out the box particle vector of old neighbors
@@ -574,9 +576,11 @@ void Neighbor::place_particles(vector<Particle*>& particles,float support_rad, C
                 particle_num = *it;
                 Vec3 a = particles[i]->position;
                 Vec3 b = particles[particle_num]->position;
-                float dist = sqrt(pow((a.x - b.x),2) - pow((a.y - b.y),2));
+                Vec3 diff = b-a;
+                float dot_prod = dot(diff,diff);
+                float dist = sqrt(dot_prod);
                 // check that the neighboring particle is within the support radius
-                if (dist <= support_rad) {
+                if (dist <= support_rad/2) {
                     particles[i]->neighbors.push_back(particle_num);
                 }
             }
