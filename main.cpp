@@ -23,8 +23,8 @@ Vec3 GRAVITY(0,-9.8f,0);
 const float MASS = .02f;//could set it to any number really.
 const float IDEAL_DENSITY = 1000.0f;
 const float STIFFNESS = 3.0f;//for pressure difference
-const float VISCOSITY = 3.5f;
-const float SURFACE_TENSION = .07f;
+float VISCOSITY = 3.5f;
+float SURFACE_TENSION = .07f;
 const float TENSION_THRESHOLD = 7.0f;
 
 float CUBE_TOL = .01f;//either grid size or tolerance for adaptive cubes, reciprocal must be an integer for now. .025f ok, .01 for high quality
@@ -55,6 +55,7 @@ int PIC_HEIGHT = 600;
 
 bool SHOW_FPS = false; // print out FPS to console
 int SETUP_SCENE = 0; // choice of preset scene, from command line input
+bool PAUSE = false; // run time, or pause
 
 Vec3 normal_at_point(Vec3);
 
@@ -420,9 +421,13 @@ Keyboard interactions.
 void keyPressed(unsigned char key, int x, int y) {
 	switch(key) {
 	case ' ':
-        // Exit program
-		exit(0);
+        // Pause program
+            PAUSE = !PAUSE;
 		break;
+    case 'q':
+        // Exit Program
+        exit(0);
+        break;
 	case 'r':
         // Output a single obj file, raytrace it, and quit
 		output_obj();
@@ -1092,9 +1097,11 @@ void myDisplay(){
 
 	gluLookAt(.25f,.4f,1.2f,.25f,.18f,0.0f,0,1,0);
 
-	run_time_step();
-	CURRENT_TIME += TIMESTEP;
-
+    if (!PAUSE) {
+        run_time_step();
+        CURRENT_TIME += TIMESTEP;
+    }
+    
 	if(CURRENT_TIME>LIFETIME){
 		exit(0);
 	}
@@ -1320,10 +1327,17 @@ int main(int argc, char* argv[]){
 			cout<<"Command Line Arguments:"<<endl;
             cout<<"-h : List all options"<<endl;
             cout<<"-s # : Load scene number #"<<endl;
+            cout<<"       1 - Dam Break"<<endl;
+            cout<<"       2 - Drop"<<endl;
+            cout<<"       3 - Randomized"<<endl;
+            cout<<"       4 - No Gravity"<<endl;
+            cout<<"       5 - Collision"<<endl;
+            cout<<"       Default - Horizontal Velocity"<<endl;
             cout<<"-m : Export Still Frames for movie into Images/"<<endl;
             cout<<"-rm : Export Raytraced Still Frames for movie into Multi_Trace/output_pics/"<<endl;
             cout<<"-i : Render Isosurface"<<endl;
             cout<<"-p : Render Particles"<<endl;
+            cout<<"-v : Increase viscosity and surface tension"<<endl;
             cout<<"-delay # : delay movie output by # frames"<<endl;
             cout<<"======================="<<endl;
 			cout<<"Live Commands:"<<endl;
@@ -1331,7 +1345,8 @@ int main(int argc, char* argv[]){
             cout<<"'r' : output single raytraced image and exit"<<endl;
             cout<<"'f' : output current FPS to command line"<<endl;
             cout<<"'p' : save current image, not raytrace, and continue"<<endl;
-            cout<<"spacebar : quit"<<endl;
+            cout<<"spacebar : pause"<<endl;
+            cout<<"'q' : quit"<<endl;
 			i += 1;
 			exit(0);
 		}
@@ -1359,6 +1374,12 @@ int main(int argc, char* argv[]){
         if (strcmp(argv[i],"-w") == 0) {
             RENDERING_WIREFRAME = true;
             CUBE_TOL = .025f;
+            i += 1;
+            continue;
+        }
+        if (strcmp(argv[i],"-v") == 0) {
+            VISCOSITY = 30.f;
+            SURFACE_TENSION = 10.0f;
             i += 1;
             continue;
         }

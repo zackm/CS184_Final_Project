@@ -30,10 +30,14 @@ float dot(Vec3,Vec3);
  an integer.
  */
 int Neighbor::compute_box_num(Vec3 pos, float support_rad, float max_point, float min_point) {
-    int row = -1,col = -1, depth = -1;
+//    int row = -1,col = -1, depth = -1;
+    int row = floor(pos.x/support_rad);
+    int col = floor(pos.y/support_rad);
+    int depth = floor(pos.z/support_rad);
+    
     float width = max_point - min_point;
     int box_per_row = (int)(width / support_rad); // casting to int, assuming support radius evenly divides width
-    
+    /*
     // current x,y,z locations of cell traversal
     float curr_x = min_point, curr_y = min_point, curr_z = min_point;
     
@@ -42,17 +46,17 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, float max_point, floa
     
     // loop until assign box number (1D numbering) in x,y, and z directions
 	for (int i = 0; i < box_per_row && curr_x < max_point; i++) {
-        col_point = abs(pos.x - curr_x - support_rad/2);
-        row_point = abs(pos.y - curr_y - support_rad/2);
-        depth_point = abs(pos.z - curr_z - support_rad/2);
+        col_point = abs(pos.x - curr_x - support_rad/2.0f);
+        row_point = abs(pos.y - curr_y - support_rad/2.0f);
+        depth_point = abs(pos.z - curr_z - support_rad/2.0f);
         
-		if (col_point <= support_rad && col == -1) {
+		if (col_point <= support_rad/2 && col == -1) {
 			col = i;
 		}
-        if (row_point <= support_rad && row == -1) {
+        if (row_point <= support_rad/2 && row == -1) {
 			row = i;
 		}
-        if (depth_point <= support_rad && depth == -1) {
+        if (depth_point <= support_rad/2 && depth == -1) {
             depth = i;
         }
         
@@ -63,7 +67,7 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, float max_point, floa
         curr_y += support_rad;
         curr_z += support_rad;
 	}
-    
+    */
     // combine box numbers into 3D numbering
     int num = col + row * box_per_row + depth * box_per_row * box_per_row;
     
@@ -80,26 +84,30 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, float max_point, floa
  a particle position is outside the min and max point range, it return -1. Same assumptions hold as before.
  */
 int Neighbor::compute_box_num(Vec3 pos, float support_rad, float max_point, float min_point, bool flag) {
-    int row = -1,col = -1, depth = -1;
+//    int row = -1,col = -1, depth = -1;
+    int row = floor(pos.x/support_rad);
+    int col = floor(pos.y/support_rad);
+    int depth = floor(pos.z/support_rad);
+    
     float width = max_point - min_point;
     int box_per_row = (int)(width / support_rad); // casting to int, assuming support radius evenly divides width
-    
+    /*
     float curr_x = min_point, curr_y = min_point, curr_z = min_point;
     
 	float col_point, row_point, depth_point;
     
 	for (int i = 0; i < box_per_row && curr_x < max_point; i++) {
-        col_point = abs(pos.x - curr_x - support_rad/2);
-        row_point = abs(pos.y - curr_y - support_rad/2);
-        depth_point = abs(pos.z - curr_z - support_rad/2);
+        col_point = abs(pos.x - curr_x - support_rad/2.0f);
+        row_point = abs(pos.y - curr_y - support_rad/2.0f);
+        depth_point = abs(pos.z - curr_z - support_rad/2.0f);
         
-		if (col_point <= support_rad && col == -1) {
+		if (col_point <= support_rad/2 && col == -1) {
 			col = i;
 		}
-        if (row_point <= support_rad && row == -1) {
+        if (row_point <= support_rad/2 && row == -1) {
 			row = i;
 		}
-        if (depth_point <= support_rad && depth == -1) {
+        if (depth_point <= support_rad/2 && depth == -1) {
             depth = i;
         }
         
@@ -110,7 +118,7 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, float max_point, floa
         curr_y += support_rad;
         curr_z += support_rad;
 	}
-    
+    */
     int num = col + row * box_per_row + depth * box_per_row * box_per_row;
     
     if (num >= box_per_row * box_per_row * box_per_row || num < 0 || row == -1 || col == -1 || depth == -1) {
