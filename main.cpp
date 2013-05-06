@@ -619,7 +619,7 @@ float density_at_point(Vec3 point){
 	int box_number = NEIGHBOR.compute_box_num(point,SUPPORT_RADIUS,CONTAINER.max.x,CONTAINER.min.x);
 
 	Particle* temp_particle;
-	vector<int> neighbor_vec = NEIGHBOR.box_particles[box_number];
+	vector<int> neighbor_vec = NEIGHBOR.box_neighbors[box_number];
 	float density = 0;//default_kernel(point,point);
 	for (int i = 0; i<neighbor_vec.size(); i++){
 		//update density. There will be a problem if the point is exactly equal to sum particle (divide by zero error).
@@ -638,7 +638,7 @@ Vec3 normal_at_point(Vec3 point){
 	//set the normal at each point
 	int box_number = NEIGHBOR.compute_box_num(point,SUPPORT_RADIUS,CONTAINER.max.x,CONTAINER.min.x);
 	Particle* temp_particle;
-	vector<int> neighbor_vec = NEIGHBOR.box_particles[box_number];
+	vector<int> neighbor_vec = NEIGHBOR.box_neighbors[box_number];
 	Vec3 normal(0,0,0);
 	for (int j = 0; j<neighbor_vec.size(); j++){
 		temp_particle = PARTICLES[neighbor_vec[j]];
@@ -770,8 +770,14 @@ void run_time_step(){
 
 	PARTICLES = new_particles;
 
-	//reset neighbor structure 
-	NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER,NUM_PARTICLES);
+	//reset neighbor structure
+    if (RENDERING_TRIANGLES) {
+        // fill vector of vector of ints to access all particles that neighbor
+        // a specific box number
+        NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER,NUM_PARTICLES,true);
+    } else {
+        NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER,NUM_PARTICLES,false);
+    }
 }
 
 /*
@@ -884,7 +890,7 @@ void initScene(){
             
         case 3:
             cout<<"Randomized Scene"<<endl;
-            step = .02;
+            step = .025;
             for(float i = 0.1f*CONTAINER.max.x/5.0; i<5*(CONTAINER.max.x)/5.0f; i=i+step){
                 for(float j = 0.1f*CONTAINER.max.y/5.0f; j<.5f*(CONTAINER.max.y)/5.0f; j=j+step){
                     for(float k = 0.1f*CONTAINER.max.y/5.0f; k<5.0f*(CONTAINER.max.z)/5.0f; k=k+step){
@@ -916,7 +922,7 @@ void initScene(){
             
         case 5:
             cout<<"2 Glob Collision Scene"<<endl;
-            step = .015;
+            step = .025;
             for(float i = 4.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
                 for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
                     for(float k = 2.0*CONTAINER.max.z/4.0f; k<(3.0f*CONTAINER.max.z/4.0f); k=k+step) {
@@ -1056,8 +1062,11 @@ void initScene(){
 	//    new_part = new Particle(pos,vel,MASS,1000);
 	//    PARTICLES.push_back(new_part);
 	//}
-
-	NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER,NUM_PARTICLES);
+    if (RENDERING_TRIANGLES) {
+        NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER,NUM_PARTICLES,true);
+    } else {
+        NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER,NUM_PARTICLES,true);
+    }
 
 	// create some lights
 	GLfloat light_position[] = {1,1,1,0};

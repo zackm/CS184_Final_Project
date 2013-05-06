@@ -9,8 +9,14 @@
 
 using namespace std;
 
-void Neighbor::add_to_box_particles(int box_num,int particle_num) {
-	box_particles[box_num].push_back(particle_num);
+void Neighbor::add_to_box_neighbors(int box_num,int particle_num) {
+    vector<int> current_neighbors = box_neighbors[box_num];
+    for (int i = 0; i < current_neighbors.size(); i++) {
+        if (current_neighbors[i] == particle_num) {
+            return; // the current particle is already in the neighbor vector for this box number
+        }
+    }
+	box_neighbors[box_num].push_back(particle_num);
 }
 
 void Neighbor::set_particle_neighbors(int particle_num, Particle *p) {
@@ -134,7 +140,7 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, float max_point, floa
  Given a vector of particles, a support radius, a container, and the number of particles, this will assign a box
  number to each particle, along with a vector of neighboring particle numbers. Works by first 
  */
-void Neighbor::place_particles(vector<Particle*>& particles,float support_rad, Container c, int num_particles){
+void Neighbor::place_particles(vector<Particle*>& particles,float support_rad, Container c, int num_particles, bool SURFACE){
     float width = c.max.x - c.min.x;
     float min = c.min.x;
     float max = c.max.x;
@@ -143,10 +149,12 @@ void Neighbor::place_particles(vector<Particle*>& particles,float support_rad, C
     
     // Clear out the box particle vector of old neighbors
     box_particles.clear();
+    box_neighbors.clear();
     
     // Fill the box particles vector with empty vectors of ints
     for (int i = 0; i < box_per_row*box_per_row*box_per_row; i++) {
         box_particles.push_back(vector<int>());
+        box_neighbors.push_back(vector<int>());
     }
     
     int box_num;
@@ -587,6 +595,10 @@ void Neighbor::place_particles(vector<Particle*>& particles,float support_rad, C
                 Vec3 diff = b-a;
                 float dot_prod = dot(diff,diff);
                 float dist = sqrt(dot_prod);
+                if (SURFACE) {
+                    int current_box_num = particles[i]->box;
+                    add_to_box_neighbors(current_box_num,particle_num);
+                }
                 // check that the neighboring particle is within the support radius
                 if (dist <= support_rad/2) {
                     particles[i]->neighbors.push_back(particle_num);
