@@ -176,12 +176,12 @@ void Neighbor::place_particles(vector<Particle*>& particles,float support_rad, C
                 Vec3 diff = b-a;
                 float dot_prod = dot(diff,diff);
                 float dist = sqrt(dot_prod);
-                if (SURFACE) {
-                    add_to_box_neighbors(current_box_num,particle_num);
-                }
                 // check that the neighboring particle is within the support radius
                 if (dist <= support_rad/2) {
                     particles[i]->neighbors.push_back(particle_num);
+                    if (SURFACE) {
+                        add_to_box_neighbors(current_box_num,particle_num);
+                    }
                 }
             }
         }
@@ -197,11 +197,11 @@ vector<int> Neighbor::surrounding_boxes(int box_num, int box_per_row, int square
     // add the correct numbers of neighboring boxes of the current box
     // 27 different cases
     if (box_num < square_face) {
-        // front face
+        // back face
         if (box_num < box_per_row) {
             // bottom row
             if (box_num == 0) {
-                // left side - front, bottom
+                // left side - back, bottom
                 neighbor_boxes.push_back(box_num+1);
                 neighbor_boxes.push_back(box_num+box_per_row);
                 neighbor_boxes.push_back(box_num+box_per_row+1);
@@ -210,7 +210,7 @@ vector<int> Neighbor::surrounding_boxes(int box_num, int box_per_row, int square
                 neighbor_boxes.push_back(box_num+square_face+box_per_row);
                 neighbor_boxes.push_back(box_num+square_face+box_per_row+1);
             } else if (box_num == box_per_row - 1) {
-                // right side - front, bottom
+                // right side - back, bottom
                 neighbor_boxes.push_back(box_num-1);
                 neighbor_boxes.push_back(box_num+box_per_row);
                 neighbor_boxes.push_back(box_num+box_per_row-1);
@@ -219,7 +219,7 @@ vector<int> Neighbor::surrounding_boxes(int box_num, int box_per_row, int square
                 neighbor_boxes.push_back(box_num+square_face+box_per_row);
                 neighbor_boxes.push_back(box_num+square_face+box_per_row-1);
             } else {
-                // bottom, not left or right side - front, bottom
+                // bottom, not left or right side - back, bottom
                 neighbor_boxes.push_back(box_num-1);
                 neighbor_boxes.push_back(box_num+1);
                 neighbor_boxes.push_back(box_num+box_per_row);
@@ -235,7 +235,7 @@ vector<int> Neighbor::surrounding_boxes(int box_num, int box_per_row, int square
         } else if (box_num >= square_face - box_per_row) {
             // top row
             if (box_num % box_per_row == 0) {
-                // left side - front, top
+                // left side - back, top
                 neighbor_boxes.push_back(box_num+1);
                 neighbor_boxes.push_back(box_num-box_per_row);
                 neighbor_boxes.push_back(box_num-box_per_row+1);
@@ -245,7 +245,7 @@ vector<int> Neighbor::surrounding_boxes(int box_num, int box_per_row, int square
                 neighbor_boxes.push_back(box_num+square_face-box_per_row+1);
                 
             } else if (box_num % box_per_row == box_per_row - 1) {
-                // right side - front, top
+                // right side - back, top
                 neighbor_boxes.push_back(box_num-1);
                 neighbor_boxes.push_back(box_num-box_per_row);
                 neighbor_boxes.push_back(box_num-box_per_row-1);
@@ -254,7 +254,7 @@ vector<int> Neighbor::surrounding_boxes(int box_num, int box_per_row, int square
                 neighbor_boxes.push_back(box_num+square_face-box_per_row);
                 neighbor_boxes.push_back(box_num+square_face-box_per_row-1);
             } else {
-                // top, not left or right - front, top
+                // top, not left or right - back, top
                 neighbor_boxes.push_back(box_num-1);
                 neighbor_boxes.push_back(box_num+1);
                 neighbor_boxes.push_back(box_num-box_per_row);
@@ -268,7 +268,7 @@ vector<int> Neighbor::surrounding_boxes(int box_num, int box_per_row, int square
                 neighbor_boxes.push_back(box_num+square_face-box_per_row+1);
             }
         } else if (box_num % box_per_row == 0) {
-            // left side - front, not top or bottom
+            // left side - back, not top or bottom
             neighbor_boxes.push_back(box_num+1);
             neighbor_boxes.push_back(box_num+box_per_row);
             neighbor_boxes.push_back(box_num+box_per_row+1);
@@ -282,7 +282,7 @@ vector<int> Neighbor::surrounding_boxes(int box_num, int box_per_row, int square
             neighbor_boxes.push_back(box_num+square_face-box_per_row+1);
             
         } else if (box_num % box_per_row == box_per_row - 1) {
-            // right side - front, not top or bottom
+            // right side - back, not top or bottom
             neighbor_boxes.push_back(box_num-1);
             neighbor_boxes.push_back(box_num+box_per_row);
             neighbor_boxes.push_back(box_num+box_per_row-1);
@@ -295,7 +295,7 @@ vector<int> Neighbor::surrounding_boxes(int box_num, int box_per_row, int square
             neighbor_boxes.push_back(box_num+square_face-box_per_row);
             neighbor_boxes.push_back(box_num+square_face-box_per_row-1);
         } else {
-            // front, not on edge
+            // back, not on edge
             neighbor_boxes.push_back(box_num+1);
             neighbor_boxes.push_back(box_num-1);
             neighbor_boxes.push_back(box_num+box_per_row);
@@ -316,11 +316,11 @@ vector<int> Neighbor::surrounding_boxes(int box_num, int box_per_row, int square
         }
         
     } else if (box_num >= square_face * (box_per_row - 1)) {
-        // back face
+        // front face
         if (box_num % square_face < box_per_row) {
             // bottom row
             if (box_num % box_per_row == 0) {
-                // left side - back, bottom
+                // left side - front, bottom
                 neighbor_boxes.push_back(box_num+1);
                 neighbor_boxes.push_back(box_num+box_per_row);
                 neighbor_boxes.push_back(box_num+box_per_row+1);
@@ -329,7 +329,7 @@ vector<int> Neighbor::surrounding_boxes(int box_num, int box_per_row, int square
                 neighbor_boxes.push_back(box_num-square_face+box_per_row);
                 neighbor_boxes.push_back(box_num-square_face+box_per_row+1);
             } else if (box_num % box_per_row == box_per_row - 1) {
-                // right side - back, bottom
+                // right side - front, bottom
                 neighbor_boxes.push_back(box_num-1);
                 neighbor_boxes.push_back(box_num+box_per_row);
                 neighbor_boxes.push_back(box_num+box_per_row-1);
@@ -338,7 +338,7 @@ vector<int> Neighbor::surrounding_boxes(int box_num, int box_per_row, int square
                 neighbor_boxes.push_back(box_num-square_face+box_per_row);
                 neighbor_boxes.push_back(box_num-square_face+box_per_row-1);
             } else {
-                // bottom, not left or right side - back, bottom
+                // bottom, not left or right side - front, bottom
                 neighbor_boxes.push_back(box_num+1);
                 neighbor_boxes.push_back(box_num-1);
                 neighbor_boxes.push_back(box_num+box_per_row);
@@ -354,7 +354,7 @@ vector<int> Neighbor::surrounding_boxes(int box_num, int box_per_row, int square
         } else if (box_num % square_face >= square_face - box_per_row) {
             // top row
             if (box_num % box_per_row == 0) {
-                // left side - back, top
+                // left side - front, top
                 neighbor_boxes.push_back(box_num+1);
                 neighbor_boxes.push_back(box_num-box_per_row);
                 neighbor_boxes.push_back(box_num-box_per_row+1);
@@ -363,7 +363,7 @@ vector<int> Neighbor::surrounding_boxes(int box_num, int box_per_row, int square
                 neighbor_boxes.push_back(box_num-square_face-box_per_row);
                 neighbor_boxes.push_back(box_num-square_face-box_per_row+1);
             } else if (box_num % box_per_row == box_per_row - 1) {
-                // right side - back, top
+                // right side - front, top
                 neighbor_boxes.push_back(box_num-1);
                 neighbor_boxes.push_back(box_num-box_per_row);
                 neighbor_boxes.push_back(box_num-box_per_row-1);
@@ -372,7 +372,7 @@ vector<int> Neighbor::surrounding_boxes(int box_num, int box_per_row, int square
                 neighbor_boxes.push_back(box_num-square_face-box_per_row);
                 neighbor_boxes.push_back(box_num-square_face-box_per_row-1);
             } else {
-                // top, not left or right - back, top
+                // top, not left or right - front, top
                 neighbor_boxes.push_back(box_num+1);
                 neighbor_boxes.push_back(box_num-1);
                 neighbor_boxes.push_back(box_num-box_per_row);
@@ -386,7 +386,7 @@ vector<int> Neighbor::surrounding_boxes(int box_num, int box_per_row, int square
                 neighbor_boxes.push_back(box_num-square_face-box_per_row-1);
             }
         } else if (box_num % box_per_row == 0) {
-            // left side - back, not top or bottom
+            // left side - front, not top or bottom
             neighbor_boxes.push_back(box_num+1);
             neighbor_boxes.push_back(box_num+box_per_row);
             neighbor_boxes.push_back(box_num+box_per_row+1);
@@ -399,7 +399,7 @@ vector<int> Neighbor::surrounding_boxes(int box_num, int box_per_row, int square
             neighbor_boxes.push_back(box_num-square_face-box_per_row);
             neighbor_boxes.push_back(box_num-square_face-box_per_row+1);
         } else if (box_num % box_per_row == box_per_row - 1) {
-            // right side - back, not top or bottom
+            // right side - front, not top or bottom
             neighbor_boxes.push_back(box_num-1);
             neighbor_boxes.push_back(box_num+box_per_row);
             neighbor_boxes.push_back(box_num+box_per_row-1);
@@ -412,7 +412,7 @@ vector<int> Neighbor::surrounding_boxes(int box_num, int box_per_row, int square
             neighbor_boxes.push_back(box_num-square_face-box_per_row);
             neighbor_boxes.push_back(box_num-square_face-box_per_row-1);
         } else {
-            // back face, not on edge
+            // front face, not on edge
             neighbor_boxes.push_back(box_num+1);
             neighbor_boxes.push_back(box_num-1);
             neighbor_boxes.push_back(box_num+box_per_row);
@@ -447,7 +447,7 @@ vector<int> Neighbor::surrounding_boxes(int box_num, int box_per_row, int square
             neighbor_boxes.push_back(box_num+square_face+1);
             neighbor_boxes.push_back(box_num+square_face-box_per_row);
             neighbor_boxes.push_back(box_num+square_face-box_per_row+1);
-        } else if (box_num % box_per_row == 0) {
+        } else if (box_num % square_face < box_per_row) {
             // bottom - not front or back, left face
             neighbor_boxes.push_back(box_num+1);
             neighbor_boxes.push_back(box_num+box_per_row);
@@ -496,7 +496,7 @@ vector<int> Neighbor::surrounding_boxes(int box_num, int box_per_row, int square
             neighbor_boxes.push_back(box_num+square_face-1);
             neighbor_boxes.push_back(box_num+square_face-box_per_row);
             neighbor_boxes.push_back(box_num+square_face-box_per_row-1);
-        } else if (box_num % box_per_row == box_per_row - 1) {
+        } else if (box_num % square_face < box_per_row) {
             // bottom - not front or back, right face
             neighbor_boxes.push_back(box_num-1);
             neighbor_boxes.push_back(box_num+box_per_row);

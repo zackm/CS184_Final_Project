@@ -952,18 +952,150 @@ void initScene(){
         case 6:
             cout<<"Test Scene"<<endl;
             if (NUM_PARTICLES == 0) {
-                Vec3 pos(.05,.05,.05);
                 Vec3 vel(0,0,0);
+                
+                // back, front, bottom
+//                Vec3 pos(.05,.05,.05);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+                
+                // right, back ,bottom
+//                Vec3 pos(.45,.05,.05);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+                
+                // right, middle, bottom ==== interesting edge case
+//                Vec3 pos(.25,.05,.05);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+                
+                // back, left, top
+//                Vec3 pos(.05,.45,.05);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // back, right, top
+//                Vec3 pos(.45,.45,.05);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // back, top, middle
+//                Vec3 pos(.34,.45,.05);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+                
+                // left, back, midway
+//                Vec3 pos(.05,.25,.05);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+                
+                // right, back, midway
+//                Vec3 pos(.45,.25,.05);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // back, not edge
+//                Vec3 pos(.24,.26,.05);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // front,left,bottom
+//                Vec3 pos(.05,.05,.45);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // front,right,bottom
+//                Vec3 pos(.46,.05,.45);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // front, bottom, middle
+//                Vec3 pos(.33,.05,.45);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // front, top, left
+//                Vec3 pos(.05,.46,.45);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // front, top, right
+//                Vec3 pos(.46,.47,.45);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // front, top, middle
+//                Vec3 pos(.37,.45,.45);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // front, left, midway
+//                Vec3 pos(.05,.25,.45);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+                
+                // right, front, midway
+//                Vec3 pos(.45,.25,.45);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // front face
+//                Vec3 pos(.25,.25,.45);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // left face, top, midway
+//                Vec3 pos(.05,.46,.34);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // left face, bottom, midway
+//                Vec3 pos(.05,.05,.23);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // left face, not edge
+//                Vec3 pos(.05,.25,.25);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+                
+                // right face, top, midway
+//                Vec3 pos(.45,.45,.23);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // right face, bottom, midway
+//                Vec3 pos(.45,.05,.31);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // right face, not edge
+//                Vec3 pos(.45,.24,.26);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // top face
+//                Vec3 pos(.27,.45,.31);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // bottom face
+//                Vec3 pos(.35,.05,.25);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // inside cube general
+                Vec3 pos(.25,.25,.25);
                 new_part = new Particle(pos,vel,MASS,1000);
                 PARTICLES.push_back(new_part);
                 
-               pos = Vec3(.15,.05,.05);
-                new_part = new Particle(pos,vel,MASS,1000);
-                PARTICLES.push_back(new_part);
+//                pos = Vec3(.05,.05,.05);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
                 
-                pos = Vec3(.05,.05,.15);
-                new_part = new Particle(pos,vel,MASS,1000);
-                PARTICLES.push_back(new_part);
+//                pos = Vec3(.05,.05,.15);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
             }
             break;
             
