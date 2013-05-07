@@ -168,6 +168,11 @@ void Neighbor::place_particles(vector<Particle*>& particles,float support_rad, C
                 cout<<"Error: incorrect neighboring box computed."<<endl;
                 num = 0; // to prevent bad vector access
             }
+            
+            if (SURFACE) {
+                add_to_box_neighbors(num,i);
+            }
+            
             // cycle through each particle in a box
             for (std::vector<int>::iterator it = box_particles[num].begin(); it != box_particles[num].end(); ++it) {
                 particle_num = *it;
@@ -176,12 +181,14 @@ void Neighbor::place_particles(vector<Particle*>& particles,float support_rad, C
                 Vec3 diff = b-a;
                 float dot_prod = dot(diff,diff);
                 float dist = sqrt(dot_prod);
+                
+                if (SURFACE) {
+                    add_to_box_neighbors(current_box_num,particle_num);
+                }
+                
                 // check that the neighboring particle is within the support radius
                 if (dist <= support_rad/2) {
                     particles[i]->neighbors.push_back(particle_num);
-                    if (SURFACE) {
-                        add_to_box_neighbors(current_box_num,particle_num);
-                    }
                 }
             }
         }
