@@ -949,6 +949,24 @@ void initScene(){
             }
             break;
             
+        case 6:
+            cout<<"Test Scene"<<endl;
+            if (NUM_PARTICLES == 0) {
+                Vec3 pos(.05,.05,.05);
+                Vec3 vel(0,0,0);
+                new_part = new Particle(pos,vel,MASS,1000);
+                PARTICLES.push_back(new_part);
+                
+               pos = Vec3(.15,.05,.05);
+                new_part = new Particle(pos,vel,MASS,1000);
+                PARTICLES.push_back(new_part);
+                
+                pos = Vec3(.05,.05,.15);
+                new_part = new Particle(pos,vel,MASS,1000);
+                PARTICLES.push_back(new_part);
+            }
+            break;
+            
         default:
             ////3D Uniform Scene
             cout<<"Default Horizontal Velocity Scene"<<endl;

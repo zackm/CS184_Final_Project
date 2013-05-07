@@ -24,4 +24,5 @@ public:
 	int compute_box_num(Vec3,float,float,float,bool);
     void add_to_box_neighbors(int,int);
     void set_particle_neighbors(int, Particle*);
+    vector<int> surrounding_boxes(int,int,int);
 };

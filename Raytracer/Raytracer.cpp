@@ -820,7 +820,7 @@ int Raytracer::ray_trace_start(std::string input_filename, std::string output_fi
 		//left wall
 		e = glm::vec3(.5,0,.5);
 		d = glm::vec3(.5,.5,.5);
-		r = glm::vec3(.1,.1,.1);
+		r = glm::vec3(0,0,0);
 		t = new RTriangle(glm::vec3(0,0,.5),glm::vec3(0,0,0),glm::vec3(0,.5,.5),ka,d,spec,r,e,sp);
 		s.add_shape(t);
 
