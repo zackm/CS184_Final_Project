@@ -744,7 +744,7 @@ int Raytracer::ray_trace_start(std::string input_filename, std::string output_fi
 		kr.x = .2; kr.y = .2; kr.z = .7;
 		glm::vec3 e(0,0,0);
 		sp = 30;
-		ParticleBlob* blob = new ParticleBlob(particles,neighborhood,ka,kd,ks,kr,e,sp);
+		ParticleBlob* blob = new ParticleBlob(particles,&neighborhood,ka,kd,ks,kr,e,sp);
 		blob->transparency = true;
 		blob->index_of_refraction = 1.33;
 		s.add_shape(blob);

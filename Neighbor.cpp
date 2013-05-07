@@ -10,13 +10,17 @@
 using namespace std;
 
 void Neighbor::add_to_box_neighbors(int box_num,int particle_num) {
+    bool contains = false;
     vector<int> current_neighbors = box_neighbors[box_num];
     for (int i = 0; i < current_neighbors.size(); i++) {
         if (current_neighbors[i] == particle_num) {
-            return; // the current particle is already in the neighbor vector for this box number
+            contains = true;
+            break; // the current particle is already in the neighbor vector for this box number
         }
     }
-	box_neighbors[box_num].push_back(particle_num);
+	if (!contains) {
+        box_neighbors[box_num].push_back(particle_num);
+    }
 }
 
 void Neighbor::set_particle_neighbors(int particle_num, Particle *p) {
@@ -97,39 +101,12 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, float max_point, floa
     
     float width = max_point - min_point;
     int box_per_row = (int)(width / support_rad); // casting to int, assuming support radius evenly divides width
-    /*
-    float curr_x = min_point, curr_y = min_point, curr_z = min_point;
     
-	float col_point, row_point, depth_point;
-    
-	for (int i = 0; i < box_per_row && curr_x < max_point; i++) {
-        col_point = abs(pos.x - curr_x - support_rad/2.0f);
-        row_point = abs(pos.y - curr_y - support_rad/2.0f);
-        depth_point = abs(pos.z - curr_z - support_rad/2.0f);
-        
-		if (col_point <= support_rad/2 && col == -1) {
-			col = i;
-		}
-        if (row_point <= support_rad/2 && row == -1) {
-			row = i;
-		}
-        if (depth_point <= support_rad/2 && depth == -1) {
-            depth = i;
-        }
-        
-        if (row != -1 && col != -1 && depth != -1) {
-			break;
-		}
-        curr_x += support_rad;
-        curr_y += support_rad;
-        curr_z += support_rad;
-	}
-    */
     int num = col + row * box_per_row + depth * box_per_row * box_per_row;
     
     if (num >= box_per_row * box_per_row * box_per_row || num < 0 || row == -1 || col == -1 || depth == -1) {
         //cout<<"Error, incorrect box # assigned in Neighbor: "<<num<<endl;
-        num = -1; // set box number to 0 to prevent bad vector access
+        num = -1; // set box number to -1 to signify out of container
         // exit(0);
     }
     //compute box num given row & col
@@ -150,6 +127,9 @@ void Neighbor::place_particles(vector<Particle*>& particles,float support_rad, C
     // Clear out the box particle vector of old neighbors
     box_particles.clear();
     box_neighbors.clear();
+    
+    box_particles.reserve(box_per_row*box_per_row*box_per_row);
+    box_neighbors.reserve(box_per_row*box_per_row*box_per_row);
     
     // Fill the box particles vector with empty vectors of ints
     for (int i = 0; i < box_per_row*box_per_row*box_per_row; i++) {
@@ -580,6 +560,9 @@ void Neighbor::place_particles(vector<Particle*>& particles,float support_rad, C
             neighbor_boxes.push_back(box_num+square_face+box_per_row+1);
         }
         
+        // add current particle as neighbor to current box
+        int current_box_num = particles[i]->box;
+        add_to_box_neighbors(current_box_num,i);
         
         // add particles in neighboring boxes to the current particles vector of neighbor particles
         for (int j = 0; j < neighbor_boxes.size(); j++) {
@@ -596,7 +579,6 @@ void Neighbor::place_particles(vector<Particle*>& particles,float support_rad, C
                 float dot_prod = dot(diff,diff);
                 float dist = sqrt(dot_prod);
                 if (SURFACE) {
-                    int current_box_num = particles[i]->box;
                     add_to_box_neighbors(current_box_num,particle_num);
                 }
                 // check that the neighboring particle is within the support radius

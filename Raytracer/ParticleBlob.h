@@ -24,7 +24,7 @@ public:
 	BRDF get_brdf();
 
 	ParticleBlob(void){t_step = .01;tolerance = 500.0f; boundary_density = 1000.0f;};
-	ParticleBlob(vector<Particle*> arg_particles,Neighbor arg_neighbors,glm::vec3 a,glm::vec3 d,glm::vec3 s,glm::vec3 r,glm::vec3 e,float sp){
+	ParticleBlob(vector<Particle*> arg_particles,Neighbor *arg_neighbors,glm::vec3 a,glm::vec3 d,glm::vec3 s,glm::vec3 r,glm::vec3 e,float sp){
 		particles = arg_particles;
 		t_step = .01;
 		tolerance = 500.0f; 
@@ -35,6 +35,6 @@ public:
 		brdf.shiny = sp;
 		brdf.kr = r;
 		brdf.ke = e;
-		neighbors = arg_neighbors;
+		neighbors = *arg_neighbors;
 	};
 };

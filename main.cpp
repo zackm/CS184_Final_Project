@@ -355,7 +355,9 @@ char triTable[256][16] =
 Output triangle mesh to OBJ file.
 */
 void output_obj() {
-
+    // place particles in box_neighbor
+    NEIGHBOR.place_particles(PARTICLES, SUPPORT_RADIUS, CONTAINER, NUM_PARTICLES, true);
+    
 	// open file
 	std::stringstream ss1;
 	ss1 << IMAGE_COUNTER;
@@ -1065,7 +1067,7 @@ void initScene(){
     if (RENDERING_TRIANGLES) {
         NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER,NUM_PARTICLES,true);
     } else {
-        NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER,NUM_PARTICLES,true);
+        NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER,NUM_PARTICLES,false);
     }
 
 	// create some lights
