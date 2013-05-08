@@ -21,53 +21,69 @@ void Neighbor::set_particle_neighbors(int particle_num, Particle *p) {
 	}
 }
 
+float dot(Vec3,Vec3);
 
+/*
+ Compute Box Number Function:
+ Given a particle position, support radius, maximum container x value, and minimum container x value, returns
+ the box number for the neighbor algorithm. Assumes the container is a cube and inverse of support radius is
+ an integer.
+ */
 int Neighbor::compute_box_num(Vec3 pos, float support_rad, float max_point, float min_point) {
-    // assuming container is cube
-    int row = -1,col = -1, depth = -1;
+	int col = floor(pos.x/support_rad);
+	int row = floor(pos.y/support_rad);
+	int depth = floor(pos.z/support_rad);
+
+	//int row = -1,col = -1, depth = -1;
     float width = max_point - min_point;
     int box_per_row = (int)(width / support_rad); // casting to int, assuming support radius evenly divides width
     
-    float curr_x = min_point, curr_y = min_point, curr_z = min_point;
-    
-	float col_point, row_point, depth_point;
-    
-	for (int i = 0; i < box_per_row && curr_x < max_point; i++) {
-        col_point = abs(pos.x - curr_x);
-        row_point = abs(pos.y - curr_y);
-        depth_point = abs(pos.z - curr_z);
-        
-		if (col_point <= support_rad && col == -1) {
-			col = i;
-		}
-        if (row_point <= support_rad && row == -1) {
-			row = i;
-		}
-        if (depth_point <= support_rad && depth == -1) {
-            depth = i;
-        }
-        
-        if (row != -1 && col != -1 && depth != -1) {
-			break;
-		}
-        curr_x += support_rad;
-        curr_y += support_rad;
-        curr_z += support_rad;
-	}
-    
+ //   // current x,y,z locations of cell traversal
+ //   float curr_x = min_point, curr_y = min_point, curr_z = min_point;
+ //   
+ //   // holds the difference between current x,y,z traversal locations and the particle x,y,z locations
+	//float col_point, row_point, depth_point;
+ //   
+ //   // loop until assign box number (1D numbering) in x,y, and z directions
+	//for (int i = 0; i < box_per_row && curr_x < max_point; i++) {
+ //       col_point = abs(pos.x - curr_x-support_rad/2.0f);
+ //       row_point = abs(pos.y - curr_y-support_rad/2.0f);
+ //       depth_point = abs(pos.z - curr_z-support_rad/2.0f);
+ //       
+	//	if (col_point <= support_rad && col == -1) {
+	//		col = i;
+	//	}
+ //       if (row_point <= support_rad && row == -1) {
+	//		row = i;
+	//	}
+ //       if (depth_point <= support_rad && depth == -1) {
+ //           depth = i;
+ //       }
+ //       
+ //       if (row != -1 && col != -1 && depth != -1) {
+	//		break;
+	//	}
+ //       curr_x += support_rad;
+ //       curr_y += support_rad;
+ //       curr_z += support_rad;
+	//}
+ //   
+    // combine box numbers into 3D numbering
     int num = col + row * box_per_row + depth * box_per_row * box_per_row;
     
     if (num >= box_per_row * box_per_row * box_per_row || num < 0 || row == -1 || col == -1 || depth == -1) {
         //cout<<"Error, incorrect box # assigned in Neighbor: "<<num<<endl;
         num = 0; // set box number to 0 to prevent bad vector access
-        // exit(0);
     }
-    //compute box num given row & col
     return num;
 }
 
+/*
+ Compute Box Number Function (for raytracer)
+ This is the same as the other compute box number function, except that it handles errors differently. If
+ a particle position is outside the min and max point range, it return -1. Same assumptions hold as before.
+ */
 int Neighbor::compute_box_num(Vec3 pos, float support_rad, float max_point, float min_point, bool flag) {
-    // assuming container is cube
     int row = -1,col = -1, depth = -1;
     float width = max_point - min_point;
     int box_per_row = (int)(width / support_rad); // casting to int, assuming support radius evenly divides width
@@ -77,9 +93,9 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, float max_point, floa
 	float col_point, row_point, depth_point;
     
 	for (int i = 0; i < box_per_row && curr_x < max_point; i++) {
-        col_point = abs(pos.x - curr_x);
-        row_point = abs(pos.y - curr_y);
-        depth_point = abs(pos.z - curr_z);
+        col_point = abs(pos.x - curr_x-support_rad/2.0f);
+        row_point = abs(pos.y - curr_y-support_rad/2.0f);
+        depth_point = abs(pos.z - curr_z-support_rad/2.0f);
         
 		if (col_point <= support_rad && col == -1) {
 			col = i;
@@ -109,17 +125,22 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, float max_point, floa
     //compute box num given row & col
     return num;
 }
-
+/*
+ Place Particles Function:
+ Given a vector of particles, a support radius, a container, and the number of particles, this will assign a box
+ number to each particle, along with a vector of neighboring particle numbers. Works by first 
+ */
 void Neighbor::place_particles(vector<Particle*>& particles,float support_rad, Container c, int num_particles){
-    // assuming square container
     float width = c.max.x - c.min.x;
     float min = c.min.x;
     float max = c.max.x;
-    int box_per_row = width/support_rad;
-    int square_face = box_per_row * box_per_row;
+    int box_per_row = width/support_rad; // numbers of boxes along each axis
+    int square_face = box_per_row * box_per_row; // number of boxes on one face of the cube container
     
+    // Clear out the box particle vector of old neighbors
     box_particles.clear();
     
+    // Fill the box particles vector with empty vectors of ints
     for (int i = 0; i < box_per_row*box_per_row*box_per_row; i++) {
         box_particles.push_back(vector<int>());
     }
@@ -144,6 +165,8 @@ void Neighbor::place_particles(vector<Particle*>& particles,float support_rad, C
         // each particle is a neighbor to particles in the same box
         neighbor_boxes.push_back(box_num);
         
+        // add the correct numbers of neighboring boxes of the current box
+        // 27 different cases
         if (box_num < square_face) {
             // front face
             if (box_num < box_per_row) {
@@ -546,7 +569,7 @@ void Neighbor::place_particles(vector<Particle*>& particles,float support_rad, C
         }
         
         
-        // need to find out which boxes neighbor the current box
+        // add particles in neighboring boxes to the current particles vector of neighbor particles
         for (int j = 0; j < neighbor_boxes.size(); j++) {
             int num = neighbor_boxes[j];
             if (num < 0 || num > box_per_row*box_per_row*box_per_row) {
@@ -557,7 +580,9 @@ void Neighbor::place_particles(vector<Particle*>& particles,float support_rad, C
                 particle_num = *it;
                 Vec3 a = particles[i]->position;
                 Vec3 b = particles[particle_num]->position;
-                float dist = sqrt(pow((a.x - b.x),2) - pow((a.y - b.y),2));
+				Vec3 diff = b-a;
+                float dist = sqrt(dot(diff,diff));
+                // check that the neighboring particle is within the support radius
                 if (dist <= support_rad) {
                     particles[i]->neighbors.push_back(particle_num);
                 }

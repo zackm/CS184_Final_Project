@@ -19,22 +19,4 @@ We simulate water using the method of Smoothed Particle Hydrodynamics. This work
 \\ \\
 After running the simulation, we reconstruct the surface created by the particles in two ways. One is by using Marching Cubes to generate a triangulated surface in OpenGL. This surface is created by finding points in space which have density above threshold and calling those points part of the fluid. The other method is by calling the ray tracer we created for Assignment 2 and using ray marching on the particle density field. With added reflection and refraction in the ray tracer, we get a cool looking surface.
 
-
-\section*{Governing Equation of SPH}
-To get the value of any quantity $A_{i}$ in space, we use the generic kernel formula: $$A_i = \sum_{j}^n A_j \frac{m_j}{\rho_j}W(r_{ij},h)$$
-where $m_j$ and $\rho_j$ are the mass and density of particle $j$, $W$ is a kernel function with local support, $h$ is the support radius of $W$, and $r_{ij}$ is the vector from the position of particle $j$ to the position of particle $i$.
-\newline
-\newline
-With this formula we can calculate the quanities we need to solve the Naiver-Stokes equation describing the motion of the particles in the fluid. In addition, by taking the gradient and laplacian of $A_i$, we only need to differentiate the kernel function. So calculating pressure gradient is simply a matter of using the same formula with the gradient of $W$.
-
-\begin{center}
-$\rho_i =  \sum_{j}^n m_j W(r_{ij},h)$
-\newline
-
-\end{center}
-
-
-
-
-
 \end{document}

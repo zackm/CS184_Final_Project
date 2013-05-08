@@ -38,16 +38,17 @@ Neighbor NEIGHBOR; //neighbor object used for calculations
 const float H = .0625; // .0625 works well, .05 good too
 const float SUPPORT_RADIUS = .125; // .125 works well, .1 good too
 
-bool RENDERING_TRIANGLES = false;
-bool RENDERING_BLOB = true;
+bool RENDERING_TRIANGLES = true;
+bool RENDERING_BLOB = false;
 
 const float PI = 3.1415926;
 const float DRAW_RADIUS = .01f;
 
-bool OUTPUT_IMAGE = false;
-bool OUTPUT_SINGLE_IMAGE = false;
-bool RAYTRACE_MOVIE = false;
-int IMAGE_COUNTER = 0;
+bool OUTPUT_IMAGE = false; // boolean to contstantly output opengl frames for movie
+bool OUTPUT_SINGLE_IMAGE = false; // boolean to output a single opengl frame, continue execution
+bool RAYTRACE_MOVIE = false; // boolean to constantly output raytracing frames for movie
+int IMAGE_COUNTER = 0; // keep track of frame number for outputting images and obj files
+int IMAGE_DELAY = 0; // number of frames to wait before outputting images
 int PIC_WIDTH = 600; // display window and output image dimensions
 int PIC_HEIGHT = 600;
 
@@ -354,11 +355,11 @@ Output triangle mesh to OBJ file.
 void output_obj() {
 
 	// open file
-    std::stringstream ss1;
-    ss1 << IMAGE_COUNTER;
-    std::string s1(ss1.str());
-    string save_name = std::string("Multi_Trace/input_obj/fluid")+s1+".obj";
-    
+	std::stringstream ss1;
+	ss1 << IMAGE_COUNTER;
+	std::string s1(ss1.str());
+	string save_name = std::string("Multi_Trace/input_obj/fluid")+s1+".obj";
+
 	ofstream output_file;
 	output_file.open (save_name.c_str());
 	output_file << "# OBJ File created by Tyler Brabham and Zack Mayeda\n";
@@ -388,7 +389,7 @@ void output_obj() {
 			Vec3 vn_temp = vn[i];
 			output_file<<"vn "<< vn_temp.x<<" "<<vn_temp.y<< " "<<vn_temp.z<<endl;
 		}
-    }else{
+	}else{
 		//we are rendering blobs, so we will make an obj point file.
 		Particle* temp_part;
 		for (int i = 0; i < NUM_PARTICLES; i++) {
@@ -399,8 +400,10 @@ void output_obj() {
 
 	}
 
-	//output_file.close();
+	output_file.close();
+    
 	Raytracer r(NEIGHBOR);
+
     std::stringstream ss;
     ss << IMAGE_COUNTER;
     std::string s(ss.str());
@@ -415,20 +418,24 @@ Keyboard interactions.
 void keyPressed(unsigned char key, int x, int y) {
 	switch(key) {
 	case ' ':
+        // Exit program
 		exit(0);
 		break;
 	case 'r':
+        // Output a single obj file, raytrace it, and quit
 		output_obj();
-		// possible call raytracer here
 		exit(0);
 		break;
 	case 'p':
+        // Output a single opengl frame and continue
 		OUTPUT_SINGLE_IMAGE = true;
 		break;
 	case 'i':
+        // Toggle isosurface rendering
 		RENDERING_TRIANGLES = !RENDERING_TRIANGLES;
 		break;
 	case 'f':
+        // Print out FPS to console once per keypress
 		SHOW_FPS = true;
 		break;
 	}
@@ -583,6 +590,10 @@ Vec3 pressure_kernel_gradient(Vec3 r_i, Vec3 r_j){
 	float coeff = (45/(PI*pow(H,6.0f)))*pow((H-sqrt(mag)),2.0f);
 
 	Vec3 v(0,0,0);
+	//might want to return random vector if sqrt(mag)==0
+	if(mag==0){
+		cout<<'h'<<endl;
+	}
 	return diff_vec*(-coeff)/(sqrt(mag));
 }
 
@@ -636,7 +647,7 @@ Vec3 normal_at_point(Vec3 point){
 	if(length>0){
 		normal = normal/length;
 	}
-	return normal*(-1.0f);
+	return normal*(-1.0f);//normal for triangles
 }
 
 /*
@@ -685,20 +696,19 @@ void run_time_step(){
 
 		vector<int> neighbor_vec = base_particle->neighbors;
 		for (int j = 0; j<neighbor_vec.size(); j++){ // changed to neighbors
-			if(i!=neighbor_vec[j]){
-				temp_particle = PARTICLES[neighbor_vec[j]];
-				Vec3 r = base_particle->position-temp_particle->position;
-				float mag = dot(r,r);
-				if(mag<H*H){
+			temp_particle = PARTICLES[neighbor_vec[j]];
+			Vec3 r = base_particle->position-temp_particle->position;
+			float mag = dot(r,r);
+			if(mag<H*H){
+				float weight = viscosity_kernel_laplacian(base_particle->position,temp_particle->position);
+				viscosity_laplacian += ((temp_particle->velocity - base_particle->velocity)/temp_particle->density)*weight * temp_particle->mass;
+
+				color += (temp_particle->mass / temp_particle->density) * default_laplacian(base_particle->position,temp_particle->position);
+
+				normal += default_gradient(base_particle->position,temp_particle->position)*(temp_particle->mass / temp_particle->density);
+				if(i!=neighbor_vec[j]){
 					Vec3 weight_vec = pressure_kernel_gradient(base_particle->position,temp_particle->position);
-					pressure_gradient += weight_vec * temp_particle->mass * ((pressure_list[i]+pressure_list[j])/(2.0f*temp_particle->density)); 
-
-					float weight = viscosity_kernel_laplacian(base_particle->position,temp_particle->position);
-					viscosity_laplacian += ((temp_particle->velocity - base_particle->velocity)/temp_particle->density)*weight * temp_particle->mass;
-
-					color += (temp_particle->mass / temp_particle->density) * default_laplacian(base_particle->position,temp_particle->position);
-
-					normal += default_gradient(base_particle->position,temp_particle->position)*(temp_particle->mass / temp_particle->density);
+					pressure_gradient += weight_vec * temp_particle->mass * ((pressure_list[i]+pressure_list[neighbor_vec[j]])/(2.0f*temp_particle->density)); 
 				}
 			}
 		}
@@ -831,6 +841,8 @@ void initScene(){
 	float x,y,z,v_x,v_y,v_z;
 
     float step;
+    // Sets up particles to preprogrammed scenes. Scene number taken from
+    // command line options, or defaults to a scene.
     switch (SETUP_SCENE) {
         case 1:
             cout<<"Dam Break Scene"<<endl;
@@ -838,7 +850,6 @@ void initScene(){
             for(float i = 0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
                 for(float j = 0; j<2.0f*(CONTAINER.max.y)/5.0f; j=j+step){
                     for(float k = 0; k<3.0f*(CONTAINER.max.z)/5.0f; k=k+step){
-//                        noise = float(rand())/(float(RAND_MAX))*.05f;
                         Vec3 pos(i,j,k);
                         Vec3 vel(0,0,0);
                         new_part = new Particle(pos,vel,MASS,1000.0f);
@@ -854,7 +865,6 @@ void initScene(){
             for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
                 for(float j = 3.0*CONTAINER.max.y/5.0f; j<4.0f*(CONTAINER.max.y)/5.0f; j=j+step){
                     for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.z)/5.0f; k=k+step){
-//                        noise = float(rand())/(float(RAND_MAX))*.05f;
                         Vec3 pos(i,j,k);
                         Vec3 vel(0,-3,0);
                         new_part = new Particle(pos,vel,MASS,1000.0f);
@@ -870,7 +880,6 @@ void initScene(){
             for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
                 for(float j = 3.0*CONTAINER.max.y/5.0f; j<4.0f*(CONTAINER.max.y)/5.0f; j=j+step){
                     for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.z)/5.0f; k=k+step){
-                        //                        noise = float(rand())/(float(RAND_MAX))*.05f;
                         Vec3 pos(i,j,k);
                         Vec3 vel(0,-3,0);
                         new_part = new Particle(pos,vel,MASS,1000.0f);
@@ -1042,13 +1051,14 @@ void initScene(){
 
 	NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER,NUM_PARTICLES);
 
-	//create some lights
+	// create some lights
 	GLfloat light_position[] = {1,1,1,0};
 	GLfloat mat_specular[] = {0,0,0,1.0};
 	GLfloat mat_diffuse[] = {0.0,0.0,1.0,1.0};
 	GLfloat mat_ambient[] = {.1,.1,.1,1};
 	GLfloat mat_shininess[] = {20.0};
 
+    // set material properties
 	glMaterialfv(GL_FRONT,GL_SPECULAR,mat_specular);
 	glMaterialfv(GL_FRONT,GL_SHININESS,mat_shininess);
 	glMaterialfv(GL_FRONT,GL_DIFFUSE,mat_diffuse);
@@ -1076,9 +1086,6 @@ void myDisplay(){
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
-	// Rectangular Container
-	//	gluLookAt(.5f,.25f,1.75f,.5f,.25f,0.0f,0,1,0);
-	// Cube Container
 	gluLookAt(.25f,.4f,1.2f,.25f,.18f,0.0f,0,1,0);
 
 	run_time_step();
@@ -1212,17 +1219,17 @@ void myDisplay(){
 		// Convert to FreeImage format & save to file
 		FIBITMAP* image = FreeImage_ConvertFromRawBits(pixels, PIC_WIDTH, PIC_HEIGHT, 3 * PIC_WIDTH, 24, 0xFF0000, 0x00FF00, 0x0000FF, false);
 
-		// I HATE C++ STRINGS
 		std::stringstream ss;
 		ss << IMAGE_COUNTER;
 		std::string s(ss.str());
 		string name = std::string("images/")+s+".png";
 		FreeImage_Save(FIF_PNG, image, name.c_str(), 0);
 
-		// Free resources
+		// FreeImage resources
 		FreeImage_Unload(image);
 		delete [] pixels;
 
+        // Increment image counter, terminate if 350 frames reached
 		IMAGE_COUNTER++;
 		if (IMAGE_COUNTER == 350) {
 			exit(0);
@@ -1233,21 +1240,20 @@ void myDisplay(){
 		}
 	}
 
+    // print out the frames per second to screen
 	if (SHOW_FPS) {
 		float time_end = glutGet(GLUT_ELAPSED_TIME);
 		cout<<1000/(time_end - time_start)<<" FPS"<<endl;
 		SHOW_FPS = false;
 	}
-	//    FPS stuff if we want to display on screen, incomplete
-	//    glColor3f(rgb.r, rgb.g, rgb.b);
-	//    glRasterPos2f(x, y);
-	//    GLUT_BITMAP_HELVETICA_12
-	//    glutBitmapString(font, string);
-	//    std::string fps = 1/((time_end - time_start)/1000)<<" FPS";
 
     // Raytrace Movie Call
-    if (RAYTRACE_MOVIE) {
+    if (RAYTRACE_MOVIE && IMAGE_DELAY == 0) {
         output_obj();
+    }
+    if (IMAGE_DELAY != 0) {
+        IMAGE_DELAY--;
+        IMAGE_COUNTER++;
     }
     
 	glFlush();
@@ -1256,7 +1262,7 @@ void myDisplay(){
 
 int main(int argc, char* argv[]){
 
-	// Arg parsing
+	// Command Line Arg Parsing
 	for (int i = 1; i < argc; ) {
 		if (strcmp(argv[i],"-m") == 0) {
 			cout<<"Generating images for animation."<<endl;
@@ -1264,13 +1270,11 @@ int main(int argc, char* argv[]){
 			i += 1;
 			continue;
 		}
-
 		if (strcmp(argv[i],"-s") == 0) {
 			SETUP_SCENE = atoi(argv[i+1]);
 			i += 2;
 			continue;
 		}
-
 		if (strcmp(argv[i],"-h") == 0) {
 			cout<<"Help Info for UC Berkeley CS184 Spring 2013 Final Project"<<endl;
 			cout<<"by Tyler Brabham and Zack Mayeda"<<endl;
@@ -1282,27 +1286,36 @@ int main(int argc, char* argv[]){
             cout<<"-rm : Export Raytraced Still Frames for movie into Multi_Trace/output_pics/"<<endl;
             cout<<"-i : Render Isosurface"<<endl;
             cout<<"-p : Render Particles"<<endl;
+            cout<<"-delay # : delay movie output by # frames"<<endl;
+            cout<<"======================="<<endl;
 			cout<<"Live Commands:"<<endl;
+            cout<<"'i' : toggle isosurface/particles"<<endl;
+            cout<<"'r' : output single raytraced image and exit"<<endl;
+            cout<<"'f' : output current FPS to command line"<<endl;
+            cout<<"'p' : save current image, not raytrace, and continue"<<endl;
+            cout<<"spacebar : quit"<<endl;
 			i += 1;
 			exit(0);
 		}
-        
         if (strcmp(argv[i],"-rm") == 0) {
             cout<<"Outputting raytrace OBJ files for movie."<<endl;
             RAYTRACE_MOVIE = true;
             i += 1;
             continue;
         }
-        
         if (strcmp(argv[i],"-i") == 0) {
             RENDERING_TRIANGLES = true;
             i += 1;
             continue;
         }
-        
         if (strcmp(argv[i],"-p") == 0) {
             RENDERING_TRIANGLES = false;
             i += 1;
+            continue;
+        }
+        if (strcmp(argv[i],"-delay") == 0) {
+            IMAGE_DELAY = atoi(argv[i+1]);
+            i += 2;
             continue;
         }
 	}

@@ -1,0 +1,18 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath}
+\usepackage{anysize}
+\marginsize{1cm}{1cm}{1cm}{1cm}
+\begin{document}
+For this ray traced image we reused our ray tracer from Assignment 2 and implemented a new class extended from the Shape superclass to represent the particle density field. From the SPH program we output the particles to an .obj file format. The ray tracer parses the file and initiates the tracing process. We call an intersection routine on the particle field using ray marching to determine if and when the ray encounters a point near a threshold density. To determine the density and normal vector at a point we reuse the kernel functions from the fluid simulation. In addition we reuse the neighbor structure to accelerate the processing of the particles within the ray tracer.
+
+The above image was created by performing the marching cubes algorithm on the density field created by the particles and the kernels. The algorithm breaking up the container of the fluid into a grid and considering the density values at each of the eight vertices. Where the vertex densities are above a certain threshold we have different cases to consider for how to draw the triangles. We implemented the marching squares version ourselves for 2D simulation (which requires considering 16 different cases when drawing triangles) but used code found online to perform marching cubes (which requires 256 cases).
+\\
+\begin{center}
+\section*{Particles}
+\end{center}
+The above image shows the particles in the scene drawn as spheres. There are approximately 2800 particles in the scene. Below the image with the reconstructed surface was created from the same frame in the dam break simulation as these particles.
+\end{section}
+
+
+
+\end{document}

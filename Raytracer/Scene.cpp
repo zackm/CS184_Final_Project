@@ -139,9 +139,9 @@ glm::vec3 Scene::trace(Ray &r,int level,bool in_shape) {
 
 		(*l).generateLightRay(local,&lray,&lcolor);//need to check for transparency now
 
-		if (!intersect_checker(lray)) {
+		if (!intersect_checker(lray,&in_shape)) {
 			add_color = shading(local, brdf, lray, lcolor, view_pos);
-			color += add_color; //do we multiply by brdf.kr here?
+			color += brdf.kr*add_color; //do we multiply by brdf.kr here?
 		}
 	}
 
@@ -165,24 +165,19 @@ glm::vec3 Scene::trace(Ray &r,int level,bool in_shape) {
 		transmit = 0.0f;
 	}
 
-	//if(roullete<=reflect){
-	//do reflected ray
 	float reflect_norm = glm::dot(brdf.kr,brdf.kr);
 	if(reflect>0.0f && reflect_norm>0.0f){
 		Ray reflected_ray = generateReflectionRay(local,&r);
 		color += reflect*brdf.kr*trace(reflected_ray,level-1,in_shape);
 	}
-	//}else{
-	//do refracted ray.
+
 	if(best_shape->transparency && transmit>0.0f){
 		Ray refracted_ray;
 		refracted_ray = generateRefractionRay(local,&r,n1,n2);
 		glm::vec3 refract_coeff(.7,.7,.7);
 		color += transmit*refract_coeff*trace(refracted_ray,level-1,!in_shape);
 	}
-	//	}
 
-	
 
 	return color;
 }
@@ -280,10 +275,10 @@ float Scene::reflectance(LocalGeo& local,Ray& ray,float n1, float n2){
 /*
 Iterates through all shapes and just does basic intersect or not routine
 */
-bool Scene::intersect_checker(Ray& r){
+bool Scene::intersect_checker(Ray& r,bool* in_shape){
 	for (std::list<Shape*>::iterator iter=shapes.begin(); iter != shapes.end(); ++iter) {
 		Shape* s =  *iter;
-		if ((*s).intersect(r)) {
+		if ((*s).intersect(r,in_shape)) {
 			return true;
 		}
 	}

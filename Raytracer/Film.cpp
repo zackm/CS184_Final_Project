@@ -33,9 +33,10 @@ void Film::commit(int x, int y, glm::vec3 color) {
 		color[2] = 1.0f;
 	}
 	
-	free_image_color.rgbRed = color[0] * 255.0f;
+    // RGB => BGR
+	free_image_color.rgbRed = color[2] * 255.0f;
 	free_image_color.rgbGreen = color[1] * 255.0f;
-	free_image_color.rgbBlue = color[2] * 255.0f;
+	free_image_color.rgbBlue = color[0] * 255.0f;
 	FreeImage_SetPixelColor(bitmap, x, y, &free_image_color);
 
 	return;

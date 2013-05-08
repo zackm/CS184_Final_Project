@@ -20,7 +20,7 @@ public:
 	Shape(void){};
 	~Shape(void){};
 	virtual bool intersect(Ray&, float*, LocalGeo*,bool*) =0;
-	virtual bool intersect(Ray&) =0;
+	virtual bool intersect(Ray&,bool*) =0;
 	virtual BRDF get_brdf() =0;
 };
 
