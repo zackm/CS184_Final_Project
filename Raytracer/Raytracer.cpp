@@ -744,7 +744,7 @@ int Raytracer::ray_trace_start(std::string input_filename, std::string output_fi
 		kr.x = .2; kr.y = .2; kr.z = .7;
 		glm::vec3 e(0,0,0);
 		sp = 30;
-		ParticleBlob* blob = new ParticleBlob(particles,neighborhood,ka,kd,ks,kr,e,sp);
+		ParticleBlob* blob = new ParticleBlob(particles,&neighborhood,ka,kd,ks,kr,e,sp);
 		blob->transparency = true;
 		blob->index_of_refraction = 1.33;
 		s.add_shape(blob);
@@ -820,7 +820,7 @@ int Raytracer::ray_trace_start(std::string input_filename, std::string output_fi
 		//left wall
 		e = glm::vec3(.5,0,.5);
 		d = glm::vec3(.5,.5,.5);
-		r = glm::vec3(.1,.1,.1);
+		r = glm::vec3(0,0,0);
 		t = new RTriangle(glm::vec3(0,0,.5),glm::vec3(0,0,0),glm::vec3(0,.5,.5),ka,d,spec,r,e,sp);
 		s.add_shape(t);
 

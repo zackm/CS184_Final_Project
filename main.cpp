@@ -23,11 +23,11 @@ Vec3 GRAVITY(0,-9.8f,0);
 const float MASS = .02f;//could set it to any number really.
 const float IDEAL_DENSITY = 1000.0f;
 const float STIFFNESS = 3.0f;//for pressure difference
-const float VISCOSITY = 3.5f;
-const float SURFACE_TENSION = .07f;
+float VISCOSITY = 3.5f;
+float SURFACE_TENSION = .07f;
 const float TENSION_THRESHOLD = 7.0f;
 
-const float CUBE_TOL = .01f;//either grid size or tolerance for adaptive cubes, reciprocal must be an integer for now. .025f ok, .01 for high quality
+float CUBE_TOL = .01f;//either grid size or tolerance for adaptive cubes, reciprocal must be an integer for now. .025f ok, .01 for high quality
 const float DENSITY_TOL = 100.0f;//also used for marching grid, for density of the particles
 const int WIDTH = 20;//floor((CONTAINER.max.x-CONTAINER.min.x)/CUBE_TOL);
 const int HEIGHT = 20;//floor((CONTAINER.max.y-CONTAINER.min.y)/CUBE_TOL);
@@ -40,6 +40,7 @@ const float SUPPORT_RADIUS = .125; // .125 works well, .1 good too
 
 bool RENDERING_TRIANGLES = true;
 bool RENDERING_BLOB = false;
+bool RENDERING_WIREFRAME = false;
 
 const float PI = 3.1415926;
 const float DRAW_RADIUS = .01f;
@@ -54,6 +55,7 @@ int PIC_HEIGHT = 600;
 
 bool SHOW_FPS = false; // print out FPS to console
 int SETUP_SCENE = 0; // choice of preset scene, from command line input
+bool PAUSE = false; // run time, or pause
 
 Vec3 normal_at_point(Vec3);
 
@@ -353,7 +355,9 @@ char triTable[256][16] =
 Output triangle mesh to OBJ file.
 */
 void output_obj() {
-
+    // place particles in box_neighbor
+    NEIGHBOR.place_particles(PARTICLES, SUPPORT_RADIUS, CONTAINER, NUM_PARTICLES, true);
+    
 	// open file
 	std::stringstream ss1;
 	ss1 << IMAGE_COUNTER;
@@ -418,9 +422,13 @@ Keyboard interactions.
 void keyPressed(unsigned char key, int x, int y) {
 	switch(key) {
 	case ' ':
-        // Exit program
-		exit(0);
+        // Pause program
+            PAUSE = !PAUSE;
 		break;
+    case 'q':
+        // Exit Program
+        exit(0);
+        break;
 	case 'r':
         // Output a single obj file, raytrace it, and quit
 		output_obj();
@@ -612,7 +620,7 @@ float density_at_point(Vec3 point){
 	int box_number = NEIGHBOR.compute_box_num(point,SUPPORT_RADIUS,CONTAINER.max.x,CONTAINER.min.x);
 
 	Particle* temp_particle;
-	vector<int> neighbor_vec = NEIGHBOR.box_particles[box_number];
+	vector<int> neighbor_vec = NEIGHBOR.box_neighbors[box_number];
 	float density = 0;//default_kernel(point,point);
 	for (int i = 0; i<neighbor_vec.size(); i++){
 		//update density. There will be a problem if the point is exactly equal to sum particle (divide by zero error).
@@ -631,7 +639,7 @@ Vec3 normal_at_point(Vec3 point){
 	//set the normal at each point
 	int box_number = NEIGHBOR.compute_box_num(point,SUPPORT_RADIUS,CONTAINER.max.x,CONTAINER.min.x);
 	Particle* temp_particle;
-	vector<int> neighbor_vec = NEIGHBOR.box_particles[box_number];
+	vector<int> neighbor_vec = NEIGHBOR.box_neighbors[box_number];
 	Vec3 normal(0,0,0);
 	for (int j = 0; j<neighbor_vec.size(); j++){
 		temp_particle = PARTICLES[neighbor_vec[j]];
@@ -656,6 +664,7 @@ To do this, calculate all quanities in Navier-Stokes, then use timestep to
 update particle location from old location and velocity.
 */
 void run_time_step(){
+    
 	vector<Particle*> new_particles; new_particles.resize(NUM_PARTICLES);
 	vector<float> pressure_list; pressure_list.resize(NUM_PARTICLES);
 	vector<Vec3> pressure_grad_list; pressure_grad_list.resize(NUM_PARTICLES);
@@ -762,8 +771,14 @@ void run_time_step(){
 
 	PARTICLES = new_particles;
 
-	//reset neighbor structure 
-	NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER,NUM_PARTICLES);
+	//reset neighbor structure
+    if (RENDERING_TRIANGLES) {
+        // fill vector of vector of ints to access all particles that neighbor
+        // a specific box number
+        NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER,NUM_PARTICLES,true);
+    } else {
+        NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER,NUM_PARTICLES,false);
+    }
 }
 
 /*
@@ -861,7 +876,7 @@ void initScene(){
             
         case 2:
             cout<<"Drop Scene"<<endl;
-            step = .015;
+            step = .01;
             for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
                 for(float j = 3.0*CONTAINER.max.y/5.0f; j<4.0f*(CONTAINER.max.y)/5.0f; j=j+step){
                     for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.z)/5.0f; k=k+step){
@@ -875,13 +890,13 @@ void initScene(){
             break;
             
         case 3:
-            cout<<"Flat Scene"<<endl;
-            step = .015;
-            for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
-                for(float j = 3.0*CONTAINER.max.y/5.0f; j<4.0f*(CONTAINER.max.y)/5.0f; j=j+step){
-                    for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.z)/5.0f; k=k+step){
-                        Vec3 pos(i,j,k);
-                        Vec3 vel(0,-3,0);
+            cout<<"Randomized Scene"<<endl;
+            step = .025;
+            for(float i = 0.1f*CONTAINER.max.x/5.0; i<5*(CONTAINER.max.x)/5.0f; i=i+step){
+                for(float j = 0.1f*CONTAINER.max.y/5.0f; j<.5f*(CONTAINER.max.y)/5.0f; j=j+step){
+                    for(float k = 0.1f*CONTAINER.max.y/5.0f; k<5.0f*(CONTAINER.max.z)/5.0f; k=k+step){
+                        Vec3 pos(i,j*noise,k);
+                        Vec3 vel(1.5f,0,0);
                         new_part = new Particle(pos,vel,MASS,1000.0f);
                         PARTICLES.push_back(new_part);
                     }
@@ -908,7 +923,7 @@ void initScene(){
             
         case 5:
             cout<<"2 Glob Collision Scene"<<endl;
-            step = .015;
+            step = .025;
             for(float i = 4.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
                 for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
                     for(float k = 2.0*CONTAINER.max.z/4.0f; k<(3.0f*CONTAINER.max.z/4.0f); k=k+step) {
@@ -933,9 +948,159 @@ void initScene(){
             }
             break;
             
+        case 6:
+            cout<<"Test Scene"<<endl;
+            if (NUM_PARTICLES == 0) {
+                Vec3 vel(0,0,0);
+                
+                // back, front, bottom
+//                Vec3 pos(.05,.05,.05);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+                
+                // right, back ,bottom
+//                Vec3 pos(.45,.05,.05);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+                
+                // right, middle, bottom ==== interesting edge case
+//                Vec3 pos(.25,.05,.05);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+                
+                // back, left, top
+//                Vec3 pos(.05,.45,.05);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // back, right, top
+//                Vec3 pos(.45,.45,.05);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // back, top, middle
+//                Vec3 pos(.34,.45,.05);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+                
+                // left, back, midway
+//                Vec3 pos(.05,.25,.05);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+                
+                // right, back, midway
+//                Vec3 pos(.45,.25,.05);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // back, not edge
+//                Vec3 pos(.24,.26,.05);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // front,left,bottom
+//                Vec3 pos(.05,.05,.45);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // front,right,bottom
+//                Vec3 pos(.46,.05,.45);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // front, bottom, middle
+//                Vec3 pos(.33,.05,.45);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // front, top, left
+//                Vec3 pos(.05,.46,.45);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // front, top, right
+//                Vec3 pos(.46,.47,.45);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // front, top, middle
+//                Vec3 pos(.37,.45,.45);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // front, left, midway
+//                Vec3 pos(.05,.25,.45);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+                
+                // right, front, midway
+//                Vec3 pos(.45,.25,.45);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // front face
+//                Vec3 pos(.25,.25,.45);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // left face, top, midway
+//                Vec3 pos(.05,.46,.34);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // left face, bottom, midway
+//                Vec3 pos(.05,.05,.23);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // left face, not edge
+//                Vec3 pos(.05,.25,.25);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+                
+                // right face, top, midway
+//                Vec3 pos(.45,.45,.23);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // right face, bottom, midway
+//                Vec3 pos(.45,.05,.31);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // right face, not edge
+//                Vec3 pos(.45,.24,.26);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // top face
+//                Vec3 pos(.27,.45,.31);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // bottom face
+//                Vec3 pos(.35,.05,.25);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+
+                // inside cube general
+                Vec3 pos(.25,.25,.25);
+                new_part = new Particle(pos,vel,MASS,1000);
+                PARTICLES.push_back(new_part);
+                
+//                pos = Vec3(.05,.05,.05);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+                
+//                pos = Vec3(.05,.05,.15);
+//                new_part = new Particle(pos,vel,MASS,1000);
+//                PARTICLES.push_back(new_part);
+            }
+            break;
+            
         default:
             ////3D Uniform Scene
-            cout<<"Default Uniform Scene"<<endl;
+            cout<<"Default Horizontal Velocity Scene"<<endl;
             step = .025;
             for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
                 for(float j = CONTAINER.min.y; j<1.0f*(CONTAINER.max.y)/5.0f; j=j+step){
@@ -1048,8 +1213,11 @@ void initScene(){
 	//    new_part = new Particle(pos,vel,MASS,1000);
 	//    PARTICLES.push_back(new_part);
 	//}
-
-	NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER,NUM_PARTICLES);
+    if (RENDERING_TRIANGLES) {
+        NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER,NUM_PARTICLES,true);
+    } else {
+        NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER,NUM_PARTICLES,false);
+    }
 
 	// create some lights
 	GLfloat light_position[] = {1,1,1,0};
@@ -1073,6 +1241,7 @@ void initScene(){
 }
 
 void myDisplay(){
+    
 	float time_start = glutGet(GLUT_ELAPSED_TIME);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -1088,9 +1257,11 @@ void myDisplay(){
 
 	gluLookAt(.25f,.4f,1.2f,.25f,.18f,0.0f,0,1,0);
 
-	run_time_step();
-	CURRENT_TIME += TIMESTEP;
-
+    if (!PAUSE) {
+        run_time_step();
+        CURRENT_TIME += TIMESTEP;
+    }
+    
 	if(CURRENT_TIME>LIFETIME){
 		exit(0);
 	}
@@ -1107,20 +1278,54 @@ void myDisplay(){
 			glClearColor(1,1,1,1);
 			//glColor3f(1.0f,1.0f,1.0f);
 
-			////wireframe for now
-			//glPolygonMode(GL_FRONT, GL_LINE);
-			//glPolygonMode(GL_BACK, GL_LINE);
-			glBegin(GL_TRIANGLES);
-			glVertex3f(temp_triangle->a.x,temp_triangle->a.y,temp_triangle->a.z);
-			glNormal3f(temp_triangle->a_normal.x,temp_triangle->a_normal.y,temp_triangle->a_normal.z);
-			glVertex3f(temp_triangle->b.x,temp_triangle->b.y,temp_triangle->b.z);
-			glNormal3f(temp_triangle->b_normal.x,temp_triangle->b_normal.y,temp_triangle->b_normal.z);
-			glVertex3f(temp_triangle->c.x,temp_triangle->c.y,temp_triangle->c.z);
-			glNormal3f(temp_triangle->c_normal.x,temp_triangle->c_normal.y,temp_triangle->c_normal.z);
-			glEnd();
-
-			//glPolygonMode(GL_FRONT, GL_FILL); // fill mode
-			//glPolygonMode(GL_BACK, GL_FILL);
+			// wireframe
+            if (RENDERING_WIREFRAME) {
+                
+                /*renders object twice as white and black with an offset. The offset removes some
+                 artifacts from lines behind object.
+                 */
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+                
+                glDisable(GL_LIGHTING);
+                glClearColor(1,1,1,1);
+                glColor3f(.4f,.4f,.4f);//color as white for wireframe
+                
+                glBegin(GL_TRIANGLES);
+                glVertex3f(temp_triangle->a.x,temp_triangle->a.y,temp_triangle->a.z);
+                glNormal3f(temp_triangle->a_normal.x,temp_triangle->a_normal.y,temp_triangle->a_normal.z);
+                glVertex3f(temp_triangle->b.x,temp_triangle->b.y,temp_triangle->b.z);
+                glNormal3f(temp_triangle->b_normal.x,temp_triangle->b_normal.y,temp_triangle->b_normal.z);
+                glVertex3f(temp_triangle->c.x,temp_triangle->c.y,temp_triangle->c.z);
+                glNormal3f(temp_triangle->c_normal.x,temp_triangle->c_normal.y,temp_triangle->c_normal.z);
+                glEnd();
+                
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);//color as background color.
+                glEnable(GL_POLYGON_OFFSET_FILL);
+                glPolygonOffset(1.0,1.0);
+                glClearColor(1,1,1,1);
+                glColor3f(1,1,1);
+                
+                glBegin(GL_TRIANGLES);
+                glVertex3f(temp_triangle->a.x,temp_triangle->a.y,temp_triangle->a.z);
+                glNormal3f(temp_triangle->a_normal.x,temp_triangle->a_normal.y,temp_triangle->a_normal.z);
+                glVertex3f(temp_triangle->b.x,temp_triangle->b.y,temp_triangle->b.z);
+                glNormal3f(temp_triangle->b_normal.x,temp_triangle->b_normal.y,temp_triangle->b_normal.z);
+                glVertex3f(temp_triangle->c.x,temp_triangle->c.y,temp_triangle->c.z);
+                glNormal3f(temp_triangle->c_normal.x,temp_triangle->c_normal.y,temp_triangle->c_normal.z);
+                glEnd();
+                
+                glDisable(GL_POLYGON_OFFSET_FILL);
+                
+            } else {
+                glBegin(GL_TRIANGLES);
+                glVertex3f(temp_triangle->a.x,temp_triangle->a.y,temp_triangle->a.z);
+                glNormal3f(temp_triangle->a_normal.x,temp_triangle->a_normal.y,temp_triangle->a_normal.z);
+                glVertex3f(temp_triangle->b.x,temp_triangle->b.y,temp_triangle->b.z);
+                glNormal3f(temp_triangle->b_normal.x,temp_triangle->b_normal.y,temp_triangle->b_normal.z);
+                glVertex3f(temp_triangle->c.x,temp_triangle->c.y,temp_triangle->c.z);
+                glNormal3f(temp_triangle->c_normal.x,temp_triangle->c_normal.y,temp_triangle->c_normal.z);
+                glEnd();
+            }
 		}
 	}else{
 		//draw particles
@@ -1207,14 +1412,14 @@ void myDisplay(){
 
 	glPopMatrix();
 
-	if (OUTPUT_IMAGE || OUTPUT_SINGLE_IMAGE) {
+	if ((OUTPUT_IMAGE && IMAGE_DELAY == 0 )|| OUTPUT_SINGLE_IMAGE) {
 		// Output image to file
 		FreeImage_Initialise();
 
 		// Make the BYTE array, factor of 3 because it's RBG.
 		BYTE* pixels = new BYTE[ 3 * PIC_HEIGHT * PIC_WIDTH];
 
-		glReadPixels(0, 0, PIC_WIDTH, PIC_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+		glReadPixels(0, 0, PIC_WIDTH, PIC_HEIGHT, GL_BGR, GL_UNSIGNED_BYTE, pixels);
 
 		// Convert to FreeImage format & save to file
 		FIBITMAP* image = FreeImage_ConvertFromRawBits(pixels, PIC_WIDTH, PIC_HEIGHT, 3 * PIC_WIDTH, 24, 0xFF0000, 0x00FF00, 0x0000FF, false);
@@ -1282,10 +1487,17 @@ int main(int argc, char* argv[]){
 			cout<<"Command Line Arguments:"<<endl;
             cout<<"-h : List all options"<<endl;
             cout<<"-s # : Load scene number #"<<endl;
+            cout<<"       1 - Dam Break"<<endl;
+            cout<<"       2 - Drop"<<endl;
+            cout<<"       3 - Randomized"<<endl;
+            cout<<"       4 - No Gravity"<<endl;
+            cout<<"       5 - Collision"<<endl;
+            cout<<"       Default - Horizontal Velocity"<<endl;
             cout<<"-m : Export Still Frames for movie into Images/"<<endl;
             cout<<"-rm : Export Raytraced Still Frames for movie into Multi_Trace/output_pics/"<<endl;
             cout<<"-i : Render Isosurface"<<endl;
             cout<<"-p : Render Particles"<<endl;
+            cout<<"-v : Increase viscosity and surface tension"<<endl;
             cout<<"-delay # : delay movie output by # frames"<<endl;
             cout<<"======================="<<endl;
 			cout<<"Live Commands:"<<endl;
@@ -1293,7 +1505,8 @@ int main(int argc, char* argv[]){
             cout<<"'r' : output single raytraced image and exit"<<endl;
             cout<<"'f' : output current FPS to command line"<<endl;
             cout<<"'p' : save current image, not raytrace, and continue"<<endl;
-            cout<<"spacebar : quit"<<endl;
+            cout<<"spacebar : pause"<<endl;
+            cout<<"'q' : quit"<<endl;
 			i += 1;
 			exit(0);
 		}
@@ -1316,6 +1529,18 @@ int main(int argc, char* argv[]){
         if (strcmp(argv[i],"-delay") == 0) {
             IMAGE_DELAY = atoi(argv[i+1]);
             i += 2;
+            continue;
+        }
+        if (strcmp(argv[i],"-w") == 0) {
+            RENDERING_WIREFRAME = true;
+            CUBE_TOL = .025f;
+            i += 1;
+            continue;
+        }
+        if (strcmp(argv[i],"-v") == 0) {
+            VISCOSITY = 30.f;
+            SURFACE_TENSION = 10.0f;
+            i += 1;
             continue;
         }
 	}

@@ -1,6 +1,9 @@
 #include "ParticleBlob.h"
 #include "../Vec3.h"
 #include "../Particle.h"
+#include <iostream>
+
+using namespace std;
 
 const float PI = 3.1415926;
 const float H = .0625;
@@ -35,7 +38,7 @@ float ParticleBlob::density_at_point(glm::vec3 position){
 	//evaluate density at point i.
 	int box_num = neighbors.compute_box_num(Vec3(position.x,position.y,position.z),SUPPORT_RADIUS, MAX.x,MIN.x,RAY_TRACING);//such bad code....it makes me cry
 	if(box_num>=0){
-		vector<int> neighbor_vec = neighbors.box_particles[box_num];
+		vector<int> neighbor_vec = neighbors.box_neighbors[box_num];
 		//evaluate density at point i.
 		for(int j = 0; j<neighbor_vec.size(); j++){
 			temp_part = particles[neighbor_vec[j]];
@@ -58,7 +61,7 @@ glm::vec3 ParticleBlob::normal_at_point(glm::vec3 position){
 	//evaluate density at point i.
 	int box_num = neighbors.compute_box_num(Vec3(position.x,position.y,position.z),SUPPORT_RADIUS, MAX.x,MIN.x,RAY_TRACING);//such bad code....it makes me cry
 	if(box_num>=0){
-		vector<int> neighbor_vec = neighbors.box_particles[box_num];
+		vector<int> neighbor_vec = neighbors.box_neighbors[box_num];
 		//evaluate normal at point i.
 		for(int j = 0; j<neighbor_vec.size(); j++){
 			temp_part = particles[neighbor_vec[j]];
@@ -93,7 +96,7 @@ bool ParticleBlob::intersect(Ray& ray, float* thit, LocalGeo* local,bool* in_sha
 		position = ray.position + i*ray.direction;
 		int box_num = neighbors.compute_box_num(Vec3(position.x,position.y,position.z),SUPPORT_RADIUS, MAX.x,MIN.x,RAY_TRACING);//such bad code....it makes me cry
 		if(box_num>=0){
-			vector<int> neighbor_vec = neighbors.box_particles[box_num];
+			vector<int> neighbor_vec = neighbors.box_neighbors[box_num];
 			//evaluate density at point i.
 			for(int j = 0; j<neighbor_vec.size(); j++){
 				temp_part = particles[neighbor_vec[j]];
@@ -150,7 +153,7 @@ bool ParticleBlob::intersect(Ray& ray,bool* in_shape){
 		position = ray.position + i*ray.direction;
 		int box_num = neighbors.compute_box_num(Vec3(position.x,position.y,position.z),SUPPORT_RADIUS, MAX.x,MIN.x,RAY_TRACING);//such bad code....it makes me cry
 		if(box_num>=0){
-			vector<int> neighbor_vec = neighbors.box_particles[box_num];
+			vector<int> neighbor_vec = neighbors.box_neighbors[box_num];
 			//evaluate density at point i.
 			for(int j = 0; j<neighbor_vec.size(); j++){
 				temp_part = particles[neighbor_vec[j]];
