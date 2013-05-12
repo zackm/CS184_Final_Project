@@ -520,27 +520,6 @@ vector<int> Neighbor::surrounding_boxes(int box_num, int box_per_row, int square
             neighbor_boxes.push_back(box_num+square_face+box_per_row-1);
             neighbor_boxes.push_back(box_num+square_face+box_per_row+1);
         }
-        
-        
-        // add particles in neighboring boxes to the current particles vector of neighbor particles
-        for (int j = 0; j < neighbor_boxes.size(); j++) {
-            int num = neighbor_boxes[j];
-            if (num < 0 || num > box_per_row*box_per_row*box_per_row) {
-                cout<<"Error: incorrect neighboring box computed."<<endl;
-                num = 0; // to prevent bad vector access
-            }
-            for (std::vector<int>::iterator it = box_particles[num].begin(); it != box_particles[num].end(); ++it) {
-                particle_num = *it;
-                Vec3 a = particles[i]->position;
-                Vec3 b = particles[particle_num]->position;
-				Vec3 diff = b-a;
-                float dist = sqrt(dot(diff,diff));
-                // check that the neighboring particle is within the support radius
-                if (dist <= support_rad) {
-                    particles[i]->neighbors.push_back(particle_num);
-                }
-            }
-        }
     } else if (box_num % square_face >= square_face - box_per_row) {
         // top face
         neighbor_boxes.push_back(box_num+1);

@@ -11,7 +11,7 @@ using namespace std;
 /*******************
 * GLOBAL VARIABLES *
 *******************/
-Container CONTAINER(Vec3(2,2,2),Vec3(0,0,0));//very simple cube for now. Later, make it a particle itself.
+Container CONTAINER(Vec3(.5,.5,.5),Vec3(0,0,0));//very simple cube for now. Later, make it a particle itself.
 vector<Particle*> PARTICLES;//particles that we do SPH on.
 vector<Triangle*> TRIANGLES;//triangles made from marching cubes to render
 
@@ -38,7 +38,7 @@ Neighbor NEIGHBOR; //neighbor object used for calculations
 const float H = .0625; // .0625 works well, .05 good too
 const float SUPPORT_RADIUS = .125; // .125 works well, .1 good too
 
-bool RENDERING_TRIANGLES = true;
+bool RENDERING_TRIANGLES = false;
 bool RENDERING_BLOB = false;
 bool RENDERING_WIREFRAME = false;
 
@@ -877,10 +877,13 @@ void initScene(){
             
         case 2:
             cout<<"Drop Scene"<<endl;
-            step = .025;
-            for(float i = 1.75*CONTAINER.max.x/5.0; i<3.25f*(CONTAINER.max.x)/5.0f; i=i+step){
+            step = .015;
+            // 1.75, 3.25
+            // 3, 4.5
+            // 2, 3.5
+            for(float i = 1.75*CONTAINER.max.x/5.0; i<3.25*(CONTAINER.max.x)/5.0f; i=i+step){
                 for(float j = 3.0*CONTAINER.max.y/5.0f; j<4.5f*(CONTAINER.max.y)/5.0f; j=j+step){
-                    for(float k = 2.0*CONTAINER.max.y/5.0f; k<3.5f*(CONTAINER.max.z)/5.0f; k=k+step){
+                    for(float k = 2.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.z)/5.0f; k=k+step){
                         Vec3 pos(i,j,k);
                         Vec3 vel(0,0,0);
                         new_part = new Particle(pos,vel,MASS,1000.0f);
@@ -889,22 +892,22 @@ void initScene(){
                 }
             }
             // some particles on floor
-            for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
-                for(float j = CONTAINER.min.y; j<.75f*(CONTAINER.max.y)/5.0f; j=j+step){
-                    for(float k = CONTAINER.min.z; k<CONTAINER.max.z; k=k+step) {
-                        noise = float(rand())/(float(RAND_MAX))*.05f;
-                        Vec3 pos(i,j,k);
-                        Vec3 vel(0,0,0);
-                        new_part = new Particle(pos,vel,MASS,1000.f);
-                        PARTICLES.push_back(new_part);
-                    }
-                }
-            }
+//            for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
+//                for(float j = CONTAINER.min.y; j<.75f*(CONTAINER.max.y)/5.0f; j=j+step){
+//                    for(float k = CONTAINER.min.z; k<CONTAINER.max.z; k=k+step) {
+//                        noise = float(rand())/(float(RAND_MAX))*.05f;
+//                        Vec3 pos(i,j,k);
+//                        Vec3 vel(0,0,0);
+//                        new_part = new Particle(pos,vel,MASS,1000.f);
+//                        PARTICLES.push_back(new_part);
+//                    }
+//                }
+//            }
             break;
             
         case 3:
             cout<<"Velocity Towards Wall"<<endl;
-            step = .02;
+            step = .025;
             for(float i = 0.1f*CONTAINER.max.x/5.0; i<5*(CONTAINER.max.x)/5.0f; i=i+step){
                 for(float j = 0.1f*CONTAINER.max.y/5.0f; j<.5f*(CONTAINER.max.y)/5.0f; j=j+step){
                     for(float k = 0.1f*CONTAINER.max.y/5.0f; k<5.0f*(CONTAINER.max.z)/5.0f; k=k+step){
@@ -1142,10 +1145,10 @@ void myDisplay(){
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
     // view for 0 to .5 cube
-	//gluLookAt(.25f,.4f,1.2f,.25f,.18f,0.0f,0,1,0);
+	gluLookAt(.25f,.4f,1.2f,.25f,.18f,0.0f,0,1,0);
     
     // view for 0 to 2 cube
-    gluLookAt(1.f,1.8f,4.5f, 1.f,.4f,0, 0,1,0);
+    //gluLookAt(1.f,1.8f,4.5f, 1.f,.4f,0, 0,1,0);
 
     if (!PAUSE) {
         run_time_step();
