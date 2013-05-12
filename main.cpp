@@ -11,7 +11,7 @@ using namespace std;
 /*******************
 * GLOBAL VARIABLES *
 *******************/
-Container CONTAINER(Vec3(.5,.5,.5),Vec3(0,0,0));//very simple cube for now. Later, make it a particle itself.
+Container CONTAINER(Vec3(2,2,2),Vec3(0,0,0));//very simple cube for now. Later, make it a particle itself.
 vector<Particle*> PARTICLES;//particles that we do SPH on.
 vector<Triangle*> TRIANGLES;//triangles made from marching cubes to render
 
@@ -52,6 +52,7 @@ int IMAGE_COUNTER = 0; // keep track of frame number for outputting images and o
 int IMAGE_DELAY = 0; // number of frames to wait before outputting images
 int PIC_WIDTH = 600; // display window and output image dimensions
 int PIC_HEIGHT = 600;
+bool HIDE = false;
 
 bool SHOW_FPS = false; // print out FPS to console
 int SETUP_SCENE = 0; // choice of preset scene, from command line input
@@ -877,13 +878,25 @@ void initScene(){
             
         case 2:
             cout<<"Drop Scene"<<endl;
-            step = .01;
-            for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
-                for(float j = 3.0*CONTAINER.max.y/5.0f; j<4.0f*(CONTAINER.max.y)/5.0f; j=j+step){
-                    for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.z)/5.0f; k=k+step){
+            step = .025;
+            for(float i = 1.75*CONTAINER.max.x/5.0; i<3.25f*(CONTAINER.max.x)/5.0f; i=i+step){
+                for(float j = 3.0*CONTAINER.max.y/5.0f; j<4.5f*(CONTAINER.max.y)/5.0f; j=j+step){
+                    for(float k = 2.0*CONTAINER.max.y/5.0f; k<3.5f*(CONTAINER.max.z)/5.0f; k=k+step){
                         Vec3 pos(i,j,k);
-                        Vec3 vel(0,-3,0);
+                        Vec3 vel(0,0,0);
                         new_part = new Particle(pos,vel,MASS,1000.0f);
+                        PARTICLES.push_back(new_part);
+                    }
+                }
+            }
+            // some particles on floor
+            for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
+                for(float j = CONTAINER.min.y; j<.75f*(CONTAINER.max.y)/5.0f; j=j+step){
+                    for(float k = CONTAINER.min.z; k<CONTAINER.max.z; k=k+step) {
+                        noise = float(rand())/(float(RAND_MAX))*.05f;
+                        Vec3 pos(i,j,k);
+                        Vec3 vel(0,0,0);
+                        new_part = new Particle(pos,vel,MASS,1000.f);
                         PARTICLES.push_back(new_part);
                     }
                 }
@@ -891,8 +904,8 @@ void initScene(){
             break;
             
         case 3:
-            cout<<"Randomized Scene"<<endl;
-            step = .025;
+            cout<<"Velocity Towards Wall"<<endl;
+            step = .02;
             for(float i = 0.1f*CONTAINER.max.x/5.0; i<5*(CONTAINER.max.x)/5.0f; i=i+step){
                 for(float j = 0.1f*CONTAINER.max.y/5.0f; j<.5f*(CONTAINER.max.y)/5.0f; j=j+step){
                     for(float k = 0.1f*CONTAINER.max.y/5.0f; k<5.0f*(CONTAINER.max.z)/5.0f; k=k+step){
@@ -908,10 +921,10 @@ void initScene(){
         case 4:
             cout<<"No Gravity Scene"<<endl;
             GRAVITY = Vec3(0,0,0);
-            step = .015;
+            step = .02;
             for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
-                for(float j = 3.0*CONTAINER.max.y/5.0f; j<4.0f*(CONTAINER.max.y)/5.0f; j=j+step){
-                    for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.z)/5.0f; k=k+step){
+                for(float j = 2.5*CONTAINER.max.y/5.0f; j<3.5f*(CONTAINER.max.y)/5.0f; j=j+step){
+                    for(float k = 1.5*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.z)/5.0f; k=k+step){
                         //                        noise = float(rand())/(float(RAND_MAX))*.05f;
                         Vec3 pos(i,j,k);
                         Vec3 vel(0,0,0);
@@ -925,8 +938,8 @@ void initScene(){
         case 5:
             cout<<"2 Glob Collision Scene"<<endl;
             step = .025;
-            for(float i = 4.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
-                for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
+            for(float i = 3.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
+                for(float j = 2.5*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
                     for(float k = 2.0*CONTAINER.max.z/4.0f; k<(3.0f*CONTAINER.max.z/4.0f); k=k+step) {
                         noise = float(rand())/(float(RAND_MAX))*.05f;
                         Vec3 pos(i,j,k);
@@ -936,12 +949,24 @@ void initScene(){
                     }
                 }
             }
-            for(float i = CONTAINER.min.x; i<1.0f*(CONTAINER.max.x)/5.0f; i=i+step){
-                for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
-                    for(float k = 2.0*CONTAINER.max.z/4.0f; k<(3.0f*CONTAINER.max.z/4.0f); k=k+step) {
+            for(float i = CONTAINER.min.x; i<1.5f*(CONTAINER.max.x)/5.0f; i=i+step){
+                for(float j = 2.5*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
+                    for(float k = 1.5*CONTAINER.max.z/4.0f; k<(3.0f*CONTAINER.max.z/4.0f); k=k+step) {
                         noise = float(rand())/(float(RAND_MAX))*.05f;
                         Vec3 pos(i,j,k);
                         Vec3 vel(5,-5,0);
+                        new_part = new Particle(pos,vel,MASS,1000.f);
+                        PARTICLES.push_back(new_part);
+                    }
+                }
+            }
+            // some particles on floor
+            for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
+                for(float j = CONTAINER.min.y; j<.5f*(CONTAINER.max.y)/5.0f; j=j+step){
+                    for(float k = CONTAINER.min.z; k<CONTAINER.max.z; k=k+step) {
+                        noise = float(rand())/(float(RAND_MAX))*.05f;
+                        Vec3 pos(i,j,k);
+                        Vec3 vel(0,0,0);
                         new_part = new Particle(pos,vel,MASS,1000.f);
                         PARTICLES.push_back(new_part);
                     }
@@ -952,150 +977,11 @@ void initScene(){
         case 6:
             cout<<"Test Scene"<<endl;
             if (NUM_PARTICLES == 0) {
+                // single particle test case
                 Vec3 vel(0,0,0);
-                
-                // back, front, bottom
-//                Vec3 pos(.05,.05,.05);
-//                new_part = new Particle(pos,vel,MASS,1000);
-//                PARTICLES.push_back(new_part);
-                
-                // right, back ,bottom
-//                Vec3 pos(.45,.05,.05);
-//                new_part = new Particle(pos,vel,MASS,1000);
-//                PARTICLES.push_back(new_part);
-                
-                // right, middle, bottom ==== interesting edge case
-//                Vec3 pos(.25,.05,.05);
-//                new_part = new Particle(pos,vel,MASS,1000);
-//                PARTICLES.push_back(new_part);
-                
-                // back, left, top
-//                Vec3 pos(.05,.45,.05);
-//                new_part = new Particle(pos,vel,MASS,1000);
-//                PARTICLES.push_back(new_part);
-
-                // back, right, top
-//                Vec3 pos(.45,.45,.05);
-//                new_part = new Particle(pos,vel,MASS,1000);
-//                PARTICLES.push_back(new_part);
-
-                // back, top, middle
-//                Vec3 pos(.34,.45,.05);
-//                new_part = new Particle(pos,vel,MASS,1000);
-//                PARTICLES.push_back(new_part);
-                
-                // left, back, midway
-//                Vec3 pos(.05,.25,.05);
-//                new_part = new Particle(pos,vel,MASS,1000);
-//                PARTICLES.push_back(new_part);
-                
-                // right, back, midway
-//                Vec3 pos(.45,.25,.05);
-//                new_part = new Particle(pos,vel,MASS,1000);
-//                PARTICLES.push_back(new_part);
-
-                // back, not edge
-//                Vec3 pos(.24,.26,.05);
-//                new_part = new Particle(pos,vel,MASS,1000);
-//                PARTICLES.push_back(new_part);
-
-                // front,left,bottom
-//                Vec3 pos(.05,.05,.45);
-//                new_part = new Particle(pos,vel,MASS,1000);
-//                PARTICLES.push_back(new_part);
-
-                // front,right,bottom
-//                Vec3 pos(.46,.05,.45);
-//                new_part = new Particle(pos,vel,MASS,1000);
-//                PARTICLES.push_back(new_part);
-
-                // front, bottom, middle
-//                Vec3 pos(.33,.05,.45);
-//                new_part = new Particle(pos,vel,MASS,1000);
-//                PARTICLES.push_back(new_part);
-
-                // front, top, left
-//                Vec3 pos(.05,.46,.45);
-//                new_part = new Particle(pos,vel,MASS,1000);
-//                PARTICLES.push_back(new_part);
-
-                // front, top, right
-//                Vec3 pos(.46,.47,.45);
-//                new_part = new Particle(pos,vel,MASS,1000);
-//                PARTICLES.push_back(new_part);
-
-                // front, top, middle
-//                Vec3 pos(.37,.45,.45);
-//                new_part = new Particle(pos,vel,MASS,1000);
-//                PARTICLES.push_back(new_part);
-
-                // front, left, midway
-//                Vec3 pos(.05,.25,.45);
-//                new_part = new Particle(pos,vel,MASS,1000);
-//                PARTICLES.push_back(new_part);
-                
-                // right, front, midway
-//                Vec3 pos(.45,.25,.45);
-//                new_part = new Particle(pos,vel,MASS,1000);
-//                PARTICLES.push_back(new_part);
-
-                // front face
-//                Vec3 pos(.25,.25,.45);
-//                new_part = new Particle(pos,vel,MASS,1000);
-//                PARTICLES.push_back(new_part);
-
-                // left face, top, midway
-//                Vec3 pos(.05,.46,.34);
-//                new_part = new Particle(pos,vel,MASS,1000);
-//                PARTICLES.push_back(new_part);
-
-                // left face, bottom, midway
-//                Vec3 pos(.05,.05,.23);
-//                new_part = new Particle(pos,vel,MASS,1000);
-//                PARTICLES.push_back(new_part);
-
-                // left face, not edge
-//                Vec3 pos(.05,.25,.25);
-//                new_part = new Particle(pos,vel,MASS,1000);
-//                PARTICLES.push_back(new_part);
-                
-                // right face, top, midway
-//                Vec3 pos(.45,.45,.23);
-//                new_part = new Particle(pos,vel,MASS,1000);
-//                PARTICLES.push_back(new_part);
-
-                // right face, bottom, midway
-//                Vec3 pos(.45,.05,.31);
-//                new_part = new Particle(pos,vel,MASS,1000);
-//                PARTICLES.push_back(new_part);
-
-                // right face, not edge
-//                Vec3 pos(.45,.24,.26);
-//                new_part = new Particle(pos,vel,MASS,1000);
-//                PARTICLES.push_back(new_part);
-
-                // top face
-//                Vec3 pos(.27,.45,.31);
-//                new_part = new Particle(pos,vel,MASS,1000);
-//                PARTICLES.push_back(new_part);
-
-                // bottom face
-//                Vec3 pos(.35,.05,.25);
-//                new_part = new Particle(pos,vel,MASS,1000);
-//                PARTICLES.push_back(new_part);
-
-                // inside cube general
                 Vec3 pos(.25,.25,.25);
                 new_part = new Particle(pos,vel,MASS,1000);
                 PARTICLES.push_back(new_part);
-                
-//                pos = Vec3(.05,.05,.05);
-//                new_part = new Particle(pos,vel,MASS,1000);
-//                PARTICLES.push_back(new_part);
-                
-//                pos = Vec3(.05,.05,.15);
-//                new_part = new Particle(pos,vel,MASS,1000);
-//                PARTICLES.push_back(new_part);
             }
             break;
             
@@ -1242,6 +1128,7 @@ void initScene(){
 }
 
 void myDisplay(){
+    if (HIDE) { glutHideWindow(); }
     
 	float time_start = glutGet(GLUT_ELAPSED_TIME);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1255,8 +1142,11 @@ void myDisplay(){
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-
-	gluLookAt(.25f,.4f,1.2f,.25f,.18f,0.0f,0,1,0);
+    // view for 0 to .5 cube
+	//gluLookAt(.25f,.4f,1.2f,.25f,.18f,0.0f,0,1,0);
+    
+    // view for 0 to 2 cube
+    gluLookAt(1.f,1.8f,4.5f, 1.f,.4f,0, 0,1,0);
 
     if (!PAUSE) {
         run_time_step();
@@ -1481,12 +1371,12 @@ int main(int argc, char* argv[]){
 			i += 2;
 			continue;
 		}
-		if (strcmp(argv[i],"-h") == 0) {
+		if (strcmp(argv[i],"-help") == 0) {
 			cout<<"Help Info for UC Berkeley CS184 Spring 2013 Final Project"<<endl;
 			cout<<"by Tyler Brabham and Zack Mayeda"<<endl;
 			cout<<endl;
 			cout<<"Command Line Arguments:"<<endl;
-            cout<<"-h : List all options"<<endl;
+            cout<<"-help : List all options"<<endl;
             cout<<"-s # : Load scene number #"<<endl;
             cout<<"       1 - Dam Break"<<endl;
             cout<<"       2 - Drop"<<endl;
@@ -1499,6 +1389,7 @@ int main(int argc, char* argv[]){
             cout<<"-i : Render Isosurface"<<endl;
             cout<<"-p : Render Particles"<<endl;
             cout<<"-v : Increase viscosity and surface tension"<<endl;
+            cout<<"-h : Hide Display Window"<<endl;
             cout<<"-delay # : delay movie output by # frames"<<endl;
             cout<<"======================="<<endl;
 			cout<<"Live Commands:"<<endl;
@@ -1544,6 +1435,11 @@ int main(int argc, char* argv[]){
             i += 1;
             continue;
         }
+        if (strcmp(argv[i],"-h") == 0) {
+            HIDE = true;
+            i += 1;
+            continue;
+        }
 	}
 
 	glutInit(&argc, argv);
@@ -1554,7 +1450,8 @@ int main(int argc, char* argv[]){
 	glutInitWindowSize(PIC_WIDTH,PIC_HEIGHT);
 	glutInitWindowPosition(0,0);
 	glutCreateWindow("Tyler and Zack Final Project");
-
+    //glutHideWindow();
+    
 	initScene();
 
 	glutDisplayFunc(myDisplay);
