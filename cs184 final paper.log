@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.3-1.40.12 (MiKTeX 2.9) (preloaded format=pdflatex 2011.12.28)  8 MAY 2013 11:00
+This is pdfTeX, Version 3.1415926-2.3-1.40.12 (MiKTeX 2.9) (preloaded format=pdflatex 2011.12.28)  11 MAY 2013 21:46
 entering extended mode
 **C:/Users/Tyler/Documents/CS*184/CS184_Final_Project/cs184*final*paper.tex
 ("C:/Users/Tyler/Documents/CS 184/CS184_Final_Project/cs184 final paper.tex"
@@ -96,116 +96,15 @@ Package: `anysize' 1.0 <1994/08/13>
 \@Rightmargin=\dimen113
 \@Topmargin=\dimen114
 \@Bottommargin=\dimen115
-) ("C:\Users\Tyler\Documents\CS 184\CS184_Final_Project\cs184 final paper.aux")
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 5.
-LaTeX Font Info:    ... okay on input line 5.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 5.
-LaTeX Font Info:    ... okay on input line 5.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 5.
-LaTeX Font Info:    ... okay on input line 5.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 5.
-LaTeX Font Info:    ... okay on input line 5.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 5.
-LaTeX Font Info:    ... okay on input line 5.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 5.
-LaTeX Font Info:    ... okay on input line 5.
+) ("C:\Program Files (x86)\MiKTeX 2.9\tex\latex\graphics\graphicx.sty"
+Package: graphicx 1999/02/16 v1.0f Enhanced LaTeX Graphics (DPC,SPQR)
 
-Underfull \hbox (badness 10000) in paragraph at lines 22--27
+("C:\Program Files (x86)\MiKTeX 2.9\tex\latex\graphics\keyval.sty"
+Package: keyval 1999/03/16 v1.13 key=value parser (DPC)
+\KV@toks@=\toks19
+)
+("C:\Program Files (x86)\MiKTeX 2.9\tex\latex\graphics\graphics.sty"
+Package: graphics 2009/02/05 v1.0o Standard LaTeX Graphics (DPC,SPQR)
 
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 22--27
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 31--37
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 31--37
-
- []
-
-[1
-
-{C:/ProgramData/MiKTeX/2.9/pdftex/config/pdftex.map}]
-Underfull \hbox (badness 10000) in paragraph at lines 37--43
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 43--49
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 49--55
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 61--63
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 63--68
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 68--72
-
- []
-
-[2]
-Underfull \hbox (badness 10000) in paragraph at lines 72--78
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 78--82
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 106--113
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 106--113
-
- []
-
-[3] [4]
-("C:\Users\Tyler\Documents\CS 184\CS184_Final_Project\cs184 final paper.aux") )
- 
-Here is how much of TeX's memory you used:
- 859 strings out of 494045
- 10114 string characters out of 3145968
- 66479 words of memory out of 3000000
- 4201 multiletter control sequences out of 15000+200000
- 9232 words of font info for 33 fonts, out of 3000000 for 9000
- 715 hyphenation exceptions out of 8191
- 27i,6n,20p,851b,153s stack positions out of 5000i,500n,10000p,200000b,50000s
-<C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmbx10.pfb><C
-:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmbx12.pfb><C:/
-Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmbx8.pfb><C:/Pro
-gram Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/Progr
-am Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi10.pfb><C:/Program
- Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi8.pfb><C:/Program Fi
-les (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Program Files
- (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr17.pfb><C:/Program Files (x
-86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Program Files (x86)/
-MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Program Files (x86)/Mi
-KTeX 2.9/fonts/type1/public/amsfonts/cm/cmti10.pfb>
-Output written on "cs184 final paper.pdf" (4 pages, 145732 bytes).
-PDF statistics:
- 59 PDF objects out of 1000 (max. 8388607)
- 0 named destinations out of 1000 (max. 500000)
- 1 words of extra memory for PDF output out of 10000 (max. 10000000)
-
+("C:\Program Files (x86)\MiKTeX 2.9\tex\latex\graphics\trig.sty"
+Package: trig 1999/03/16 v1.09 sin c
