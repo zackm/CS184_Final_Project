@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.3-1.40.12 (MiKTeX 2.9) (preloaded format=pdflatex 2011.12.28)  8 MAY 2013 10:40
+This is pdfTeX, Version 3.1415926-2.3-1.40.12 (MiKTeX 2.9) (preloaded format=pdflatex 2011.12.28)  8 MAY 2013 11:00
 entering extended mode
 **C:/Users/Tyler/Documents/CS*184/CS184_Final_Project/cs184*final*paper.tex
 ("C:/Users/Tyler/Documents/CS 184/CS184_Final_Project/cs184 final paper.tex"
@@ -185,10 +185,10 @@ Underfull \hbox (badness 10000) in paragraph at lines 106--113
 ("C:\Users\Tyler\Documents\CS 184\CS184_Final_Project\cs184 final paper.aux") )
  
 Here is how much of TeX's memory you used:
- 858 strings out of 494045
- 10105 string characters out of 3145968
+ 859 strings out of 494045
+ 10114 string characters out of 3145968
  66479 words of memory out of 3000000
- 4200 multiletter control sequences out of 15000+200000
+ 4201 multiletter control sequences out of 15000+200000
  9232 words of font info for 33 fonts, out of 3000000 for 9000
  715 hyphenation exceptions out of 8191
  27i,6n,20p,851b,153s stack positions out of 5000i,500n,10000p,200000b,50000s
@@ -203,7 +203,7 @@ les (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Program Files
 86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Program Files (x86)/
 MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Program Files (x86)/Mi
 KTeX 2.9/fonts/type1/public/amsfonts/cm/cmti10.pfb>
-Output written on "cs184 final paper.pdf" (4 pages, 145082 bytes).
+Output written on "cs184 final paper.pdf" (4 pages, 145732 bytes).
 PDF statistics:
  59 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
