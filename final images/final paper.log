@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.3-1.40.12 (MiKTeX 2.9) (preloaded format=pdflatex 2011.12.28)  12 MAY 2013 11:41
+This is pdfTeX, Version 3.1415926-2.3-1.40.12 (MiKTeX 2.9) (preloaded format=pdflatex 2011.12.28)  12 MAY 2013 14:13
 entering extended mode
 **C:/Users/Tyler/Documents/CS*184/CS184_Final_Project/final*images/final*paper.
 tex
@@ -266,6 +266,9 @@ File: 79k-particles.pdf Graphic file (type pdf)
 Package pdftex.def Info: 79k-particles.pdf used on input line 134.
 (pdftex.def)             Requested size: 289.0801pt x 289.0801pt.
 
+
+LaTeX Warning: Float too large for page by 10.62335pt on input line 138.
+
 <2k-ray-active.png, id=26, 602.25pt x 602.25pt>
 File: 2k-ray-active.png Graphic file (type png)
  <use 2k-ray-active.png>
@@ -329,7 +332,7 @@ Here is how much of TeX's memory you used:
  5086 multiletter control sequences out of 15000+200000
  9232 words of font info for 33 fonts, out of 3000000 for 9000
  715 hyphenation exceptions out of 8191
- 27i,11n,21p,858b,347s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 27i,11n,21p,833b,347s stack positions out of 5000i,500n,10000p,200000b,50000s
 <C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmbx10
 .pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmbx12.p
 fb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmbx8.pfb>
@@ -341,7 +344,7 @@ m Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr17.pfb><C:/Program F
 iles (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Program Files
  (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Program Files (
 x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmti10.pfb>
-Output written on "final paper.pdf" (8 pages, 789381 bytes).
+Output written on "final paper.pdf" (8 pages, 789405 bytes).
 PDF statistics:
  86 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
