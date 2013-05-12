@@ -55,7 +55,7 @@ where $c_i$ is the color field calculated by plugging in $1$ for $A_j$ in the ge
 {\bf Gravitational Force}
 $$f_{gravity} = \rho_i {\bf g}$$
 \\
-We add up all these quanities in the Navier-Stokes equation and solve the equation for the change in velocity of particle $i$. Then we update the current velocity and position for each particle. To do this, we use Euler's method with a step size of $.01$.
+We add up all these quantities in the Navier-Stokes equation and solve the equation for the change in velocity of particle $i$. Then we update the current velocity and position for each particle. To do this, we use Euler's method with a step size of $.01$.
 We tried the method of Verlet as well, but experienced no change in the simulation, so we went back to using the simpler method. This perhaps would have not been the case had we used a larger timestep.
 
 \section*{Kernels}
@@ -120,12 +120,12 @@ The simulation using only particles rendered as spheres took approximately .287 
 \\ \\
 When reconstructing the surface with marching cubes, it took around 22, 600, and 2100 seconds per frame when rendering 2k, 21k, and 45k particles, respectively. Images created on the 2k and 21k scale can be seen in figure 5. Note in the figure that the surface appears very globular. As such, it would seem SPH is not as well suited for the simulation of lower viscosity fluids. Also, due to the nature of the density grid, the fluid appears to be very compressible. As particles approach the side of a container, the fluid surface near the container disappears as opposed to being deformed. This is more easily seen in the video.
 \\ \\
-As for ray marching, the reconstruction of the surface is very slow, even on the scale of 600 by 600 pixels. With around 2k particles, the average time per frame is 440 seconds, compared to the 22 seconds for marching cubes. Figures 2, 3, and 4 show ray traced images in similar scenes. Particularly in figure 4 the reflection and refraction of the container are very noticable.
+As for ray marching, the reconstruction of the surface is very slow, even on the scale of 600 by 600 pixels. With around 2k particles, the average time per frame is 440 seconds, compared to the 22 seconds for marching cubes. Figures 2, 3, and 4 show ray traced images in similar scenes. Particularly in figure 4 the reflection and refraction of the container are very noticeable.
 
 \section*{Conclusion \& Future Consideration}
-In this project, we implemented the Smoothed Particle Hydrodynamics method of fluid simulation, in particular for the the simulation of liquids. We explored a couple different methods for surface reconstruction, and found neither to be sufficient for the simulation of incompressible fluids. In addition, the surface reconstruction significantly added computational cost to the simulation, preventing it from rendering at a reasonable frame rate, even with the acceleration obtained from implementing the Nearest Neighbors algorithm for the particle interactions.
+In this project, we implemented the Smoothed Particle Hydrodynamics method of fluid simulation, in particular for the simulation of liquids. We explored a couple different methods for surface reconstruction, and found neither to be sufficient for the simulation of incompressible fluids. In addition, the surface reconstruction significantly added computational cost to the simulation, preventing it from rendering at a reasonable frame rate, even with the acceleration obtained from implementing the Nearest Neighbors algorithm for the particle interactions.
 \\ \\
-The project was a fun first foray into fluid simulation. In the future, we would like to try other methods such as an Eulerian method, and improve the speed of the current program by including parallel processing of the particles. As well, including relfection and refraction of the surface is only part of the reproduction water, so we would like to include realistic caustics in future projects.
+The project was a fun first foray into fluid simulation. In the future, we would like to try other methods such as an Eulerian method, and improve the speed of the current program by including parallel processing of the particles. As well, including reflection and refraction of the surface is only part of the reproduction of water, so we would like to include realistic caustics in future projects.
 
 \begin{figure}
 \begin{center}$
@@ -163,7 +163,7 @@ The project was a fun first foray into fluid simulation. In the future, we would
 \includegraphics[width=4.4in,height=4.4in]{raytrace.png}
 \end{array}$
 \end{center}
-\caption{Another ray traced image with more noticable refraction and higher level of reflections.}
+\caption{Another ray traced image with more noticeable refraction and higher level of reflections.}
 \end{figure}
 
 
