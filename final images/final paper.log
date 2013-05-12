@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.3-1.40.12 (MiKTeX 2.9) (preloaded format=pdflatex 2011.12.28)  11 MAY 2013 22:57
+This is pdfTeX, Version 3.1415926-2.3-1.40.12 (MiKTeX 2.9) (preloaded format=pdflatex 2011.12.28)  12 MAY 2013 11:11
 entering extended mode
 **C:/Users/Tyler/Documents/CS*184/CS184_Final_Project/final*images/final*paper.
 tex
@@ -230,79 +230,106 @@ Underfull \hbox (badness 10000) in paragraph at lines 107--114
 
  []
 
-[3] <97k-particles.png, id=21, 602.25pt x 602.25pt>
+[3]
+Underfull \hbox (badness 10000) in paragraph at lines 117--124
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 117--124
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 117--124
+
+ []
+
+[4]
+Underfull \hbox (badness 10000) in paragraph at lines 126--129
+
+ []
+
+<97k-particles.png, id=24, 602.25pt x 602.25pt>
 File: 97k-particles.png Graphic file (type png)
  <use 97k-particles.png>
-Package pdftex.def Info: 97k-particles.png used on input line 122.
+Package pdftex.def Info: 97k-particles.png used on input line 133.
 (pdftex.def)             Requested size: 289.08589pt x 289.08589pt.
 
 
 pdfTeX warning: pdflatex.EXE (file C:/Users/Tyler/Documents/CS 184/CS184_Final_
 Project/final images/79k-particles.pdf): PDF inclusion: found PDF version <1.6>
 , but at most version <1.5> allowed
-<79k-particles.pdf, id=22, 733.74126pt x 733.74126pt>
+<79k-particles.pdf, id=25, 733.74126pt x 733.74126pt>
 File: 79k-particles.pdf Graphic file (type pdf)
  <use 79k-particles.pdf>
-Package pdftex.def Info: 79k-particles.pdf used on input line 123.
+Package pdftex.def Info: 79k-particles.pdf used on input line 134.
 (pdftex.def)             Requested size: 289.0801pt x 289.0801pt.
 
-<2k-ray-active.png, id=23, 602.25pt x 602.25pt>
+<2k-ray-active.png, id=26, 602.25pt x 602.25pt>
 File: 2k-ray-active.png Graphic file (type png)
  <use 2k-ray-active.png>
-Package pdftex.def Info: 2k-ray-active.png used on input line 132.
+Package pdftex.def Info: 2k-ray-active.png used on input line 143.
 (pdftex.def)             Requested size: 216.80983pt x 216.80983pt.
 
-<2k-ray-settled.png, id=24, 602.25pt x 602.25pt>
+<2k-ray-settled.png, id=27, 602.25pt x 602.25pt>
 File: 2k-ray-settled.png Graphic file (type png)
  <use 2k-ray-settled.png>
-Package pdftex.def Info: 2k-ray-settled.png used on input line 133.
+Package pdftex.def Info: 2k-ray-settled.png used on input line 144.
 (pdftex.def)             Requested size: 216.80983pt x 216.80983pt.
 
-Overfull \hbox (0.65176pt too wide) in paragraph at lines 130--135
+Overfull \hbox (0.65176pt too wide) in paragraph at lines 141--146
  $[]$ 
  []
 
-<raytrace.png, id=25, 702.625pt x 702.625pt>
+<towers.png, id=28, 602.25pt x 602.25pt>
+File: towers.png Graphic file (type png)
+ <use towers.png>
+Package pdftex.def Info: towers.png used on input line 153.
+(pdftex.def)             Requested size: 317.99632pt x 317.99632pt.
+
+<raytrace.png, id=29, 702.625pt x 702.625pt>
 File: raytrace.png Graphic file (type png)
  <use raytrace.png>
-Package pdftex.def Info: raytrace.png used on input line 142.
+Package pdftex.def Info: raytrace.png used on input line 163.
 (pdftex.def)             Requested size: 317.9902pt x 317.9902pt.
 
-<18ke-1-march.jpg, id=26, 731.73375pt x 732.7375pt>
+<18ke-1-march.jpg, id=30, 731.73375pt x 732.7375pt>
 File: 18ke-1-march.jpg Graphic file (type jpg)
  <use 18ke-1-march.jpg>
-Package pdftex.def Info: 18ke-1-march.jpg used on input line 152.
+Package pdftex.def Info: 18ke-1-march.jpg used on input line 173.
 (pdftex.def)             Requested size: 216.80864pt x 216.80417pt.
 
-<21k-march.png, id=27, 602.25pt x 602.25pt>
+<21k-march.png, id=31, 602.25pt x 602.25pt>
 File: 21k-march.png Graphic file (type png)
  <use 21k-march.png>
-Package pdftex.def Info: 21k-march.png used on input line 153.
+Package pdftex.def Info: 21k-march.png used on input line 174.
 (pdftex.def)             Requested size: 216.80983pt x 216.80983pt.
 
-Overfull \hbox (0.65057pt too wide) in paragraph at lines 150--155
+Overfull \hbox (0.65057pt too wide) in paragraph at lines 171--176
  $[]$ 
  []
 
-[4] [5 <C:/Users/Tyler/Documents/CS 184/CS184_Final_Project/final images/97k-pa
+[5] [6 <C:/Users/Tyler/Documents/CS 184/CS184_Final_Project/final images/97k-pa
 rticles.png (PNG copy)> <C:/Users/Tyler/Documents/CS 184/CS184_Final_Project/fi
-nal images/79k-particles.pdf>] [6 <C:/Users/Tyler/Documents/CS 184/CS184_Final_
+nal images/79k-particles.pdf>] [7 <C:/Users/Tyler/Documents/CS 184/CS184_Final_
 Project/final images/2k-ray-active.png (PNG copy)> <C:/Users/Tyler/Documents/CS
  184/CS184_Final_Project/final images/2k-ray-settled.png (PNG copy)> <C:/Users/
-Tyler/Documents/CS 184/CS184_Final_Project/final images/raytrace.png (PNG copy)
->] [7 <C:/Users/Tyler/Documents/CS 184/CS184_Final_Project/final images/18ke-1-
-march.jpg> <C:/Users/Tyler/Documents/CS 184/CS184_Final_Project/final images/21
-k-march.png (PNG copy)>]
+Tyler/Documents/CS 184/CS184_Final_Project/final images/towers.png (PNG copy)>]
+[8 <C:/Users/Tyler/Documents/CS 184/CS184_Final_Project/final images/raytrace.p
+ng (PNG copy)> <C:/Users/Tyler/Documents/CS 184/CS184_Final_Project/final image
+s/18ke-1-march.jpg> <C:/Users/Tyler/Documents/CS 184/CS184_Final_Project/final 
+images/21k-march.png (PNG copy)>]
 ("C:\Users\Tyler\Documents\CS 184\CS184_Final_Project\final images\final paper.
 aux") ) 
 Here is how much of TeX's memory you used:
- 1780 strings out of 494045
- 22928 string characters out of 3145968
+ 1785 strings out of 494045
+ 22997 string characters out of 3145968
  81392 words of memory out of 3000000
- 5082 multiletter control sequences out of 15000+200000
+ 5086 multiletter control sequences out of 15000+200000
  9232 words of font info for 33 fonts, out of 3000000 for 9000
  715 hyphenation exceptions out of 8191
- 27i,11n,21p,858b,349s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 27i,11n,21p,858b,347s stack positions out of 5000i,500n,10000p,200000b,50000s
 <C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmbx10
 .pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmbx12.p
 fb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmbx8.pfb>
@@ -314,9 +341,9 @@ m Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr17.pfb><C:/Program F
 iles (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Program Files
  (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Program Files (
 x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmti10.pfb>
-Output written on "final paper.pdf" (7 pages, 692426 bytes).
+Output written on "final paper.pdf" (8 pages, 789189 bytes).
 PDF statistics:
- 82 PDF objects out of 1000 (max. 8388607)
+ 86 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
- 36 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 41 words of extra memory for PDF output out of 10000 (max. 10000000)
 
