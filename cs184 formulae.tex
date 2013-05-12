@@ -1,0 +1,22 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath}
+\usepackage{anysize}
+\marginsize{1cm}{1cm}{1cm}{1cm}
+\begin{document}
+\begin{flushright}
+\large
+Tyler Brabham cs184-ej\\
+Zack Mayeda cs184-bg
+\end{flushright}
+
+\begin{center}
+\Large
+Fluid Simulation using Smoothed Particle Hydrodynamics
+\end{center}
+
+\section*{Project Description}
+We simulate water using the method of Smoothed Particle Hydrodynamics. This works by taking physical quantities, such as density, at some finite number of particles and using kernels to smooth out the values to the surrounding space. Thus, with these kernels we can get the value of any physical quantity at any point in space. Then, we can numerically integrate the Navier-Stokes equation by calculating for each particle the necessary quantities, such as pressure gradient, viscosity, gravity, and surface tension, and applying the changes in position and velocity to the particles.
+\\ \\
+After running the simulation, we reconstruct the surface created by the particles in two ways. One is by using Marching Cubes to generate a triangulated surface in OpenGL. This surface is created by finding points in space which have density above threshold and calling those points part of the fluid. The other method is by calling the ray tracer we created for Assignment 2 and using ray marching on the particle density field. With added reflection and refraction in the ray tracer, we get a cool looking surface.
+
+\end{document}

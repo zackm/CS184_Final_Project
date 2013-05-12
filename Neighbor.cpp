@@ -40,44 +40,45 @@ float dot(Vec3,Vec3);
  an integer.
  */
 int Neighbor::compute_box_num(Vec3 pos, float support_rad, float max_point, float min_point) {
-//    int row = -1,col = -1, depth = -1;
-    int row = floor(pos.x/support_rad);
-    int col = floor(pos.y/support_rad);
-    int depth = floor(pos.z/support_rad);
-    
+	int col = floor(pos.x/support_rad);
+	int row = floor(pos.y/support_rad);
+	int depth = floor(pos.z/support_rad);
+
+	//int row = -1,col = -1, depth = -1;
     float width = max_point - min_point;
     int box_per_row = (int)(width / support_rad); // casting to int, assuming support radius evenly divides width
-    /*
-    // current x,y,z locations of cell traversal
-    float curr_x = min_point, curr_y = min_point, curr_z = min_point;
     
-    // holds the difference between current x,y,z traversal locations and the particle x,y,z locations
-	float col_point, row_point, depth_point;
-    
-    // loop until assign box number (1D numbering) in x,y, and z directions
-	for (int i = 0; i < box_per_row && curr_x < max_point; i++) {
-        col_point = abs(pos.x - curr_x - support_rad/2.0f);
-        row_point = abs(pos.y - curr_y - support_rad/2.0f);
-        depth_point = abs(pos.z - curr_z - support_rad/2.0f);
-        
-		if (col_point <= support_rad/2 && col == -1) {
-			col = i;
-		}
-        if (row_point <= support_rad/2 && row == -1) {
-			row = i;
-		}
-        if (depth_point <= support_rad/2 && depth == -1) {
-            depth = i;
-        }
-        
-        if (row != -1 && col != -1 && depth != -1) {
-			break;
-		}
-        curr_x += support_rad;
-        curr_y += support_rad;
-        curr_z += support_rad;
-	}
-    */
+ //   // current x,y,z locations of cell traversal
+ //   float curr_x = min_point, curr_y = min_point, curr_z = min_point;
+ //   
+ //   // holds the difference between current x,y,z traversal locations and the particle x,y,z locations
+	//float col_point, row_point, depth_point;
+ //   
+ //   // loop until assign box number (1D numbering) in x,y, and z directions
+	//for (int i = 0; i < box_per_row && curr_x < max_point; i++) {
+ //       col_point = abs(pos.x - curr_x-support_rad/2.0f);
+ //       row_point = abs(pos.y - curr_y-support_rad/2.0f);
+ //       depth_point = abs(pos.z - curr_z-support_rad/2.0f);
+ //       
+	//	if (col_point <= support_rad && col == -1) {
+	//		col = i;
+	//	}
+ //       if (row_point <= support_rad && row == -1) {
+	//		row = i;
+	//	}
+ //       if (depth_point <= support_rad && depth == -1) {
+ //           depth = i;
+ //       }
+ //       
+ //       if (row != -1 && col != -1 && depth != -1) {
+	//		break;
+	//	}
+ //       curr_x += support_rad;
+ //       curr_y += support_rad;
+ //       curr_z += support_rad;
+	//}
+ //   
+
     // combine box numbers into 3D numbering
     int num = row + col * box_per_row + depth * box_per_row * box_per_row;
     
@@ -95,14 +96,15 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, float max_point, floa
  */
 int Neighbor::compute_box_num(Vec3 pos, float support_rad, float max_point, float min_point, bool flag) {
 //    int row = -1,col = -1, depth = -1;
-    int row = floor(pos.x/support_rad);
-    int col = floor(pos.y/support_rad);
-    int depth = floor(pos.z/support_rad);
-    
+    int col = floor(pos.x/support_rad);
+	int row = floor(pos.y/support_rad);
+	int depth = floor(pos.z/support_rad);
+
+	//int row = -1,col = -1, depth = -1;
     float width = max_point - min_point;
-    int box_per_row = (int)(width / support_rad); // casting to int, assuming support radius evenly divides width
+    int box_per_row = (int)(width / support_rad);
     
-    int num = row + col * box_per_row + depth * box_per_row * box_per_row;
+    int num = col + row * box_per_row + depth * box_per_row * box_per_row;
     
     if (num >= box_per_row * box_per_row * box_per_row || num < 0 || row == -1 || col == -1 || depth == -1) {
         //cout<<"Error, incorrect box # assigned in Neighbor: "<<num<<endl;
@@ -516,25 +518,28 @@ vector<int> Neighbor::surrounding_boxes(int box_num, int box_per_row, int square
             neighbor_boxes.push_back(box_num+square_face-1);
             neighbor_boxes.push_back(box_num+square_face+box_per_row);
             neighbor_boxes.push_back(box_num+square_face+box_per_row-1);
-        } else {
-            // right face - not on edge
-            neighbor_boxes.push_back(box_num-1);
-            neighbor_boxes.push_back(box_num+box_per_row);
-            neighbor_boxes.push_back(box_num+box_per_row-1);
-            neighbor_boxes.push_back(box_num-box_per_row);
-            neighbor_boxes.push_back(box_num-box_per_row-1);
-            neighbor_boxes.push_back(box_num-square_face);
-            neighbor_boxes.push_back(box_num-square_face-1);
-            neighbor_boxes.push_back(box_num-square_face+box_per_row);
-            neighbor_boxes.push_back(box_num-square_face+box_per_row-1);
-            neighbor_boxes.push_back(box_num-square_face-box_per_row);
-            neighbor_boxes.push_back(box_num-square_face-box_per_row-1);
-            neighbor_boxes.push_back(box_num+square_face);
-            neighbor_boxes.push_back(box_num+square_face-1);
-            neighbor_boxes.push_back(box_num+square_face+box_per_row);
-            neighbor_boxes.push_back(box_num+square_face+box_per_row-1);
-            neighbor_boxes.push_back(box_num+square_face-box_per_row);
-            neighbor_boxes.push_back(box_num+square_face-box_per_row-1);
+            neighbor_boxes.push_back(box_num+square_face+box_per_row+1);
+        }
+        
+        
+        // add particles in neighboring boxes to the current particles vector of neighbor particles
+        for (int j = 0; j < neighbor_boxes.size(); j++) {
+            int num = neighbor_boxes[j];
+            if (num < 0 || num > box_per_row*box_per_row*box_per_row) {
+                cout<<"Error: incorrect neighboring box computed."<<endl;
+                num = 0; // to prevent bad vector access
+            }
+            for (std::vector<int>::iterator it = box_particles[num].begin(); it != box_particles[num].end(); ++it) {
+                particle_num = *it;
+                Vec3 a = particles[i]->position;
+                Vec3 b = particles[particle_num]->position;
+				Vec3 diff = b-a;
+                float dist = sqrt(dot(diff,diff));
+                // check that the neighboring particle is within the support radius
+                if (dist <= support_rad) {
+                    particles[i]->neighbors.push_back(particle_num);
+                }
+            }
         }
     } else if (box_num % square_face >= square_face - box_per_row) {
         // top face
