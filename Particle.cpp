@@ -1,5 +1,8 @@
 #include "Particle.h"
 
+/*
+Used only for SPH simulation
+*/
 Particle::Particle(float x, float y, float z){
 	 Vec3 temp(x,y,z);
 	 position = temp;

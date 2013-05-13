@@ -13,9 +13,6 @@ const Vec3 MAX(.5,.5,.5);
 const Vec3 MIN(0,0,0);
 const bool RAY_TRACING = true;
 
-//ParticleBlob::ParticleBlob(){
-//}
-
 float ParticleBlob::kernel(glm::vec3 r_i,glm::vec3 r_j){
 	glm::vec3 diff_vec = r_i-r_j;
 	float mag = glm::dot(diff_vec,diff_vec);
@@ -114,7 +111,6 @@ bool ParticleBlob::intersect(Ray& ray, float* thit, LocalGeo* local,bool* in_sha
 			if(dense_value<500){
 			hit = true;
 			(*thit) = i;
-			//interpolate position to get more accurate value.
 
 			local->point = position;
 
@@ -126,7 +122,6 @@ bool ParticleBlob::intersect(Ray& ray, float* thit, LocalGeo* local,bool* in_sha
 			if(dense_value>500){
 				hit = true;
 			(*thit) = i;
-			//interpolate position to get more accurate value.
 
 			local->point = position;
 

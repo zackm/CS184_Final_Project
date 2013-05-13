@@ -1,5 +1,8 @@
 #include "Triangle.h"
 
+/*
+This class of Triangle is used only for SPH simulation, not for ray tracer.
+*/
 Triangle::Triangle(Vec3 alpha, Vec3 beta, Vec3 gamma){
 	a = alpha;
 	b = beta;

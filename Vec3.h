@@ -3,6 +3,7 @@ class Vec3{
 public:
 	float x,y,z;
 
+	//overloads for usual additions and multiplication
 	Vec3 operator + (Vec3);
 	Vec3 operator - (Vec3);
 	void operator += (Vec3);

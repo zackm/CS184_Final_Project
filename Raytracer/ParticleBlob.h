@@ -6,6 +6,7 @@
 
 #pragma once
 class ParticleBlob : public Shape{
+	//class represents the density field of particles. Used to perform marching cubes.
 public:
 	//Three vertices denote the triangle
 	vector<Particle*> particles;

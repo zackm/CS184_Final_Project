@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.3-1.40.12 (MiKTeX 2.9) (preloaded format=pdflatex 2011.12.28)  12 MAY 2013 14:21
+This is pdfTeX, Version 3.1415926-2.3-1.40.12 (MiKTeX 2.9) (preloaded format=pdflatex 2011.12.28)  12 MAY 2013 14:42
 entering extended mode
 **C:/Users/Tyler/Documents/CS*184/CS184_Final_Project/final*images/final*paper.
 tex
@@ -294,35 +294,30 @@ Package pdftex.def Info: towers.png used on input line 153.
 <raytrace.png, id=29, 702.625pt x 702.625pt>
 File: raytrace.png Graphic file (type png)
  <use raytrace.png>
-Package pdftex.def Info: raytrace.png used on input line 163.
-(pdftex.def)             Requested size: 317.9902pt x 317.9902pt.
+Package pdftex.def Info: raytrace.png used on input line 162.
+(pdftex.def)             Requested size: 433.62886pt x 433.62886pt.
 
 <18ke-1-march.jpg, id=30, 731.73375pt x 732.7375pt>
 File: 18ke-1-march.jpg Graphic file (type jpg)
  <use 18ke-1-march.jpg>
-Package pdftex.def Info: 18ke-1-march.jpg used on input line 173.
-(pdftex.def)             Requested size: 216.80864pt x 216.80417pt.
+Package pdftex.def Info: 18ke-1-march.jpg used on input line 171.
+(pdftex.def)             Requested size: 289.08191pt x 289.07594pt.
 
 <21k-march.png, id=31, 602.25pt x 602.25pt>
 File: 21k-march.png Graphic file (type png)
  <use 21k-march.png>
-Package pdftex.def Info: 21k-march.png used on input line 174.
-(pdftex.def)             Requested size: 216.80983pt x 216.80983pt.
-
-Overfull \hbox (0.65057pt too wide) in paragraph at lines 171--176
- $[]$ 
- []
-
-[5] [6 <C:/Users/Tyler/Documents/CS 184/CS184_Final_Project/final images/97k-pa
-rticles.png (PNG copy)> <C:/Users/Tyler/Documents/CS 184/CS184_Final_Project/fi
-nal images/79k-particles.pdf>] [7 <C:/Users/Tyler/Documents/CS 184/CS184_Final_
-Project/final images/2k-ray-active.png (PNG copy)> <C:/Users/Tyler/Documents/CS
- 184/CS184_Final_Project/final images/2k-ray-settled.png (PNG copy)> <C:/Users/
-Tyler/Documents/CS 184/CS184_Final_Project/final images/towers.png (PNG copy)>]
-[8 <C:/Users/Tyler/Documents/CS 184/CS184_Final_Project/final images/raytrace.p
-ng (PNG copy)>] [9 <C:/Users/Tyler/Documents/CS 184/CS184_Final_Project/final i
-mages/18ke-1-march.jpg> <C:/Users/Tyler/Documents/CS 184/CS184_Final_Project/fi
-nal images/21k-march.png (PNG copy)>]
+Package pdftex.def Info: 21k-march.png used on input line 172.
+(pdftex.def)             Requested size: 289.08589pt x 289.08589pt.
+ [5] [6 <C:/Users/Tyler/Documents/CS 184/CS184_Final_Project/final images/97k-p
+articles.png (PNG copy)> <C:/Users/Tyler/Documents/CS 184/CS184_Final_Project/f
+inal images/79k-particles.pdf>] [7 <C:/Users/Tyler/Documents/CS 184/CS184_Final
+_Project/final images/2k-ray-active.png (PNG copy)> <C:/Users/Tyler/Documents/C
+S 184/CS184_Final_Project/final images/2k-ray-settled.png (PNG copy)> <C:/Users
+/Tyler/Documents/CS 184/CS184_Final_Project/final images/towers.png (PNG copy)>
+] [8 <C:/Users/Tyler/Documents/CS 184/CS184_Final_Project/final images/raytrace
+.png (PNG copy)>] [9 <C:/Users/Tyler/Documents/CS 184/CS184_Final_Project/final
+ images/18ke-1-march.jpg> <C:/Users/Tyler/Documents/CS 184/CS184_Final_Project/
+final images/21k-march.png (PNG copy)>]
 ("C:\Users\Tyler\Documents\CS 184\CS184_Final_Project\final images\final paper.
 aux") ) 
 Here is how much of TeX's memory you used:
@@ -344,7 +339,7 @@ m Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr17.pfb><C:/Program F
 iles (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Program Files
  (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Program Files (
 x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmti10.pfb>
-Output written on "final paper.pdf" (9 pages, 789886 bytes).
+Output written on "final paper.pdf" (9 pages, 789895 bytes).
 PDF statistics:
  89 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
