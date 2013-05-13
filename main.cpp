@@ -11,7 +11,7 @@ using namespace std;
 /*******************
 * GLOBAL VARIABLES *
 *******************/
-Container CONTAINER(Vec3(.5,.5,.5),Vec3(0,0,0));
+Container CONTAINER(Vec3(2,2,2),Vec3(0,0,0));
 vector<Particle*> PARTICLES;//particles that we do SPH on.
 vector<Triangle*> TRIANGLES;//triangles made from marching cubes to render
 
@@ -899,17 +899,17 @@ void initScene(){
                 }
             }
             // some particles on floor
-//            for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
-//                for(float j = CONTAINER.min.y; j<.75f*(CONTAINER.max.y)/5.0f; j=j+step){
-//                    for(float k = CONTAINER.min.z; k<CONTAINER.max.z; k=k+step) {
-//                        noise = float(rand())/(float(RAND_MAX))*.05f;
-//                        Vec3 pos(i,j,k);
-//                        Vec3 vel(0,0,0);
-//                        new_part = new Particle(pos,vel,MASS,1000.f);
-//                        PARTICLES.push_back(new_part);
-//                    }
-//                }
-//            }
+            for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
+                for(float j = CONTAINER.min.y; j<.75f*(CONTAINER.max.y)/5.0f; j=j+step){
+                    for(float k = CONTAINER.min.z; k<CONTAINER.max.z; k=k+step) {
+                        noise = float(rand())/(float(RAND_MAX))*.05f;
+                        Vec3 pos(i,j,k);
+                        Vec3 vel(0,0,0);
+                        new_part = new Particle(pos,vel,MASS,1000.f);
+                        PARTICLES.push_back(new_part);
+                    }
+                }
+            }
             break;
             
         case 3:
@@ -1012,103 +1012,9 @@ void initScene(){
             break;
     }
 
-	////2D Drop Scene
-	//float step = .017;
-	//for(float i = 2.0*CONTAINER.max.x/5.0f; i<3.0*(CONTAINER.max.x)/5.0f; i=i+step){
-	//	for(float j = 4.0*CONTAINER.max.y/5.0f; j<(CONTAINER.max.y); j=j+step){
-	//		Vec3 pos(i,j,0);
-	//		Vec3 vel(0,0,0);
-	//		new_part = new Particle(pos,vel,MASS,1000);
-	//		PARTICLES.push_back(new_part);
-	//	}
-	//}
-
-	//step = .017;
-	//for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
-	//	for(float j = CONTAINER.min.y; j<(CONTAINER.max.y)/5.0f; j=j+step){
-	//		Vec3 pos(i,j,0);
-	//		Vec3 vel(0,0,0);
-	//		new_part = new Particle(pos,vel,MASS,1000);
-	//		PARTICLES.push_back(new_part);
-	//	}
-	//}
-
-	////3D Throw Scene
-	//////Semi random grid of particles
-	//float step = .01;
-	//for(float i = 4.0*CONTAINER.max.x/5.0f; i<(CONTAINER.max.x); i=i+step){
-	//	for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
-	//		for(float k = 2.0*CONTAINER.max.z/4.0f; k<(3.0f*CONTAINER.max.z/4.0f); k=k+step) {
-	//			noise = float(rand())/(float(RAND_MAX))*.05f;
-	//			Vec3 pos(i,j,k);
-	//			Vec3 vel(-1,-3,0);
-	//			new_part = new Particle(pos,vel,MASS,1000.0f);
-	//			PARTICLES.push_back(new_part);
-	//		}
-	//	}
-	//}
-
-	//step = .03;
-	//for(float i = CONTAINER.min.x; i<1.0f*(CONTAINER.max.x)/5.0f; i=i+step){
-	//	for(float j = 3.0*CONTAINER.max.y/4.0f; j<(CONTAINER.max.y); j=j+step){
-	//		for(float k = 2.0*CONTAINER.max.z/4.0f; k<(3.0f*CONTAINER.max.z/4.0f); k=k+step) {
-	//			noise = float(rand())/(float(RAND_MAX))*.05f;
-	//			Vec3 pos(i,j,k);
-	//			Vec3 vel(3,-3,0);
-	//			new_part = new Particle(pos,vel,MASS,1000.0f);
-	//			PARTICLES.push_back(new_part);
-	//		}
-	//	}
-	//}
-
-	//////3D Drop Scene
-	//float step = .025;
-	//for(float i = 2.0*CONTAINER.max.x/5.0; i<3.0f*(CONTAINER.max.x)/5.0f; i=i+step){
-	//	for(float j = 2.0*CONTAINER.max.y/5.0f; j<3.0f*(CONTAINER.max.y)/5.0f; j=j+step){
-	//		for(float k = 1.0*CONTAINER.max.y/5.0f; k<4.0f*(CONTAINER.max.y)/5.0f; k=k+step){
-	//			noise = float(rand())/(float(RAND_MAX))*.05f;
-	//			Vec3 pos(i,j,k);
-	//			Vec3 vel(0,-3,0);
-	//			new_part = new Particle(pos,vel,MASS,1000.0f);
-	//			PARTICLES.push_back(new_part);
-	//		}
-	//	}
-	//}
-
-	//step = .02;
-	//for(float i = CONTAINER.min.x; i<(CONTAINER.max.x); i=i+step){
-	//	for(float j = CONTAINER.min.y; j<1.0f*(CONTAINER.max.y)/5.0f; j=j+step){
-	//		for(float k = CONTAINER.min.z; k<(CONTAINER.max.z); k=k+step){
-	//			noise = float(rand())/(float(RAND_MAX))*.05f;
-	//			Vec3 pos(i,j,k);
-	//			Vec3 vel(0.3,1,0);
-	//			new_part = new Particle(pos,vel,MASS,1000.0f);
-	//			PARTICLES.push_back(new_part);
-	//		}
-	//	}
-	//}
-
 	NUM_PARTICLES = PARTICLES.size();
 	cout<<NUM_PARTICLES<<" Particles"<<endl;
 
-	//random particles
-	//for (int i = 0; i<NUM_PARTICLES; i++){
-	//    x = .2f+float(rand())/(float(RAND_MAX))*.1f;
-	//    y = float(rand())/(float(RAND_MAX))/5.0 + .1f;
-	//    z = 0.0f;//.2f + float(rand())/(float(RAND_MAX))*.1f;
-
-	//    v_x = -.5f+float(rand())/(float(RAND_MAX))*2.0f*noise;
-	//    v_y = -0.2+float(rand())/(float(RAND_MAX))*noise;
-	//    v_z = 0.0f;//-0.2+float(rand())/(float(RAND_MAX))*noise;
-
-
-	//    Vec3 pos(x,y,z);
-	//    Vec3 vel(v_x,v_y,v_z);
-	//    float mass = 4.0f+(float(rand())/(float(RAND_MAX)))*5.0f;
-	//    //also need to instantiate the other fields
-	//    new_part = new Particle(pos,vel,MASS,1000);
-	//    PARTICLES.push_back(new_part);
-	//}
     if (RENDERING_TRIANGLES) {
         NEIGHBOR.place_particles(PARTICLES,SUPPORT_RADIUS,CONTAINER,NUM_PARTICLES,true);
     } else {
@@ -1152,10 +1058,10 @@ void myDisplay(){
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
     // view for 0 to .5 cube
-	gluLookAt(.25f,.4f,1.2f,.25f,.18f,0.0f,0,1,0);
+	//gluLookAt(.25f,.4f,1.2f,.25f,.18f,0.0f,0,1,0);
     
     // view for 0 to 2 cube
-    //gluLookAt(1.f,1.8f,4.5f, 1.f,.4f,0, 0,1,0);
+    gluLookAt(1.f,1.8f,4.5f, 1.f,.4f,0, 0,1,0);
 
     if (!PAUSE) {
         run_time_step();

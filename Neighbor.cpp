@@ -47,37 +47,6 @@ int Neighbor::compute_box_num(Vec3 pos, float support_rad, float max_point, floa
 	//int row = -1,col = -1, depth = -1;
     float width = max_point - min_point;
     int box_per_row = (int)(width / support_rad); // casting to int, assuming support radius evenly divides width
-    
- //   // current x,y,z locations of cell traversal
- //   float curr_x = min_point, curr_y = min_point, curr_z = min_point;
- //   
- //   // holds the difference between current x,y,z traversal locations and the particle x,y,z locations
-	//float col_point, row_point, depth_point;
- //   
- //   // loop until assign box number (1D numbering) in x,y, and z directions
-	//for (int i = 0; i < box_per_row && curr_x < max_point; i++) {
- //       col_point = abs(pos.x - curr_x-support_rad/2.0f);
- //       row_point = abs(pos.y - curr_y-support_rad/2.0f);
- //       depth_point = abs(pos.z - curr_z-support_rad/2.0f);
- //       
-	//	if (col_point <= support_rad && col == -1) {
-	//		col = i;
-	//	}
- //       if (row_point <= support_rad && row == -1) {
-	//		row = i;
-	//	}
- //       if (depth_point <= support_rad && depth == -1) {
- //           depth = i;
- //       }
- //       
- //       if (row != -1 && col != -1 && depth != -1) {
-	//		break;
-	//	}
- //       curr_x += support_rad;
- //       curr_y += support_rad;
- //       curr_z += support_rad;
-	//}
- //   
 
     // combine box numbers into 3D numbering
     int num = row + col * box_per_row + depth * box_per_row * box_per_row;
