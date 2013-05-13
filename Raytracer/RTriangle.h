@@ -5,6 +5,7 @@
 #include "Transformation.h"
 
 class RTriangle : public Shape{
+	//Class used only for ray tracer
 public:
 	//Three vertices denote the triangle
 	glm::vec3 a,b,c;

@@ -11,7 +11,7 @@ using namespace std;
 /*******************
 * GLOBAL VARIABLES *
 *******************/
-Container CONTAINER(Vec3(.5,.5,.5),Vec3(0,0,0));//very simple cube for now. Later, make it a particle itself.
+Container CONTAINER(Vec3(.5,.5,.5),Vec3(0,0,0));
 vector<Particle*> PARTICLES;//particles that we do SPH on.
 vector<Triangle*> TRIANGLES;//triangles made from marching cubes to render
 
@@ -452,12 +452,18 @@ void keyPressed(unsigned char key, int x, int y) {
 
 /*
 Linearly interpolate the position where an isosurface cuts
-an edge between two vertices, each with their own scalar value
+an edge between two vertices, each with their own scalar value.
+This code comes from Matt Fisher at http://graphics.stanford.edu/~mdfisher/MarchingCubes.html
+It is cited in our final project write up.
 */
 Vec3 VertexInterp(Vec3 *p1,Vec3* p2,float valp1,float valp2){
 	return ((*p1) + ((*p2) - (*p1))*(-valp1 / (valp2 - valp1)));
 }
 
+/*
+This code generates the list of triangles at the gridcell. It comes from Matt Fisher, and
+is again cited in the final project write up.
+*/
 vector<Triangle*> polygonise(GRIDCELL &Grid, int &NewVertexCount, vector<Vec3> vertices){
 	int TriangleCount;
 	int CubeIndex;
@@ -592,6 +598,9 @@ float default_laplacian(Vec3 r_i,Vec3 r_j){
 	return coeff * (H*H - mag) * (3.0f*H*H - 7.0f*mag);
 }
 
+/*
+Kernel used specifically for pressure gradient calculation.
+*/
 Vec3 pressure_kernel_gradient(Vec3 r_i, Vec3 r_j){
 	Vec3 diff_vec = r_i-r_j;
 	float mag = dot(diff_vec,diff_vec);
@@ -606,6 +615,9 @@ Vec3 pressure_kernel_gradient(Vec3 r_i, Vec3 r_j){
 	return diff_vec*(-coeff)/(sqrt(mag));
 }
 
+/*
+Kernel used specifically for viscosity calculation.
+*/
 float viscosity_kernel_laplacian(Vec3 r_i, Vec3 r_j){
 	Vec3 diff_vec = r_i-r_j;
 	float mag = dot(diff_vec,diff_vec);
@@ -616,6 +628,9 @@ float viscosity_kernel_laplacian(Vec3 r_i, Vec3 r_j){
 /*******************
 * Particle Methods *
 *******************/
+/*
+Returns the density, using kernels, at the point param.
+*/
 float density_at_point(Vec3 point){
 	//first should generate a list of the particles we need to check, using the box for this point.
 	int box_number = NEIGHBOR.compute_box_num(point,SUPPORT_RADIUS,CONTAINER.max.x,CONTAINER.min.x);
@@ -636,6 +651,9 @@ float density_at_point(Vec3 point){
 	return density;
 }
 
+/*
+Similarly returns the normal at the point param.
+*/
 Vec3 normal_at_point(Vec3 point){
 	//set the normal at each point
 	int box_number = NEIGHBOR.compute_box_num(point,SUPPORT_RADIUS,CONTAINER.max.x,CONTAINER.min.x);
@@ -665,7 +683,6 @@ To do this, calculate all quanities in Navier-Stokes, then use timestep to
 update particle location from old location and velocity.
 */
 void run_time_step(){
-    
 	vector<Particle*> new_particles; new_particles.resize(NUM_PARTICLES);
 	vector<float> pressure_list; pressure_list.resize(NUM_PARTICLES);
 	vector<Vec3> pressure_grad_list; pressure_grad_list.resize(NUM_PARTICLES);
@@ -742,7 +759,6 @@ void run_time_step(){
 
 		//using Navier Stokes, calculate the change in velocity.
 
-		//First add external forces
 		Vec3 acceleration = GRAVITY + (tension_list[i]*SURFACE_TENSION
 			+ (viscosity_list[i]*VISCOSITY)
 			+ pressure_grad_list[i])/temp_particle->density;
@@ -750,20 +766,14 @@ void run_time_step(){
 		Vec3 position = temp_particle->position;
 		Vec3 velocity = temp_particle->velocity;
 		Vec3 new_velocity,new_position;
-		//if(CURRENT_TIME==0){
+
 		new_velocity = velocity+acceleration*TIMESTEP;
 		new_position = position + (velocity + acceleration*TIMESTEP*.5f)*TIMESTEP;
-		//}else{
-		//	velocity = (position-temp_particle->prev_position)/TIMESTEP;
-		//	new_position = position*2.0f - temp_particle->prev_position + acceleration*TIMESTEP*TIMESTEP*.5f;
-		//	new_velocity = velocity + acceleration*TIMESTEP;
-		//}
 
 		float mass = temp_particle->mass;
 
 		temp_particle = new Particle(new_position,new_velocity,mass,temp_particle->density);
 		temp_particle->prev_position = position;
-		//temp_particle->prev_velocity = velocity;
 
 		CONTAINER.in_container(temp_particle,TIMESTEP); //applies reflections if outside of boundary.
 
@@ -783,15 +793,12 @@ void run_time_step(){
 }
 
 /*
-Code modified from Matthew Ward.
+Code modified from Matthew Fisher. It is located at http://graphics.stanford.edu/~mdfisher/MarchingCubes.html
+We have cited it in our final project write up
 */
 void generate_triangles(){
 	TRIANGLES.clear();
 	GRIDCELL grid;
-
-	//first generate all the densities at each point necessary
-	//float density_grid[WIDTH][HEIGHT][DEPTH];
-
 
 	//call polygonize, add triangles to TRIANGLES list.
 	vector<Triangle*> new_triangles;
