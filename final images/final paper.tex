@@ -70,9 +70,9 @@ $$ W({\bf r_{ij}},h) = \frac{15}{\pi h^6}(h-r)^3$$
 \\
 We use this kernel only for calculating pressure gradient, so really we need the gradient of this kernel, which is:
 \\
-$$ W({\bf r_{ij}},h) = \frac{-45}{\pi h^6}\frac{{\bf r_{ij}}}{r}(h-r)^2$$
+$$\bigtriangledown W({\bf r_{ij}},h) = \frac{-45}{\pi h^6}\frac{{\bf r_{ij}}}{r}(h-r)^2$$
 \\
-We use this kernel for pressure because the magnitude of the gradient is nonzero as $r$ approaches $0$.
+We use this kernel for pressure because the magnitude of $\bigtriangledown W$ is nonzero as $r$ approaches $0$.
 \\
 \\
 {\bf Viscosity}
